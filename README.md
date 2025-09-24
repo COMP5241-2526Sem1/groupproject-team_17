@@ -21,11 +21,15 @@ This project aims to develop a comprehensive solution for Interaction between te
     - Routing: App Router
     - HTTP Client: Axios
 - Backend: C# ASP.NET Core
-    - Authentication: JWT
+    - Authentication: Auth0 with JWT
     - API Documentation: Swagger
-    - ORM: Entity Framework Core
+    - ORM: Entity Framework Core, MySQL
+    
+
 
 - Database: MySQL
+
+- Version Control: Git and GitHub
 
 ## Project Structure
 - `frontend/`: Contains all frontend related code and assets.
