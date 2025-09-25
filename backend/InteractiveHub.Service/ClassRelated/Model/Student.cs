@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,4 +24,15 @@ public class Student : IHObject
 
     }
 
+}
+
+
+public class CreateStudentDto
+{
+    [Required]
+    public string StudentId { get; set; } = null!;
+    public string? FirstName { get; set; }
+    public string? LastName { get; set; }
+    public string? NickName { get; set; }
+    public string? Email { get; set; }
 }

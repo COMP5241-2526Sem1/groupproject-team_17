@@ -69,6 +69,7 @@ namespace InteractiveHub.WebAPI.Controllers
                 return ReturnOK(null, "Course created successfully.");
             });
         }
+
         [HttpPut("UpdateCourse/{courseId}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(HttpResult))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(HttpResult))]
@@ -85,6 +86,8 @@ namespace InteractiveHub.WebAPI.Controllers
                 return ReturnOK(null, "Course updated successfully.");
             });
         }
+
+
         [HttpDelete("DeleteCourse/{courseId}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(HttpResult))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(HttpResult))]
@@ -101,6 +104,60 @@ namespace InteractiveHub.WebAPI.Controllers
                 return ReturnOK(null, "Course deleted successfully.");
             });
         }
+
+        [HttpPost("AddOrUpdateStudents/{courseId}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(HttpResult))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(HttpResult))]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(HttpResult))]
+        public async Task<IActionResult> AddOrUpdateStudents(string courseId, [FromBody] IEnumerable<CreateStudentDto> students)
+        {
+            return await HandleWithResultAsync(async () =>
+            {
+                ServiceRes res = await _classManager.CreateOrUpdateStudentToCourse(students, courseId);
+                if (res.Code != ResCode.OK)
+                {
+                    return ReturnResponse(res);
+                }
+                return ReturnOK(null, "Students added/updated successfully.");
+            });
+        }
+
+        [HttpDelete("{courseId}/RemoveStudent/{studentId}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(HttpResult))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(HttpResult))]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(HttpResult))]
+        public async Task<IActionResult> RemoveStudent(string courseId, string studentId)
+        {
+            return await HandleWithResultAsync(async () =>
+            {
+                ServiceRes res = await _classManager.RemoveStudentsFromCourseAsync(new[] { studentId }, courseId);
+                if (res.Code != ResCode.OK)
+                {
+                    return ReturnResponse(res);
+                }
+                return ReturnOK(null, "Student removed successfully.");
+            });
+        }
+
+        [HttpDelete("{courseId}/RemoveStudents")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(HttpResult))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(HttpResult))]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(HttpResult))]
+        public async Task<IActionResult> RemoveStudents(string courseId, [FromBody] IEnumerable<string> studentIds)
+        {
+            return await HandleWithResultAsync(async () =>
+            {
+                ServiceRes res = await _classManager.RemoveStudentsFromCourseAsync(studentIds, courseId);
+                if (res.Code != ResCode.OK)
+                {
+                    return ReturnResponse(res);
+                }
+                return ReturnOK(null, "Students removed successfully.");
+            });
+        }
+
+
+
 
     }
 
