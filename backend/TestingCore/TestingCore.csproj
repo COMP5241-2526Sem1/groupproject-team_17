@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\InteractiveHub\InteractiveHub.csproj" />
+    <ProjectReference Include="..\InteractiveHub.Service\InteractiveHub.Service.csproj" />
+    <ProjectReference Include="..\InteractiveHub.Service.Logger\InteractiveHub.Service.Logger.csproj" />
+    <PackageReference Include="Moq" Version="4.16.1" />
+    <PackageReference Include="xunit" Version="2.4.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" />
+  </ItemGroup>
+
+</Project>

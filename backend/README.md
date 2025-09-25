@@ -16,3 +16,4 @@ This directory contains the backend code for the COMP5241 Semester 1 Group 17 pr
 - `InteractiveHub.Service.Logger`: Dedicated logging service implementation with custom logger functionality and database-specific logging operations. References the models from InteractiveHub.Service.
 In this project, it only focuses on the logging service implementation and database-related operations.
 
+
