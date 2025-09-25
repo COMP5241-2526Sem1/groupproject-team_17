@@ -6,6 +6,7 @@ using System;
 
 public interface IHubLogger
 {
+    string TraceId { get; }
     string Service { get; }
     string RemoteIpAddress { get; }
     void SetService(string serviceName);

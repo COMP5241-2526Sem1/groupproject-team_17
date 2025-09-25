@@ -1,5 +1,6 @@
 using InteractiveHub;
 using InteractiveHub.Service.Logger;
+using InteractiveHub.WebAPI.Middleware;
 using Microsoft.OpenApi.Models;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -75,10 +76,14 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseCustomTraceIdentifier(); // Add custom TraceIdentifier middleware
+
 app.UseAuthorization();
 
 app.MapControllers();
 
 app.UseInteractiveHubServices(); // Use the HubLogger middleware
+
+app.UseMiddleware<TraceIdentifierMiddleware>(); // Use the custom TraceIdentifier middleware
 
 app.Run();
