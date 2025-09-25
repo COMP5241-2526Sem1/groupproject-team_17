@@ -1,4 +1,5 @@
 using System;
+using InteractiveHub.Service;
 using InteractiveHub.Service.Logger;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
@@ -13,13 +14,14 @@ public static class DependencyInjection
         // Add other service registrations here as needed
         // Get the connection string from appsettings.json
 
-        // HubLogger
-        var connectionString = services.BuildServiceProvider()
-            .GetService<IConfiguration>()?
-            .GetConnectionString("MySqlConnection");
+        // Get default connection string from configuration
+        var serviceProvider = services.BuildServiceProvider();
+        var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+        var connectionString = configuration.GetConnectionString("DefaultConnection");
+ 
         if (string.IsNullOrEmpty(connectionString))
         {
-            throw new ArgumentException("Connection string 'MySqlConnection' is not found in configuration.");
+            throw new ArgumentException("Connection string 'DefaultConnection' is not found in configuration.");
         }
 
         services.AddHubLogger(connectionString);
@@ -32,6 +34,12 @@ public static class DependencyInjection
 
         // Use HubLogger
         app.UseHubLogger();
+        // create a scope to get the logger instance
+        using var scope = app.Services.CreateScope();
+        var logger = scope.ServiceProvider.GetRequiredService<IHubLogger>();
+        logger.SetService("Interactive Hub");
+
+        logger.LogInfo("Interactive Hub Service started");
 
         return app;
     }
