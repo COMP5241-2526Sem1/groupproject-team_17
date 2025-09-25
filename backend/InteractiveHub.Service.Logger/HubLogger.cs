@@ -19,8 +19,10 @@ public partial class HubLogger : IHubLogger
         service = serviceName;
     }
 
+    public string OwnerId => _httpContext?.User?.FindFirst("sub")?.Value ?? "";
 
 
+    public string TraceId => _httpContext?.TraceIdentifier ?? "";
     private readonly HttpContext? _httpContext;
     public HubLogger(IHttpContextAccessor httpContextAccessor)
     {
@@ -29,13 +31,22 @@ public partial class HubLogger : IHubLogger
 
     public string LogInfo(string message, string? source = null, string? Operator = null)
     {
-        var logMessage = LogMessage.Create(LogMessage.LogLevel.INFO, message, source ?? RemoteIpAddress, Operator ?? "", Service);
+        var logMessage = LogMessage.Create(LogMessage.LogLevel.INFO, message, source ?? RemoteIpAddress, Operator ?? OwnerId, Service);
+        if (!string.IsNullOrWhiteSpace(TraceId) && _httpContext != null)
+        {
+            logMessage.LogId = TraceId;
+        }
         messageQueue.Enqueue(logMessage);
         return logMessage.LogId;
     }
     public string LogError(string message, string? source = null, Exception? ex = null, string? Operator = null)
     {
-        var logMessage = LogMessage.Create(LogMessage.LogLevel.ERROR, message + (ex != null ? $" Exception: {ex.Message}" : ""), RemoteIpAddress, Operator ?? "", Service);
+        var logMessage = LogMessage.Create(LogMessage.LogLevel.ERROR, message + (ex != null ? $" Exception: {ex.Message}" : ""), RemoteIpAddress, Operator ?? OwnerId, Service);
+        if (!string.IsNullOrWhiteSpace(TraceId) && _httpContext != null)
+        {
+            logMessage.LogId = TraceId;
+        }
+
         messageQueue.Enqueue(logMessage);
         if (ex != null)
         {
@@ -47,7 +58,12 @@ public partial class HubLogger : IHubLogger
     }
     public string LogWarning(string message,string? source = null , string? Operator = null)
     {
-        var logMessage = LogMessage.Create(LogMessage.LogLevel.WARN, message, RemoteIpAddress, Operator ?? "", Service);
+        var logMessage = LogMessage.Create(LogMessage.LogLevel.WARN, message, RemoteIpAddress, Operator ?? OwnerId, Service);
+        if (!string.IsNullOrWhiteSpace(TraceId) && _httpContext != null)
+        {
+            logMessage.LogId = TraceId;
+        }
+
         messageQueue.Enqueue(logMessage);
         return logMessage.LogId;
     }

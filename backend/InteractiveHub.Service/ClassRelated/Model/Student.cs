@@ -1,0 +1,26 @@
+using System;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
+
+namespace InteractiveHub.Service.ClassManagement;
+
+[Table("Students")]
+public class Student : IHObject
+{
+
+    public string StudentId { get; set; } = string.Empty;
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public string NickName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public List<TeachingCourse> Courses { get; set; } = new List<TeachingCourse>();
+    public Student() : base()
+    {
+        //extract short id from guid
+
+        var guid = Guid.NewGuid().ToString("N");
+        Id = $"std.{guid.Substring(0, 12)}";
+
+    }
+
+}
