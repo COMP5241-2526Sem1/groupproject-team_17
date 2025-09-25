@@ -1,5 +1,6 @@
 using System;
 using InteractiveHub.Service;
+using InteractiveHub.Service.ClassManagement;
 using InteractiveHub.Service.Logger;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
@@ -18,13 +19,14 @@ public static class DependencyInjection
         var serviceProvider = services.BuildServiceProvider();
         var configuration = serviceProvider.GetRequiredService<IConfiguration>();
         var connectionString = configuration.GetConnectionString("DefaultConnection");
- 
+
         if (string.IsNullOrEmpty(connectionString))
         {
             throw new ArgumentException("Connection string 'DefaultConnection' is not found in configuration.");
         }
 
         services.AddHubLogger(connectionString);
+        services.AddClassManager(connectionString);
     }
 
 
@@ -34,6 +36,7 @@ public static class DependencyInjection
 
         // Use HubLogger
         app.UseHubLogger();
+        app.UseClassManager();
         // create a scope to get the logger instance
         using var scope = app.Services.CreateScope();
         var logger = scope.ServiceProvider.GetRequiredService<IHubLogger>();

@@ -10,7 +10,7 @@ public abstract class ServiceBase
     protected readonly HttpContext? _httpContext;
     protected string RequestSource => _httpContext?.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
 
-    protected string OwnerId => _httpContext?.User?.FindFirst("sub")?.Value ?? "Unknown";
+    protected string OwnerId => _httpContext?.User?.FindFirst("sub")?.Value ?? "";
 
 
 
@@ -21,9 +21,9 @@ public abstract class ServiceBase
 
     }
 
-    protected virtual void EnsureHasOwner(string messageIfMissing = "Unknown owner.")
+    protected virtual bool EnsureHasOwner(string messageIfMissing = "Unknown owner.")
     {
-
+        return true;
     }
     protected void SetServiceName(string name)
     {
