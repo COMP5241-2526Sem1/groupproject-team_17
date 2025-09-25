@@ -9,6 +9,7 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="../InteractiveHub.Service.ClassManagement/InteractiveHub.Service.ClassManagement.csproj" />
     <ProjectReference Include="../InteractiveHub.Service.Logger/InteractiveHub.Service.Logger.csproj" />
     <ProjectReference Include="../InteractiveHub.Service/InteractiveHub.Service.csproj" />
   </ItemGroup>

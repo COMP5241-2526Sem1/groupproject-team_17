@@ -5,6 +5,8 @@ using Microsoft.OpenApi.Models;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using InteractiveHub.Service;
+using InteractiveHub.WebAPI;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +28,41 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             ValidIssuer = $"https://{builder.Configuration["Auth0:Domain"]}/",
             ValidAudience = builder.Configuration["Auth0:Audience"]
+        };
+
+        // intercept immediately during token validation
+        options.Events = new JwtBearerEvents
+        {
+            OnChallenge = context =>
+            {
+                // intercept authentication challenge immediately, preventing default handler from processing
+                context.HandleResponse();
+
+                // log authentication failure
+                var logger = context.HttpContext.RequestServices.GetService<IHubLogger>();
+                logger?.LogWarning("Token validation failed - Path: {Path}, TraceId: {TraceId}",
+                    context.Request.Path, context.HttpContext.TraceIdentifier);
+
+                // set custom response immediately
+                context.Response.StatusCode = 401;
+                context.Response.ContentType = "application/json; charset=utf-8";
+
+                var errorResponse = new HttpResult
+                (
+                    (int)ResCode.Unauthorized,
+                    null,
+                    "Authentication failed: Invalid or missing token"
+                    
+                );
+
+                var json = System.Text.Json.JsonSerializer.Serialize(errorResponse, new System.Text.Json.JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                    WriteIndented = true
+                });
+
+                return context.Response.WriteAsync(json);
+            },
         };
     });
 
@@ -78,12 +115,11 @@ app.UseHttpsRedirection();
 
 app.UseCustomTraceIdentifier(); // Add custom TraceIdentifier middleware
 
+app.UseAuthentication();
+
 app.UseAuthorization();
 
 app.MapControllers();
 
-app.UseInteractiveHubServices(); // Use the HubLogger middleware
-
-app.UseMiddleware<TraceIdentifierMiddleware>(); // Use the custom TraceIdentifier middleware
 
 app.Run();

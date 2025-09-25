@@ -8,28 +8,25 @@ namespace InteractiveHub.Service.ClassManagement;
 
 public partial class ClassManager
 {
-    protected override void EnsureHasOwner(string messageIfMissing = "Operation attempted without valid owner.")
-    {
-        if (string.IsNullOrWhiteSpace(OwnerId))
-        {
-            _log?.LogError($"{messageIfMissing}", Operator: OwnerId);
-            throw new ServiceException(ResCode.OwnerIdMissing, messageIfMissing);
-        }
 
-    }
+
     public async Task<ServiceRes> CreateCourseAsync(CreateCourseRequest request)
     {
-        EnsureHasOwner("CreateCourseAsync: Operation attempted without valid owner.");
+
+        if (string.IsNullOrWhiteSpace(OwnerId))
+        {
+            return ServiceRes.Unauthorized(ResCode.OwnerIdMissing, "Operation attempted without valid owner.");
+        }
+
         if (request == null)
         {
-            return new ServiceRes(ResCode.InvalidCourseData, "Invalid course data.");
+            return ServiceRes.BadRequest(ResCode.InvalidCourseData, "Invalid course data.");
         }
 
         if (!request.CheckNotNull(out var missingField))
         {
             _log?.LogError($"CreateCourseAsync: Missing required field [{missingField}].", Operator: OwnerId);
-            return new ServiceRes(ResCode.CourseRequiredFieldMissing, $"Missing required field [{missingField}].");
-
+            return ServiceRes.BadRequest(ResCode.CourseRequiredFieldMissing, $"Missing required field [{missingField}].");
         }
         var course = new TeachingCourse();
         course.CopyFrom(request);
@@ -44,7 +41,8 @@ public partial class ClassManager
             if (existing != null)
             {
                 _log?.LogError($"CreateCourseAsync: Course with code [{course.CourseCode} in {course.AcademicYear} Semester{course.Semester}] already exists.", Operator: OwnerId);
-                return new ServiceRes(ResCode.CourseAlreadyExists, $"Course with code [{course.CourseCode} in {course.AcademicYear} Semester{course.Semester}] already exists.", traceId: _log?.TraceId);
+                return ServiceRes.Conflict(ResCode.CourseAlreadyExists, $"Course with code [{course.CourseCode} in {course.AcademicYear} Semester{course.Semester}] already exists.");
+                // return new ServiceRes(ResCode.CourseAlreadyExists, $"Course with code [{course.CourseCode} in {course.AcademicYear} Semester{course.Semester}] already exists.", traceId: _log?.TraceId);
             }
 
             db.Courses.Add(course);
@@ -53,29 +51,37 @@ public partial class ClassManager
         catch (DbUpdateException dbEx)
         {
             _log?.LogError("CreateCourseAsync: Database error occurred while creating course.", Operator: OwnerId, ex: dbEx);
-            return new ServiceRes(ResCode.DatabaseError, "Unexpected error.", traceId: _log?.TraceId);
+            return ServiceRes.InternalError(ResCode.DatabaseError, "Unexpected error.", traceId: _log?.TraceId);
         }
         catch (Exception ex)
         {
             _log?.LogError("CreateCourseAsync: An unexpected error occurred while creating course.", Operator: OwnerId, ex: ex);
-            return new ServiceRes(ResCode.DatabaseError, "An unexpected error occurred while creating the course.", traceId: _log?.TraceId);
+            return ServiceRes.InternalError(ResCode.DatabaseError, "An unexpected error occurred while creating the course.", traceId: _log?.TraceId);
         }
 
-        return new ServiceRes(ResCode.OK);
+        return ServiceRes.OK();
 
     }
     public async Task<ServiceRes> UpdateCourseAsync(UpdateCourseRequest request, string courseId)
     {
-        EnsureHasOwner("UpdateCourseAsync: Operation attempted without valid owner.");
+        if (string.IsNullOrWhiteSpace(OwnerId))
+        {
+            return ServiceRes.Unauthorized(ResCode.OwnerIdMissing, "Operation attempted without valid owner.");
+        }
+
+        if (string.IsNullOrWhiteSpace(courseId))
+        {
+            return ServiceRes.BadRequest(ResCode.InvalidCourseData, "Invalid course ID.");
+        }
         if (request == null)
         {
-            return new ServiceRes(ResCode.InvalidCourseData, "Invalid course data.");
+            return ServiceRes.BadRequest(ResCode.InvalidCourseData, "Invalid course ID.");
         }
 
         if (!request.CheckNotNull(out var missingField))
         {
             _log?.LogError($"UpdateCourseAsync: Missing required field [{missingField}].", Operator: OwnerId);
-            return new ServiceRes(ResCode.CourseRequiredFieldMissing, $"Missing required field [{missingField}].");
+            return ServiceRes.BadRequest(ResCode.CourseRequiredFieldMissing, $"Missing required field [{missingField}].");
         }
 
         try
@@ -84,7 +90,7 @@ public partial class ClassManager
             if (existingCourse == null)
             {
                 _log?.LogError($"UpdateCourseAsync: Course with ID [{courseId}] not found.", Operator: OwnerId);
-                return new ServiceRes(ResCode.CourseNotFound, $"Course not found.", traceId: _log?.TraceId);
+                return ServiceRes.NotFound(ResCode.CourseNotFound, $"Course not found.", traceId: _log?.TraceId);
             }
             var existingFromOther = await db.Courses.FirstOrDefaultAsync(c => c.CourseCode == request.CourseCode
                       && c.OwnerId == OwnerId
@@ -95,7 +101,7 @@ public partial class ClassManager
             {
 
                 _log?.LogError($"UpdateCourseAsync: Course with code [{request.CourseCode} in {request.AcademicYear} Semester{request.Semester}] already exists.", Operator: OwnerId);
-                return new ServiceRes(ResCode.CourseAlreadyExists, $"Course with code [{request.CourseCode} in {request.AcademicYear} Semester{request.Semester}] already exists.", traceId: _log?.TraceId);
+                return ServiceRes.Conflict(ResCode.CourseAlreadyExists, $"Course with code [{request.CourseCode} in {request.AcademicYear} Semester{request.Semester}] already exists.", traceId: _log?.TraceId);
 
             }
 
@@ -106,23 +112,29 @@ public partial class ClassManager
         catch (DbUpdateException dbEx)
         {
             _log?.LogError("UpdateCourseAsync: Database error occurred while updating course.", Operator: OwnerId, ex: dbEx);
-            return new ServiceRes(ResCode.DatabaseError, "Unexpected error.", traceId: _log?.TraceId);
+            return ServiceRes.InternalError(ResCode.DatabaseError, "Unexpected error.", traceId: _log?.TraceId);
         }
         catch (Exception ex)
         {
             _log?.LogError("UpdateCourseAsync: An unexpected error occurred while updating course.", Operator: OwnerId, ex: ex);
-            return new ServiceRes(ResCode.DatabaseError, "An unexpected error occurred while updating the course.", traceId: _log?.TraceId);
+            return ServiceRes.InternalError(ResCode.DatabaseError, "An unexpected error occurred while updating the course.", traceId: _log?.TraceId);
         }
 
-        return new ServiceRes(ResCode.OK);
+        return ServiceRes.OK();
 
     }
     public async Task<ServiceRes> DeleteCourseAsync(string courseId)
     {
-        EnsureHasOwner("DeleteCourseAsync: Operation attempted without valid owner.");
+
+
+        if (string.IsNullOrWhiteSpace(OwnerId))
+        {
+            return ServiceRes.Unauthorized(ResCode.OwnerIdMissing, "Operation attempted without valid owner.");
+        }
+
         if (string.IsNullOrWhiteSpace(courseId))
         {
-            return new ServiceRes(ResCode.InvalidCourseData, "Invalid course data.");
+            return ServiceRes.BadRequest(ResCode.InvalidCourseData, "Invalid course ID.");
         }
 
         try
@@ -132,7 +144,7 @@ public partial class ClassManager
             if (existingCourse == null)
             {
                 _log?.LogError($"DeleteCourseAsync: Course with ID [{courseId}] not found.", Operator: OwnerId);
-                return new ServiceRes(ResCode.CourseNotFound, $"Course not found.", traceId: _log?.TraceId);
+                return ServiceRes.NotFound(ResCode.CourseNotFound, $"Course not found.", traceId: _log?.TraceId);
             }
             // Remove the course inside the student-course many-to-many relationship
             var studentsEnrolled = await db.Students
@@ -151,68 +163,143 @@ public partial class ClassManager
         catch (DbUpdateException dbEx)
         {
             _log?.LogError("DeleteCourseAsync: Database error occurred while deleting course.", Operator: OwnerId, ex: dbEx);
-            return new ServiceRes(ResCode.DatabaseError, "Unexpected error.", traceId: _log?.TraceId);
+            return ServiceRes.InternalError(ResCode.DatabaseError, "Unexpected error.", traceId: _log?.TraceId);
         }
         catch (Exception ex)
         {
             _log?.LogError("DeleteCourseAsync: An unexpected error occurred while deleting course.", Operator: OwnerId, ex: ex);
-            return new ServiceRes(ResCode.DatabaseError, "An unexpected error occurred while deleting the course.", traceId: _log?.TraceId);
+            return ServiceRes.InternalError(ResCode.DatabaseError, "An unexpected error occurred while deleting the course.", traceId: _log?.TraceId);
         }
 
-        return new ServiceRes(ResCode.OK);
+        return ServiceRes.OK();
 
     }
     public async Task<(ServiceRes, TeachingCourse?)> GetCourseByIdAsync(string courseId)
     {
-        EnsureHasOwner("GetCourseByIdAsync: Operation attempted without valid owner.");
+        if (string.IsNullOrWhiteSpace(OwnerId))
+        {
+            _log?.LogError("GetCourseByIdAsync: Operation attempted without valid owner.", Operator: OwnerId);
+            return (ServiceRes.Unauthorized(ResCode.OwnerIdMissing, "Operation attempted without valid owner."), null);
+        }
+
         if (string.IsNullOrWhiteSpace(courseId))
         {
-            return (new ServiceRes(ResCode.InvalidCourseData, "Invalid course data."), null);
+            _log?.LogError("GetCourseByIdAsync: Invalid course ID provided.", Operator: OwnerId);
+            return (ServiceRes.BadRequest(ResCode.InvalidCourseData, "Invalid course ID."), null);
         }
 
         try
         {
-            var course = await db.Courses.AsNoTracking().FirstOrDefaultAsync(c => c.Id == courseId && c.OwnerId == OwnerId);
+            var course = await db.Courses
+                .Include(c => c.Students) // Include enrolled students
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == courseId && c.OwnerId == OwnerId);
             if (course == null)
             {
                 _log?.LogError($"GetCourseByIdAsync: Course with ID [{courseId}] not found.", Operator: OwnerId);
-                return (new ServiceRes(ResCode.CourseNotFound, $"Course not found.", traceId: _log?.TraceId), null);
+                return (ServiceRes.NotFound(ResCode.CourseNotFound, $"Course not found.", traceId: _log?.TraceId), null);
             }
-            return (new ServiceRes(ResCode.OK), course);
+            return (ServiceRes.OK(), course);
         }
         catch (DbUpdateException dbEx)
         {
             _log?.LogError("GetCourseByIdAsync: Database error occurred while retrieving course.", Operator: OwnerId, ex: dbEx);
-            return (new ServiceRes(ResCode.DatabaseError, "Unexpected error.", traceId: _log?.TraceId), null);
+            return (ServiceRes.InternalError(ResCode.DatabaseError, "Unexpected error.", traceId: _log?.TraceId), null);
         }
         catch (Exception ex)
         {
             _log?.LogError("GetCourseByIdAsync: An unexpected error occurred while retrieving course.", Operator: OwnerId, ex: ex);
-            return (new ServiceRes(ResCode.DatabaseError, "Unexpected error.", traceId: _log?.TraceId), null);
+            return (ServiceRes.InternalError(ResCode.DatabaseError, "Unexpected error.", traceId: _log?.TraceId), null);
         }
     }
-    public async Task<(ServiceRes, List<TeachingCourse>)> GetAllCoursesAsync()
+    public async Task<(ServiceRes, IEnumerable<TeachingCourse>)> GetAllCoursesAsync()
     {
-        EnsureHasOwner("GetAllCoursesAsync: Operation attempted without valid owner.");
 
+        if (string.IsNullOrWhiteSpace(OwnerId))
+        {
+            _log?.LogError("GetAllCoursesAsync: Operation attempted without valid owner.", Operator: OwnerId);
+            return (ServiceRes.BadRequest(ResCode.OwnerIdMissing, "Operation attempted without valid owner."), new List<TeachingCourse>());
+        }
         try
         {
-            var courses = await db.Courses.AsNoTracking().Where(c => c.OwnerId == OwnerId).ToListAsync();
-            return (new ServiceRes(ResCode.OK), courses);
+            var courses = await db.Courses
+                .Include(c => c.Students) // Include enrolled students for each course
+                .AsNoTracking()
+                .Where(c => c.OwnerId == OwnerId)
+                .ToListAsync();
+            return (ServiceRes.OK(), courses);
         }
         catch (DbUpdateException dbEx)
         {
             _log?.LogError("GetAllCoursesAsync: Database error occurred while retrieving courses.", Operator: OwnerId, ex: dbEx);
-            return (new ServiceRes(ResCode.DatabaseError, "Unexpected error.", traceId: _log?.TraceId), new List<TeachingCourse>());
+            return (ServiceRes.InternalError(ResCode.DatabaseError, "Unexpected error.", traceId: _log?.TraceId), new List<TeachingCourse>());
         }
         catch (Exception ex)
         {
             _log?.LogError("GetAllCoursesAsync: An unexpected error occurred while retrieving courses.", Operator: OwnerId, ex: ex);
-            return (new ServiceRes(ResCode.DatabaseError, "Unexpected error.", traceId: _log?.TraceId), new List<TeachingCourse>());
+            return (ServiceRes.InternalError(ResCode.DatabaseError, "Unexpected error.", traceId: _log?.TraceId), new List<TeachingCourse>());
+        }
+    }
+    public async Task<(ServiceRes, object?)> GetCourseWithStatsAsync(string courseId)
+    {
+        if (string.IsNullOrWhiteSpace(OwnerId))
+        {
+            _log?.LogError("GetCourseWithStatsAsync: Operation attempted without valid owner.", Operator: OwnerId);
+            return (ServiceRes.Unauthorized(ResCode.OwnerIdMissing, "Operation attempted without valid owner."), null);
+        }
+
+        if (string.IsNullOrWhiteSpace(courseId))
+        {
+            _log?.LogError("GetCourseWithStatsAsync: Invalid course ID provided.", Operator: OwnerId);
+            return (ServiceRes.BadRequest(ResCode.InvalidCourseData, "Invalid course ID."), null);
+        }
+
+        try
+        {
+            var course = await db.Courses
+                .Include(c => c.Students) // Include enrolled students
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == courseId && c.OwnerId == OwnerId);
+                
+            if (course == null)
+            {
+                _log?.LogError($"GetCourseWithStatsAsync: Course with ID [{courseId}] not found.", Operator: OwnerId);
+                return (ServiceRes.NotFound(ResCode.CourseNotFound, $"Course not found.", traceId: _log?.TraceId), null);
+            }
+
+            var courseWithStats = new
+            {
+                Course = course,
+                Statistics = new
+                {
+                    TotalStudentsEnrolled = course.Students?.Count ?? 0,
+                    StudentsList = course.Students?.Select(s => new
+                    {
+                        s.Id,
+                        s.StudentId,
+                        s.FirstName,
+                        s.LastName,
+                        s.NickName,
+                        s.Email
+                    }).ToList()
+                }
+            };
+
+            return (ServiceRes.OK(), courseWithStats);
+        }
+        catch (DbUpdateException dbEx)
+        {
+            _log?.LogError("GetCourseWithStatsAsync: Database error occurred while retrieving course.", Operator: OwnerId, ex: dbEx);
+            return (ServiceRes.InternalError(ResCode.DatabaseError, "Unexpected error.", traceId: _log?.TraceId), null);
+        }
+        catch (Exception ex)
+        {
+            _log?.LogError("GetCourseWithStatsAsync: An unexpected error occurred while retrieving course.", Operator: OwnerId, ex: ex);
+            return (ServiceRes.InternalError(ResCode.DatabaseError, "Unexpected error.", traceId: _log?.TraceId), null);
         }
     }
 
 
-    
+
 
 }
