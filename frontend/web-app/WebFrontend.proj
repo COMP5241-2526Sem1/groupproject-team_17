@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.Build.NoTargets/3.7.0">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <FrontendDir>$(MSBuildThisFileDirectory)</FrontendDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Track frontend source changes (exclude build artifacts & deps) -->
+    <FrontendFiles Include="**/*" Exclude="node_modules/**;dist/**;.next/**;*.proj;bin/**;obj/**" />
+  </ItemGroup>
+
+  <Target Name="NpmInstall" Inputs="package.json" Outputs="node_modules/.installed.stamp">
+    <Message Text="[WebFrontend] npm install" Importance="high" />
+    <Exec Command="npm install" WorkingDirectory="$(FrontendDir)" />
+    <Touch Files="node_modules/.installed.stamp" AlwaysCreate="true" />
+  </Target>
+
+  <Target Name="BuildFrontend" DependsOnTargets="NpmInstall" Inputs="@(FrontendFiles)" Outputs=".next/build-complete.stamp">
+    <Message Text="[WebFrontend] next build" Importance="high" />
+    <Exec Command="npm run build" WorkingDirectory="$(FrontendDir)" />
+    <Touch Files=".next/build-complete.stamp" AlwaysCreate="true" />
+  </Target>
+
+  <!-- Hook into standard build lifecycle -->
+  <Target Name="Build" DependsOnTargets="BuildFrontend" />
+  <Target Name="Clean">
+    <RemoveDir Directories="$(FrontendDir).next" />
+    <RemoveDir Directories="$(FrontendDir)dist" />
+  </Target>
+</Project>
