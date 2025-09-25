@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 import { CONFIG } from 'src/global-config';
+import { th } from 'zod/v4/locales';
 
 // ----------------------------------------------------------------------
 
@@ -89,3 +90,99 @@ export const endpoints = {
     search: '/api/product/search',
   },
 };
+
+
+export const httpGet = async (url, data) => {
+  try {
+    const response = await axiosInstance.get(url, {
+      params: {
+        ...data
+      }
+    });
+    const resData = response.data;
+
+    if (resData && resData.code === 0) {
+      return resData;
+    }
+
+    throw resData || { code: -999, message: 'Unknown error' };
+  } catch (error) {
+    if (error.code && Number.isInteger(error.code)) {
+      throw error;
+    }
+
+    throw {
+      code: -999,
+      message: error.message || 'Unknown error',
+      data: error,
+    };
+  }
+}
+
+export const httpPost = async (url, data, config) => {
+  try {
+    const response = await axiosInstance.post(url, data, config);
+    const resData = response.data;
+
+    if (resData && resData.code === 0) {
+      return resData;
+    }
+
+    throw resData || { code: -999, message: 'Unknown error' };
+  } catch (error) {
+    if (error.code && Number.isInteger(error.code)) {
+      throw error;
+    }
+
+    throw {
+      code: -999,
+      message: error.message || 'Unknown error',
+      data: error,
+    };
+  }
+}
+
+export const httpPut = async (url, data, config) => {
+  try {
+    const response = await axiosInstance.put(url, data, config);
+    const resData = response.data;
+
+    if (resData && resData.code === 0) {
+      return resData;
+    }
+
+    throw resData || { code: -999, message: 'Unknown error' };
+  } catch (error) {
+    if (error.code && Number.isInteger(error.code)) {
+      throw error;
+    }
+
+    throw {
+      code: -999,
+      message: error.message || 'Unknown error',
+      data: error,
+    };
+  }
+}
+export const httpDelete = async (url, data, config) => {
+  try {
+    const response = await axiosInstance.delete(url, { data, ...config });
+    const resData = response.data;
+
+    if (resData && resData.code === 0) {
+      return resData;
+    }
+
+    throw resData || { code: -999, message: 'Unknown error' };
+  } catch (error) {
+    if (error.code && Number.isInteger(error.code)) {
+      throw error;
+    }
+
+    throw {
+      code: -999,
+      message: error.message || 'Unknown error',
+      data: error,
+    };
+  }
+}
