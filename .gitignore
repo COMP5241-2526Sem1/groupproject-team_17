@@ -70,6 +70,7 @@ TestResults/
 *.VC.db
 *.VC.VC.opendb
 *.vscode/
+*.vs/
 
 # Next.js
 .next/
