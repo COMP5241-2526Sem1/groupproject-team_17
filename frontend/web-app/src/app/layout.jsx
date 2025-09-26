@@ -14,6 +14,7 @@ import { detectSettings } from 'src/components/settings/server';
 import { SettingsDrawer, defaultSettings, SettingsProvider } from 'src/components/settings';
 
 import { AuthProvider } from 'src/auth/context/jwt';
+import ReduxProvider from 'src/redux/ReduxProvider';
 
 // ----------------------------------------------------------------------
 
@@ -61,27 +62,31 @@ export default async function RootLayout({ children }) {
           attribute={themeConfig.cssVariables.colorSchemeSelector}
           defaultMode={themeConfig.defaultMode}
         />
-        <Auth0Provider>
-          <AuthProvider>
-            <SettingsProvider
-              cookieSettings={appConfig.cookieSettings}
-              defaultSettings={defaultSettings}
-            >
-              <AppRouterCacheProvider options={{ key: 'css' }}>
-                <ThemeProvider
-                  modeStorageKey={themeConfig.modeStorageKey}
-                  defaultMode={themeConfig.defaultMode}
-                >
-                  <MotionLazy>
-                    <ProgressBar />
-                    <SettingsDrawer defaultSettings={defaultSettings} />
-                    {children}
-                  </MotionLazy>
-                </ThemeProvider>
-              </AppRouterCacheProvider>
-            </SettingsProvider>
-          </AuthProvider>
-        </Auth0Provider>
+        <ReduxProvider>
+
+
+          <Auth0Provider>
+            <AuthProvider>
+              <SettingsProvider
+                cookieSettings={appConfig.cookieSettings}
+                defaultSettings={defaultSettings}
+              >
+                <AppRouterCacheProvider options={{ key: 'css' }}>
+                  <ThemeProvider
+                    modeStorageKey={themeConfig.modeStorageKey}
+                    defaultMode={themeConfig.defaultMode}
+                  >
+                    <MotionLazy>
+                      <ProgressBar />
+                      <SettingsDrawer defaultSettings={defaultSettings} />
+                      {children}
+                    </MotionLazy>
+                  </ThemeProvider>
+                </AppRouterCacheProvider>
+              </SettingsProvider>
+            </AuthProvider>
+          </Auth0Provider>
+        </ReduxProvider>
       </body>
     </html>
   );
