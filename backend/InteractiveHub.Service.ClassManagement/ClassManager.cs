@@ -1,6 +1,7 @@
 ﻿using InteractiveHub.Service;
 using InteractiveHub.Service.ClassManagement.Repository;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 namespace InteractiveHub.Service.ClassManagement;
@@ -8,7 +9,7 @@ namespace InteractiveHub.Service.ClassManagement;
 public partial class ClassManager : ServiceBase, IClassManager
 {
     private readonly ClassDbContext db;
-    public ClassManager(ClassDbContext dbContext, IHubLogger? logManager) : base(logManager)
+    public ClassManager(ClassDbContext dbContext, IHubLogger? logManager, IHttpContextAccessor httpContextAccessor) : base(logManager, httpContextAccessor)
     {
         db = dbContext;
         SetServiceName("Class Manager");

@@ -14,7 +14,7 @@ public static class DependencyInjection
         {
             throw new ArgumentException("Connection string cannot be null or empty", nameof(connectionString));
         }
-
+        services.AddHttpContextAccessor();
         services.AddDbContext<ClassDbContext>(options =>
         {
             options.UseMySQL(connectionString);
