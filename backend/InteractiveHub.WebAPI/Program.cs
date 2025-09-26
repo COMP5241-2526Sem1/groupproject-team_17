@@ -97,6 +97,14 @@ builder.Services.AddSwaggerGen(c =>
 
 builder.Services.AddInteractiveHubServices(); // Add the HubLogger service
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: "Allow_All", builderx =>
+    {
+        builderx.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+    });
+
+});
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -110,6 +118,8 @@ if (app.Environment.IsDevelopment())
         c.DisplayRequestDuration();
     });
 }
+
+app.UseCors("Allow_All");
 
 app.UseHttpsRedirection();
 
