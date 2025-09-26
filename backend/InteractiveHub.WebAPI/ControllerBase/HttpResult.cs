@@ -4,7 +4,7 @@ namespace InteractiveHub.WebAPI;
 
 public class HttpResult
 {
-    public int ResCode { get; set; }
+    public int Code { get; set; }
     public object? Data { get; set; }
     public string? Message { get; set; }
 
@@ -12,7 +12,7 @@ public class HttpResult
 
     public HttpResult(int resCode, object? data = null, string? message = null, string? traceId = null)
     {
-        ResCode = resCode;
+        Code = resCode;
         Data = data;
         Message = message;
         TraceId = traceId;

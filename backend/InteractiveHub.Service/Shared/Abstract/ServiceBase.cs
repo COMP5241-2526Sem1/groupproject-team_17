@@ -1,4 +1,5 @@
 using System;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 
 namespace InteractiveHub.Service;
@@ -9,8 +10,9 @@ public abstract class ServiceBase
     protected readonly IHubLogger? _log;
     protected readonly HttpContext? _httpContext;
     protected string RequestSource => _httpContext?.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
-
-    protected string OwnerId => _httpContext?.User?.FindFirst("sub")?.Value ?? "";
+    // name identifier claim type is used to store user id
+    // https://learn.microsoft.com/en-us/dotnet/api/system.security.claims.claimtypes.nameidentifier?view=net-7.0
+    protected string OwnerId => _httpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
 
 
 
@@ -27,6 +29,7 @@ public abstract class ServiceBase
     }
     protected void SetServiceName(string name)
     {
+        _log?.SetService(name);
         _serviceName = name;
     }
 
