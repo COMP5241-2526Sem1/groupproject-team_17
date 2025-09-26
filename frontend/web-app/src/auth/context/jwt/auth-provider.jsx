@@ -2,12 +2,9 @@
 
 import { useSetState } from 'minimal-shared/hooks';
 import { useMemo, useEffect, useCallback } from 'react';
-
-import axios, { endpoints } from 'src/lib/axios';
-
-import { JWT_STORAGE_KEY } from './constant';
 import { AuthContext } from '../auth-context';
-import { setSession, isValidToken } from './utils';
+import { getAccessToken, useUser } from '@auth0/nextjs-auth0';
+
 
 // ----------------------------------------------------------------------
 
@@ -18,26 +15,15 @@ import { setSession, isValidToken } from './utils';
  */
 
 export function AuthProvider({ children }) {
-  const { state, setState } = useSetState({ user: null, loading: true });
-
+  const { user } = useUser();
+  const { state, setState } = useSetState({ user: null , roles: []});
+  
   const checkUserSession = useCallback(async () => {
-    try {
-      const accessToken = sessionStorage.getItem(JWT_STORAGE_KEY);
-
-      if (accessToken && isValidToken(accessToken)) {
-        setSession(accessToken);
-
-        const res = await axios.get(endpoints.auth.me);
-
-        const { user } = res.data;
-
-        setState({ user: { ...user, accessToken }, loading: false });
-      } else {
-        setState({ user: null, loading: false });
-      }
-    } catch (error) {
-      console.error(error);
-      setState({ user: null, loading: false });
+    const token = await getAccessToken();
+    if (token) {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const roles = payload['role'] || [];
+      setState({ user: payload, roles });
     }
   }, [setState]);
 
@@ -48,19 +34,13 @@ export function AuthProvider({ children }) {
 
   // ----------------------------------------------------------------------
 
-  const checkAuthenticated = state.user ? 'authenticated' : 'unauthenticated';
-
-  const status = state.loading ? 'loading' : checkAuthenticated;
-
   const memoizedValue = useMemo(
     () => ({
-      user: state.user ? { ...state.user, role: state.user?.role ?? 'admin' } : null,
+      user: user,
+      roles: state.roles,
       checkUserSession,
-      loading: status === 'loading',
-      authenticated: status === 'authenticated',
-      unauthenticated: status === 'unauthenticated',
     }),
-    [checkUserSession, state.user, status]
+    [checkUserSession, user, state.roles]
   );
 
   return <AuthContext value={memoizedValue}>{children}</AuthContext>;

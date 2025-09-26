@@ -43,7 +43,7 @@ export function AuthGuard({ children }) {
     const bearer = `Bearer ${token}`;
     console.log('bearer ', bearer);
     setAxiosAuthToken(token);
-
+ 
     setIsChecking(false);
   };
 
