@@ -40,8 +40,8 @@ public partial class ClassManager
                 && c.Semester == course.Semester);
             if (existing != null)
             {
-                _log?.LogError($"CreateCourseAsync: Course with code [{course.CourseCode} in {course.AcademicYear} Semester{course.Semester}] already exists.", Operator: OwnerId);
-                return ServiceRes.Conflict(ResCode.CourseAlreadyExists, $"Course with code [{course.CourseCode} in {course.AcademicYear} Semester{course.Semester}] already exists.");
+                _log?.LogError($"CreateCourseAsync: Course with code [{course.CourseCode} in {course.AcademicYear} Semester {course.Semester}] already exists.", Operator: OwnerId);
+                return ServiceRes.Conflict(ResCode.CourseAlreadyExists, $"Course {course.CourseCode} in {course.AcademicYear} Semester {course.Semester} already exists.");
                 // return new ServiceRes(ResCode.CourseAlreadyExists, $"Course with code [{course.CourseCode} in {course.AcademicYear} Semester{course.Semester}] already exists.", traceId: _log?.TraceId);
             }
 
@@ -260,7 +260,7 @@ public partial class ClassManager
                 .Include(c => c.Students) // Include enrolled students
                 .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Id == courseId && c.OwnerId == OwnerId);
-                
+
             if (course == null)
             {
                 _log?.LogError($"GetCourseWithStatsAsync: Course with ID [{courseId}] not found.", Operator: OwnerId);
@@ -299,7 +299,45 @@ public partial class ClassManager
         }
     }
 
+    //Create a method to get courses with pagination
+    public async Task<(ServiceRes, IEnumerable<TeachingCourse>)> GetCoursesPaginatedAsync(int pageNumber, int pageSize, string? orderBy = null, bool? ascending = true)
+    {
+        if (string.IsNullOrWhiteSpace(OwnerId))
+        {
+            _log?.LogError("GetCoursesPaginatedAsync: Operation attempted without valid owner.", Operator: OwnerId);
+            return (ServiceRes.Unauthorized(ResCode.OwnerIdMissing, "Operation attempted without valid owner."), new List<TeachingCourse>());
+        }
 
+        if (pageNumber <= 0 || pageSize <= 0)
+        {
+            _log?.LogError("GetCoursesPaginatedAsync: Invalid pagination parameters.", Operator: OwnerId);
+            return (ServiceRes.BadRequest(ResCode.InvalidPaginationParameters, "Invalid pagination parameters."), new List<TeachingCourse>());
+        }
+
+        try
+        {
+            var courses = await db.Courses
+                .Include(c => c.Students) // Include enrolled students for each course
+                .AsNoTracking()
+                .Where(c => c.OwnerId == OwnerId)
+                
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (ServiceRes.OK(), courses);
+        }
+        catch (DbUpdateException dbEx)
+        {
+            _log?.LogError("GetCoursesPaginatedAsync: Database error occurred while retrieving courses.", Operator: OwnerId, ex: dbEx);
+            return (ServiceRes.InternalError(ResCode.DatabaseError, "Unexpected error.", traceId: _log?.TraceId), new List<TeachingCourse>());
+        }
+        catch (Exception ex)
+        {
+            _log?.LogError("GetCoursesPaginatedAsync: An unexpected error occurred while retrieving courses.", Operator: OwnerId, ex: ex);
+            return (ServiceRes.InternalError(ResCode.DatabaseError, "Unexpected error.", traceId: _log?.TraceId), new List<TeachingCourse>());
+        }
+    }
 
 
 }

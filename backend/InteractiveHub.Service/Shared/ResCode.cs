@@ -70,8 +70,6 @@ public enum ResCode
     OwnerIdMissing = 1001,
 
 
-
-
     [Description("The student already exists.")]
     StudentAlreadyExists,
     [Description("The student was not found.")]
@@ -100,5 +98,8 @@ public enum ResCode
     ClassNotFound,
     [Description("Invalid class data.")]
     InvalidClassData,
+
+    [Description("Invalid pagination parameters.")]
+    InvalidPaginationParameters,
 
 }

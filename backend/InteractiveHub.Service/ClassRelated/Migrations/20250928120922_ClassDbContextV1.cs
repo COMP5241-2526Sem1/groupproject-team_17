@@ -19,6 +19,8 @@ namespace InteractiveHub.Service.ClassRelated.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "varchar(256)", nullable: false),
+                    IsEnabled = table.Column<bool>(type: "tinyint(1)", nullable: false),
+                    IsArchived = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     AcademicYear = table.Column<int>(type: "int", nullable: false),
                     Semester = table.Column<int>(type: "int", nullable: false),
                     CourseCode = table.Column<string>(type: "varchar(255)", nullable: false),

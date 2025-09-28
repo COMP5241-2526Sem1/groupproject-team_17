@@ -8,10 +8,13 @@ public class TeachingCourse : IHObject
 {
     public enum SemesterEnum
     {
+        None = 0,
         One = 1,
         Two = 2,
         Summer = 3
     }
+    public bool IsEnabled { get; set; } = true;
+    public bool IsArchived { get; set; } = false;
     public int AcademicYear { get; set; } = 2025;
     public SemesterEnum Semester { get; set; }
     public string CourseCode { get; set; } = string.Empty;

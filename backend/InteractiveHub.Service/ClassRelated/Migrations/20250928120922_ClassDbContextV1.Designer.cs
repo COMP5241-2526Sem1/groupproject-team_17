@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InteractiveHub.Service.ClassRelated.Migrations
 {
     [DbContext(typeof(ClassDbContext))]
-    [Migration("20250926150017_ClassDbContextV1")]
+    [Migration("20250928120922_ClassDbContextV1")]
     partial class ClassDbContextV1
     {
         /// <inheritdoc />
@@ -137,6 +137,12 @@ namespace InteractiveHub.Service.ClassRelated.Migrations
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("longtext");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<string>("OwnerId")
                         .IsRequired()
