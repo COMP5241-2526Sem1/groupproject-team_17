@@ -63,8 +63,6 @@ export default async function RootLayout({ children }) {
           defaultMode={themeConfig.defaultMode}
         />
         <ReduxProvider>
-
-
           <Auth0Provider>
             <AuthProvider>
               <SettingsProvider

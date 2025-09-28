@@ -5,7 +5,10 @@ import { set } from "nprogress";
 
 
 const initialState = {
-    classes: [],
+    courses: [],
+    loadingCourses: false,
+
+
     counter: 0,
     loading: false,
     error: null,
@@ -14,11 +17,14 @@ const slice = createSlice({
     name: "classManagement",
     initialState,
     reducers: {
-        setClasses: (state, action) => {
-            state.classes = action.payload;
+        setAllCourses: (state, action) => {
+            state.courses = action.payload;
         },
-        clearClasses: (state) => {
-            state.classes = [];
+        clearCourses: (state) => {
+            state.courses = [];
+        },
+        setLoadingCourses: (state, action) => {
+            state.loadingCourses = action.payload;
         },
         setLoading: (state, action) => {
             state.loading = action.payload;
