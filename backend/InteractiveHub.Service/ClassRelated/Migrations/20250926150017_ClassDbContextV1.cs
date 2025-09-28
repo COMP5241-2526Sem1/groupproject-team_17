@@ -3,10 +3,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace InteractiveHub.Service.ClassManagement.Db.Migrations
+namespace InteractiveHub.Service.ClassRelated.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class ClassDbContextV1 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -19,7 +19,7 @@ namespace InteractiveHub.Service.ClassManagement.Db.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "varchar(256)", nullable: false),
-                    AcademicYear = table.Column<string>(type: "varchar(255)", nullable: false),
+                    AcademicYear = table.Column<int>(type: "int", nullable: false),
                     Semester = table.Column<int>(type: "int", nullable: false),
                     CourseCode = table.Column<string>(type: "varchar(255)", nullable: false),
                     CourseName = table.Column<string>(type: "longtext", nullable: false),

@@ -125,6 +125,8 @@ app.UseHttpsRedirection();
 
 app.UseCustomTraceIdentifier(); // Add custom TraceIdentifier middleware
 
+app.UseInteractiveHubServices(); // Add the HubLogger middleware
+
 app.UseAuthentication();
 
 app.UseAuthorization();
