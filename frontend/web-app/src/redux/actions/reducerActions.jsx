@@ -13,13 +13,18 @@ import { dispatch } from "../store"
 
 
 export const ClassManagementActions = {
-    getAllClasses: async () => {
+    getAllCourses: async () => {
+        dispatch(classManActions.setLoadingCourses(true));
         const res = await courseAPI.getAllCourses();
-        if (res) {
-            dispatch(classManActions.setClasses(res));
+        if (res.code === 0){
+            dispatch(classManActions.setAllCourses(res.data));
         }
+        dispatch(classManActions.setLoadingCourses(false));
     },
-
+    createCourse: async (courseData) => {
+        const res = await courseAPI.createCourse(courseData);
+        return res;
+    },
     incrementCounter: () => {
         dispatch(classManActions.incrementCounter());
     }

@@ -38,152 +38,77 @@ const axiosInstance = axios.create({
 */
 
 axiosInstance.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    return response;
+  },
   (error) => {
-    const message = error?.response?.data?.message || error?.message || 'Something went wrong!';
-    console.error('Axios error:', message);
-    return Promise.reject(new Error(message));
+    throw error;
   }
 );
 
 export default axiosInstance;
 
-// ----------------------------------------------------------------------
-
-export const fetcher = async (args) => {
-  try {
-    const [url, config] = Array.isArray(args) ? args : [args, {}];
-
-    const res = await axiosInstance.get(url, config);
-
-    return res.data;
-  } catch (error) {
-    console.error('Fetcher failed:', error);
-    throw error;
+// Helper function to handle response
+const handleResponse = (response) => {
+  const resData = response.data;
+  if (resData && resData.code === 0) {
+    return resData;
   }
-};
-
-// ----------------------------------------------------------------------
-
-export const endpoints = {
-  chat: '/api/chat',
-  kanban: '/api/kanban',
-  calendar: '/api/calendar',
-  auth: {
-    me: '/api/auth/me',
-    signIn: '/api/auth/sign-in',
-    signUp: '/api/auth/sign-up',
-  },
-  mail: {
-    list: '/api/mail/list',
-    details: '/api/mail/details',
-    labels: '/api/mail/labels',
-  },
-  post: {
-    list: '/api/post/list',
-    details: '/api/post/details',
-    latest: '/api/post/latest',
-    search: '/api/post/search',
-  },
-  product: {
-    list: '/api/product/list',
-    details: '/api/product/details',
-    search: '/api/product/search',
-  },
+  throw response || { code: -999, message: 'Unknown error' };
 };
 
 
-export const httpGet = async (url, data) => {
-  try {
-    const response = await axiosInstance.get(url, {
-      params: {
-        ...data
-      }
-    });
-    const resData = response.data;
-
-    if (resData && resData.code === 0) {
-      return resData;
-    }
-
-    throw resData || { code: -999, message: 'Unknown error' };
-  } catch (error) {
-    if (error.code && Number.isInteger(error.code)) {
-      throw error;
-    }
-
-    throw {
-      code: -999,
-      message: error.message || 'Unknown error',
-      data: error,
-    };
+// Helper function to handle errors
+const handleError = (error) => {
+  const response = error.response;
+  const data = response?.data;
+  if (data && data.code && Number.isInteger(data.code)) {
+    console.error(`[API Error ${data.code}]`, data.message || 'Unknown error');
+    return data;
   }
-}
+  console.error('API Error:', response.message || response);
+  return {
+    code: -999,
+    message: response.message || 'Unknown error',
+    data: response,
+  };
+};
 
-export const httpPost = async (url, data, config) => {
+export const httpGet = async (url, params = {}) => {
+  try {
+    const response = await axiosInstance.get(url, { params });
+    return handleResponse(response);
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+export const httpPost = async (url, data = {}, config = {}) => {
   try {
     const response = await axiosInstance.post(url, data, config);
-    const resData = response.data;
-
-    if (resData && resData.code === 0) {
-      return resData;
-    }
-
-    throw resData || { code: -999, message: 'Unknown error' };
+    return handleResponse(response);
   } catch (error) {
-    if (error.code && Number.isInteger(error.code)) {
-      throw error;
-    }
-
-    throw {
-      code: -999,
-      message: error.message || 'Unknown error',
-      data: error,
-    };
+    return handleError(error);
   }
-}
+};
 
-export const httpPut = async (url, data, config) => {
+export const httpPut = async (url, data = {}, config = {}) => {
   try {
     const response = await axiosInstance.put(url, data, config);
-    const resData = response.data;
-
-    if (resData && resData.code === 0) {
-      return resData;
-    }
-
-    throw resData || { code: -999, message: 'Unknown error' };
+    return handleResponse(response);
   } catch (error) {
-    if (error.code && Number.isInteger(error.code)) {
-      throw error;
-    }
-
-    throw {
-      code: -999,
-      message: error.message || 'Unknown error',
-      data: error,
-    };
+    return handleError(error);
   }
-}
-export const httpDelete = async (url, data, config) => {
+};
+
+export const httpDelete = async (url, data = {}, config = {}) => {
   try {
-    const response = await axiosInstance.delete(url, { data, ...config });
-    const resData = response.data;
-
-    if (resData && resData.code === 0) {
-      return resData;
-    }
-
-    throw resData || { code: -999, message: 'Unknown error' };
+    const response = await axiosInstance.delete(url, {
+      data,
+      ...config
+    });
+    return handleResponse(response);
   } catch (error) {
-    if (error.code && Number.isInteger(error.code)) {
-      throw error;
-    }
-
-    throw {
-      code: -999,
-      message: error.message || 'Unknown error',
-      data: error,
-    };
+    return handleError(error);
   }
-}
+};
