@@ -3,19 +3,16 @@ using System;
 using InteractiveHub.Service.ClassManagement.Repository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace InteractiveHub.Service.ClassManagement.Db.Migrations
+namespace InteractiveHub.Service.ClassRelated.Migrations
 {
     [DbContext(typeof(ClassDbContext))]
-    [Migration("20250925062057_InitialCreate")]
-    partial class InitialCreate
+    partial class ClassDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -120,9 +117,8 @@ namespace InteractiveHub.Service.ClassManagement.Db.Migrations
                         .HasColumnType("varchar(256)")
                         .HasColumnOrder(0);
 
-                    b.Property<string>("AcademicYear")
-                        .IsRequired()
-                        .HasColumnType("varchar(255)");
+                    b.Property<int>("AcademicYear")
+                        .HasColumnType("int");
 
                     b.Property<string>("CourseCode")
                         .IsRequired()
