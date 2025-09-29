@@ -13,7 +13,7 @@ public interface IClassManager
     Task<(ServiceRes, object?)> GetCourseWithStatsAsync(string courseId);
 
     // Student Management Methods
-    Task<(ServiceRes, IEnumerable<Student>?)> GetStudentsInCourseAsync(string courseId);
+    Task<(ServiceRes, IEnumerable<StudentSimpleDto>?)> GetStudentsInCourseAsync(string courseId);
     Task<(ServiceRes, IEnumerable<Student>?)> GetAllStudentsByOwnerAsync();
     Task<ServiceRes> CreateOrUpdateStudentToCourse(IEnumerable<CreateStudentDto> students, string courseId);
     Task<ServiceRes> RemoveStudentsFromCourseAsync(IEnumerable<string> studentIds, string courseId);

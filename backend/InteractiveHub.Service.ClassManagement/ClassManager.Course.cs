@@ -40,7 +40,7 @@ public partial class ClassManager
                 && c.Semester == course.Semester);
             if (existing != null)
             {
-                _log?.LogError($"CreateCourseAsync: Course with code [{course.CourseCode} in {course.AcademicYear} Semester {course.Semester}] already exists.", Operator: OwnerId);
+                _log?.LogError($"CreateCourseAsync: Course {course.CourseCode} in {course.AcademicYear} Semester {course.Semester} already exists.", Operator: OwnerId);
                 return ServiceRes.Conflict(ResCode.CourseAlreadyExists, $"Course {course.CourseCode} in {course.AcademicYear} Semester {course.Semester} already exists.");
                 // return new ServiceRes(ResCode.CourseAlreadyExists, $"Course with code [{course.CourseCode} in {course.AcademicYear} Semester{course.Semester}] already exists.", traceId: _log?.TraceId);
             }
@@ -223,7 +223,6 @@ public partial class ClassManager
         try
         {
             var courses = await db.Courses
-                .Include(c => c.Students) // Include enrolled students for each course
                 .AsNoTracking()
                 .Where(c => c.OwnerId == OwnerId)
                 .ToListAsync();
@@ -320,7 +319,7 @@ public partial class ClassManager
                 .Include(c => c.Students) // Include enrolled students for each course
                 .AsNoTracking()
                 .Where(c => c.OwnerId == OwnerId)
-                
+
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();

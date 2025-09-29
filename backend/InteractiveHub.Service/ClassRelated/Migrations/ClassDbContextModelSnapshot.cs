@@ -36,6 +36,10 @@ namespace InteractiveHub.Service.ClassRelated.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -47,6 +51,10 @@ namespace InteractiveHub.Service.ClassRelated.Migrations
                     b.Property<string>("OwnerId")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
+
+                    b.Property<string>("PIN")
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.Property<string>("StudentId")
                         .IsRequired()

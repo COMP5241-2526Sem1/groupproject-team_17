@@ -6,7 +6,7 @@ namespace InteractiveHub.Service.ClassManagement;
 public partial class ClassManager
 {
 
-    public async Task<(ServiceRes, IEnumerable<Student>?)> GetStudentsInCourseAsync(string courseId)
+    public async Task<(ServiceRes, IEnumerable<StudentSimpleDto>?)> GetStudentsInCourseAsync(string courseId)
     {
         if (string.IsNullOrWhiteSpace(OwnerId))
         {
@@ -29,12 +29,19 @@ public partial class ClassManager
 
             if (course == null)
             {
-                return (ServiceRes.NotFound(ResCode.CourseNotFound, "Course not found or access denied."), Array.Empty<Student>());
+                return (ServiceRes.NotFound(ResCode.CourseNotFound, "Course not found or access denied."), Array.Empty<StudentSimpleDto>());
             }
 
             var students = course.Students.ToList();
+            var studentDtos = students.Select(s => new StudentSimpleDto
+            {
+                StudentId = s.StudentId,
+                FullName = s.FullName,
+                Email = s.Email,
+                PIN = s.PIN
+            }).ToList();
             _log?.LogInfo($"GetStudentsInCourseAsync: Retrieved {students.Count} students for course {courseId}.", Operator: OwnerId);
-            return (ServiceRes.OK("Students retrieved successfully."), students);
+            return (ServiceRes.OK("Students retrieved successfully."), studentDtos);
         }
         catch (DbUpdateException dbEx)
         {
@@ -99,14 +106,11 @@ public partial class ClassManager
             return ServiceRes.BadRequest(ResCode.InvalidStudentData, "Each student must have a valid StudentId.");
         }
 
-
-
         try
         {
-            // Fetch the course to ensure it exists and belongs to the owner (without AsNoTracking for updates)
+            // Fetch the course to ensure it exists and belongs to the owner
             var course = await db.Courses
                 .Include(c => c.Students)
-                .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Id == courseId && c.OwnerId == OwnerId);
 
             if (course == null)
@@ -115,21 +119,26 @@ public partial class ClassManager
                 return ServiceRes.NotFound(ResCode.CourseNotFound, "Course not found or access denied.");
             }
 
-            // Get all existing students by StudentId and OwnerId (not by Entity Id)
+            // Get all incoming student IDs
             var incomingStudentIds = students.Select(s => s.StudentId).ToList();
 
-            var existingStudents = course.Students
-                .Where(s => incomingStudentIds.Contains(s.StudentId)).ToList();
+            // Get existing students from database (not just from course)
+            var existingStudentsInDb = await db.Students
+                .Where(s => incomingStudentIds.Contains(s.StudentId) && s.OwnerId == OwnerId)
+                .ToListAsync();
+
+            // Get students already enrolled in this course
+            var studentsInCourse = course.Students.Where(s => incomingStudentIds.Contains(s.StudentId)).ToList();
 
             var studentsToUpdate = new List<Student>();
+            var studentsToAdd = new List<Student>();
             var studentsToEnroll = new List<Student>();
 
             foreach (var incomingStudent in students)
             {
-                // Check if student already exists in database
-                var existingStudent = existingStudents.FirstOrDefault(es => es.StudentId == incomingStudent.StudentId);
+                // Check if student exists in database
+                var existingStudent = existingStudentsInDb.FirstOrDefault(es => es.StudentId == incomingStudent.StudentId);
 
-                // If exists, update details; if not, add new student
                 if (existingStudent != null)
                 {
                     // Update existing student data
@@ -137,11 +146,19 @@ public partial class ClassManager
                     existingStudent.LastName = incomingStudent.LastName ?? existingStudent.LastName;
                     existingStudent.NickName = incomingStudent.NickName ?? existingStudent.NickName;
                     existingStudent.Email = incomingStudent.Email ?? existingStudent.Email;
+                    existingStudent.FullName = incomingStudent.FullName ?? existingStudent.FullName;
+                    existingStudent.PIN = incomingStudent.PIN ?? existingStudent.PIN;
                     studentsToUpdate.Add(existingStudent);
+
+                    // Check if student is already enrolled in this course
+                    if (!studentsInCourse.Any(sic => sic.Id == existingStudent.Id))
+                    {
+                        studentsToEnroll.Add(existingStudent);
+                    }
                 }
                 else
                 {
-                    // New student - set OwnerId and add to database
+                    // Create new student
                     var newStudent = new Student
                     {
                         OwnerId = OwnerId,
@@ -150,26 +167,46 @@ public partial class ClassManager
                         LastName = incomingStudent.LastName ?? string.Empty,
                         NickName = incomingStudent.NickName ?? string.Empty,
                         Email = incomingStudent.Email ?? string.Empty,
+                        FullName = incomingStudent.FullName ?? string.Empty,
+                        PIN = incomingStudent.PIN ?? string.Empty,
                     };
-                    newStudent.Courses.Add(course);
+
+                    studentsToAdd.Add(newStudent);
                     studentsToEnroll.Add(newStudent);
                 }
             }
 
-            // Add new students to database
-            if (studentsToEnroll.Any())
+            // Add new students to database first
+            if (studentsToAdd.Any())
             {
-                db.Students.AddRange(studentsToEnroll);
+                db.Students.AddRange(studentsToAdd);
+                await db.SaveChangesAsync(); // Save new students first
             }
+
+            // Update existing students
             if (studentsToUpdate.Any())
             {
                 db.Students.UpdateRange(studentsToUpdate);
             }
 
-            db.Courses.Update(course);
+            // Enroll students in course (both new and existing)
+            foreach (var student in studentsToEnroll)
+            {
+                if (!course.Students.Any(s => s.Id == student.Id))
+                {
+                    course.Students.Add(student);
+                }
+            }
+
+            // Update course with new enrollments
+            if (studentsToEnroll.Any())
+            {
+                db.Courses.Update(course);
+            }
+
             await db.SaveChangesAsync();
 
-            _log?.LogInfo($"CreateOrUpdateStudent: Successfully processed {students.Count()} students for course {courseId}. Updated: {studentsToUpdate.Count}, Enrolled: {studentsToEnroll.Count}", Operator: OwnerId);
+            _log?.LogInfo($"CreateOrUpdateStudent: Successfully processed {students.Count()} students for course {courseId}. Updated: {studentsToUpdate.Count}, Added: {studentsToAdd.Count}, Enrolled: {studentsToEnroll.Count}", Operator: OwnerId);
             return ServiceRes.OK("Students created/updated successfully.");
         }
         catch (DbUpdateException dbEx)
@@ -182,10 +219,8 @@ public partial class ClassManager
             _log?.LogError("CreateOrUpdateStudent: Error while creating or updating students.", ex: ex);
             return ServiceRes.InternalError(ResCode.InternalError, "An error occurred while creating or updating students.", traceId: _log?.TraceId);
         }
-
     }
-
-    public async Task<ServiceRes> RemoveStudentsFromCourseAsync(IEnumerable<string> studentIds, string courseId)
+    public async Task<ServiceRes> RemoveStudentsFromCourseAsync(IEnumerable<string> studentObjId, string courseId)
     {
         // Validate OwnerId
         if (string.IsNullOrWhiteSpace(OwnerId))
@@ -193,7 +228,7 @@ public partial class ClassManager
             _log?.LogWarning("RemoveStudentFromCourseAsync: OwnerId is not set. Unauthorized access attempt.");
             return ServiceRes.Unauthorized(ResCode.Unauthorized, "OwnerId is not set. Unauthorized access.");
         }
-        if (studentIds == null || !studentIds.Any() || string.IsNullOrWhiteSpace(courseId))
+        if (studentObjId == null || !studentObjId.Any() || string.IsNullOrWhiteSpace(courseId))
         {
             _log?.LogWarning("RemoveStudentFromCourseAsync: StudentIds or CourseId is null or empty. Bad request.");
             return ServiceRes.BadRequest(ResCode.InvalidStudentData, "StudentIds and CourseId cannot be null or empty.");
@@ -204,7 +239,6 @@ public partial class ClassManager
             // Fetch the course to ensure it exists and belongs to the owner
             var course = await db.Courses
                 .Include(c => c.Students)
-                .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Id == courseId && c.OwnerId == OwnerId);
             if (course == null)
             {
@@ -213,7 +247,7 @@ public partial class ClassManager
             }
 
             // Find the students in the course
-            var studentToBeRemove = course.Students.Where(s => studentIds.Contains(s.StudentId)).ToList();
+            var studentToBeRemove = course.Students.Where(s => studentObjId.Contains(s.Id)).ToList();
             if (!studentToBeRemove.Any())
             {
                 _log?.LogWarning("RemoveStudentFromCourseAsync: No students found in the specified course.");
@@ -221,7 +255,7 @@ public partial class ClassManager
             }
 
             // Remove the students from the course
-            course.Students.RemoveAll(s => studentToBeRemove.Select(st => st.StudentId).Contains(s.StudentId));
+            course.Students.RemoveAll(s => studentToBeRemove.Select(st => st.Id).Contains(s.Id));
 
             // Remove the course from each student's course list
             studentToBeRemove = studentToBeRemove.Select(st =>
@@ -252,7 +286,6 @@ public partial class ClassManager
         }
 
     }
-
     public async Task<ServiceRes> DeleteStudentAsync(string studentId)
     {
         // Validate OwnerId
@@ -305,7 +338,6 @@ public partial class ClassManager
             return ServiceRes.InternalError(ResCode.InternalError, "An error occurred while deleting the student.", traceId: _log?.TraceId);
         }
     }
-
     public async Task<ServiceRes> DelteStudentsAsync(IEnumerable<string> studentIds)
     {
         // Validate OwnerId
@@ -362,4 +394,5 @@ public partial class ClassManager
             return ServiceRes.InternalError(ResCode.InternalError, "An error occurred while deleting the students.", traceId: _log?.TraceId);
         }
     }
+
 }

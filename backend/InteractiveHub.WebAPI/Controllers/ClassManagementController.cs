@@ -22,7 +22,7 @@ namespace InteractiveHub.WebAPI.Controllers
     public partial class ClassManagementController
     {
         [HttpGet("GetCourse/{courseId}")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(HttpResult<TeachingCourse>))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(HttpResult<TeachingCourseDto>))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(HttpResult))]
         [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(HttpResult))]
         public async Task<IActionResult> GetCourse(string courseId)
@@ -30,11 +30,13 @@ namespace InteractiveHub.WebAPI.Controllers
             return await HandleWithResultAsync(async () =>
             {
                 (ServiceRes res, TeachingCourse? teachingCourse) result = await _classManager.GetCourseByIdAsync(courseId);
+
                 if (result.res.Code != ResCode.OK)
                 {
                     return ReturnResponse(result.res);
                 }
-                return ReturnOK(result.teachingCourse);
+                var courseDto = result.teachingCourse?.ToDto();
+                return ReturnOK(courseDto);
             });
         }
         [HttpGet("GetAllCourses")]

@@ -1,8 +1,8 @@
-'use client'
+'use client';
+
 import axios from 'axios';
 
 import { CONFIG } from 'src/global-config';
-import { th } from 'zod/v4/locales';
 
 // ----------------------------------------------------------------------
 
@@ -38,9 +38,7 @@ const axiosInstance = axios.create({
 */
 
 axiosInstance.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   (error) => {
     throw error;
   }
@@ -57,13 +55,12 @@ const handleResponse = (response) => {
   throw response || { code: -999, message: 'Unknown error' };
 };
 
-
 // Helper function to handle errors
 const handleError = (error) => {
   const response = error.response;
   const data = response?.data;
   if (data && data.code && Number.isInteger(data.code)) {
-    console.error(`[API Error ${data.code}]`, data.message || 'Unknown error');
+    console.warn(`[API Error ${data.code}]`, data.message || 'Unknown error');
     return data;
   }
   console.error('API Error:', response.message || response);
@@ -105,7 +102,7 @@ export const httpDelete = async (url, data = {}, config = {}) => {
   try {
     const response = await axiosInstance.delete(url, {
       data,
-      ...config
+      ...config,
     });
     return handleResponse(response);
   } catch (error) {

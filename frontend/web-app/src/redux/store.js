@@ -1,25 +1,21 @@
-'use client'
-import { combineReducers, configureStore } from "@reduxjs/toolkit"
+'use client';
 
-import classManagementReducer from "./slices/classManagement";
+import { configureStore, combineReducers } from '@reduxjs/toolkit';
 
-
-
+import classManagementReducer from './slices/classManagement';
 
 const combinedReducer = combineReducers({
-    classManagement: classManagementReducer
+  classManagement: classManagementReducer,
 });
 
-
 export const store = configureStore({
-    reducer: combinedReducer,
-    middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware({
-            serializableCheck: {
-                ignoredActions: ['persist/PERSIST'],
-            },
-        }),
+  reducer: combinedReducer,
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: {
+        ignoredActions: ['persist/PERSIST'],
+      },
+    }),
 });
 
 export const dispatch = store.dispatch;
-

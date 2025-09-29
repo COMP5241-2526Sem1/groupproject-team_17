@@ -12,16 +12,12 @@ import { SplashScreen } from 'src/components/loading-screen';
 
 // ----------------------------------------------------------------------
 
-
-
 export function AuthGuard({ children }) {
-  
   const router = useRouter();
 
   const { user, isLoading } = useUser();
 
   const [isChecking, setIsChecking] = useState(true);
-
 
   const checkPermissions = async () => {
     if (isLoading) {
@@ -33,7 +29,7 @@ export function AuthGuard({ children }) {
       //const redirectPath = router.push();
 
       router.replace(CONFIG.auth.loginPath);
-      
+
       return;
     }
     // authenticated - allow access
@@ -43,7 +39,7 @@ export function AuthGuard({ children }) {
     const bearer = `Bearer ${token}`;
     console.log('bearer ', bearer);
     setAxiosAuthToken(token);
- 
+
     setIsChecking(false);
   };
 

@@ -11,7 +11,6 @@ import { CONFIG } from 'src/global-config';
 export default function Page() {
   const router = useRouter();
 
-
   useEffect(() => {
     router.push(CONFIG.auth.redirectPath);
   }, [router]);
