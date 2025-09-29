@@ -9,7 +9,6 @@ import { CONFIG } from 'src/global-config';
 
 import { SplashScreen } from 'src/components/loading-screen';
 
-
 // ----------------------------------------------------------------------
 
 export function GuestGuard({ children }) {
@@ -17,7 +16,6 @@ export function GuestGuard({ children }) {
 
   const router = useRouter();
   const searchParams = useSearchParams();
-
 
   const returnTo = searchParams.get('returnTo') ?? CONFIG.auth.redirectPath;
 

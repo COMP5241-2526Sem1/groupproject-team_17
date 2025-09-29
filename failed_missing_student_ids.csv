@@ -1,0 +1,7 @@
+Student ID,Name,Email,PIN
+STU001,John Doe,john.doe@example.com,1234
+,Jane Smith,jane.smith@example.com,5678
+STU003,Alice Johnson,alice.johnson@example.com,9012
+STU004,,bob.wilson@example.com,3456
+,,,
+STU006,Emma Davis,emma.davis@example.com,7890

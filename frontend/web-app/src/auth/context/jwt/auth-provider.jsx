@@ -2,9 +2,9 @@
 
 import { useSetState } from 'minimal-shared/hooks';
 import { useMemo, useEffect, useCallback } from 'react';
-import { AuthContext } from '../auth-context';
-import { getAccessToken, useUser } from '@auth0/nextjs-auth0';
+import { useUser, getAccessToken } from '@auth0/nextjs-auth0';
 
+import { AuthContext } from '../auth-context';
 
 // ----------------------------------------------------------------------
 
@@ -16,14 +16,18 @@ import { getAccessToken, useUser } from '@auth0/nextjs-auth0';
 
 export function AuthProvider({ children }) {
   const { user } = useUser();
-  const { state, setState } = useSetState({ user: null , roles: []});
-  
+  const { state, setState } = useSetState({ user: null, roles: [], token: null });
+
   const checkUserSession = useCallback(async () => {
-    const token = await getAccessToken();
-    if (token) {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const roles = payload['role'] || [];
-      setState({ user: payload, roles });
+    try {
+      const token = await getAccessToken();
+      if (token) {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const roles = payload['role'] || [];
+        setState({ user: payload, roles, token });
+      }
+    } catch {
+      setState({ user: null, roles: [] });
     }
   }, [setState]);
 
@@ -36,7 +40,8 @@ export function AuthProvider({ children }) {
 
   const memoizedValue = useMemo(
     () => ({
-      user: user,
+      user,
+      token: state.token,
       roles: state.roles,
       checkUserSession,
     }),

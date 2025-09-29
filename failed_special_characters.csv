@@ -1,0 +1,5 @@
+Student ID,Name,Email,PIN
+STU001,"John, Jr.",john.doe@example.com,1234
+STU002,"Jane ""The Brain"" Smith",jane.smith@example.com,5678
+STU003,Alice Johnson with, extra comma,alice.johnson@example.com,9012
+STU004,"Bob Wilson",bob@test,3456

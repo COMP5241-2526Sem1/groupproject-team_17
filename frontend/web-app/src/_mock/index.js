@@ -16,6 +16,8 @@ export * from './_order';
 
 export * from './_others';
 
+export * from './_course';
+
 export * from './_invoice';
 
 export * from './_product';
@@ -23,5 +25,3 @@ export * from './_product';
 export * from './_overview';
 
 export * from './_calendar';
-
-export * from './_course';

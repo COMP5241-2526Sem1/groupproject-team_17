@@ -14,7 +14,7 @@ export const signInWithPassword = async ({ email, password }) => {
   try {
     const params = { email, password };
 
-    const res = await axios.post(endpoints.auth.signIn, params);
+    const res = await axios.post('', params);
 
     const { accessToken } = res.data;
 
@@ -41,7 +41,7 @@ export const signUp = async ({ email, password, firstName, lastName }) => {
   };
 
   try {
-    const res = await axios.post(endpoints.auth.signUp, params);
+    const res = await axios.post('', params);
 
     const { accessToken } = res.data;
 

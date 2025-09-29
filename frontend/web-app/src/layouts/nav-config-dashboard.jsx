@@ -90,14 +90,13 @@ export const navData = [
       {
         title: 'Report',
         path: paths.dashboard.two,
-        icon: ICONS.analytics
+        icon: ICONS.analytics,
       },
       {
         title: 'Students',
         path: paths.dashboard.three,
-        icon: ICONS.user
-      }
+        icon: ICONS.user,
+      },
     ],
   },
-]
-
+];

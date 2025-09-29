@@ -2,7 +2,7 @@ import { CONFIG } from 'src/global-config';
 import { DashboardLayout } from 'src/layouts/dashboard';
 
 import { AuthGuard } from 'src/auth/guard';
-
+import { AuthProvider } from 'src/auth/context/jwt';
 
 // ----------------------------------------------------------------------
 
@@ -12,9 +12,10 @@ export default function Layout({ children }) {
   }
 
   return (
-    <AuthGuard>
-      <DashboardLayout>{children}</DashboardLayout>
-    </AuthGuard>
-
+    <AuthProvider>
+      <AuthGuard>
+        <DashboardLayout>{children}</DashboardLayout>
+      </AuthGuard>
+    </AuthProvider>
   );
 }

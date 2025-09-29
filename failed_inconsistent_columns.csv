@@ -1,0 +1,5 @@
+Student ID,Name,Email,PIN
+STU001,John Doe,john.doe@example.com
+STU002,Jane Smith,jane.smith@example.com,5678,extra_column
+STU003,Alice Johnson
+STU004

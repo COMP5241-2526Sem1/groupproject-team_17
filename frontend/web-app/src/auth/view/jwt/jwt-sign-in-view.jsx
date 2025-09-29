@@ -80,8 +80,6 @@ export function JwtSignInView() {
       <Field.Text name="email" label="Email address" slotProps={{ inputLabel: { shrink: true } }} />
 
       <Box sx={{ gap: 1.5, display: 'flex', flexDirection: 'column' }}>
-
-
         <Field.Text
           name="password"
           label="Password"
@@ -132,7 +130,6 @@ export function JwtSignInView() {
         }
         sx={{ textAlign: { xs: 'center', md: 'left' } }}
       />
-
 
       {!!errorMessage && (
         <Alert severity="error" sx={{ mb: 3 }}>

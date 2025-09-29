@@ -18,17 +18,17 @@ public class IHControllerBase : ControllerBase
     [NonAction]
     public IActionResult ReturnResponse(ServiceRes res, object? data = null, string? message = null)
     {
-        var httpResult = new HttpResult((int)res.Code, data, message ?? res.Message);
+        var httpResult = new HttpResult((int)res.Code, data, message ?? res.Message, traceId: res.TraceId);
 
         return res.Code switch
         {
 
             ResCode.OK => Ok(httpResult),
 
-            _ => StatusCode((int)res.httpStatusCode, new HttpResult((int)res.Code, null, res.Message ?? "Conflict occurred.")),
+            _ => StatusCode((int)res.httpStatusCode, httpResult),
         };
     }
-    
+
     [NonAction]
     public IActionResult ReturnOK(object? data = null, string? message = null)
     {
