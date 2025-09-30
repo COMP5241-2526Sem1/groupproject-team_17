@@ -1,24 +1,24 @@
-import * as z from 'zod';
-import { useForm } from 'react-hook-form';
-import { useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
 
 import {
   Alert,
-  Stack,
   Button,
   Dialog,
-  MenuItem,
-  IconButton,
-  DialogTitle,
   DialogActions,
   DialogContent,
+  DialogTitle,
+  IconButton,
+  MenuItem,
+  Stack,
 } from '@mui/material';
 
 import { ClassManagementActions } from 'src/redux/actions/reducerActions';
 
-import { Iconify } from 'src/components/iconify';
 import { Form, RHFTextField } from 'src/components/hook-form';
+import { Iconify } from 'src/components/iconify';
 
 // if semester is not a number, show error
 const newCourseSchema = z.object({
@@ -94,10 +94,10 @@ export default function CourseCreateDialog({ open, onClose }) {
     <Stack spacing={3} sx={{ mt: 2 }}>
       <RHFTextField name="academicYear" label="Academic Year" type="number" />
       <RHFTextField name="semester" label="Semester" select>
-        <MenuItem value="0">None</MenuItem>
-        <MenuItem value="1">Spring</MenuItem>
-        <MenuItem value="2">Winter</MenuItem>
-        <MenuItem value="3">Summer</MenuItem>
+        <MenuItem value="0">All</MenuItem>
+        <MenuItem value="1">1</MenuItem>
+        <MenuItem value="2">2</MenuItem>
+        <MenuItem value="3">3</MenuItem>
       </RHFTextField>
       <RHFTextField name="courseCode" label="Course Code" />
       <RHFTextField name="courseName" label="Course Name" />

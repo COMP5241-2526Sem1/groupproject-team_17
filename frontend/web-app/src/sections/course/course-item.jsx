@@ -2,23 +2,34 @@ import { usePopover } from 'minimal-shared/hooks';
 
 import {
   Card,
+  ListItemText,
   Stack,
   Tooltip,
-  IconButton,
   Typography,
-  ListItemText,
-  useMediaQuery,
+  useMediaQuery
 } from '@mui/material';
 
 import { RouterLink } from 'src/routes/components';
 
-import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
+import { Label } from 'src/components/label';
 
 export default function CourseItem({ course }) {
   // Check if screen is desktop
   const isDesktop = useMediaQuery((theme) => theme.breakpoints.up('md'));
   const menuActions = usePopover();
+
+  const getColor = (course) => {
+
+    if (course.isEnabled === true) {
+      return 'info';
+    }
+    if (course.isArchived === true) {
+      return 'warning';
+    }
+    return 'error';
+  }
+
 
   const renderInfoBlock = () => (
     <ListItemText
@@ -44,7 +55,7 @@ export default function CourseItem({ course }) {
               {course.courseCode}
             </Typography>
           </Tooltip>
-          <Label variant="soft" color="info" sx={{ textTransform: 'uppercase', mr: 3 }}>
+          <Label variant="soft" color={getColor(course)} sx={{ textTransform: 'uppercase' }}>
             {`${course.academicYear}/${course.academicYear + 1} ${course.semester > 0 ? 'Sem ' + course.semester : ''}`}
           </Label>
         </Stack>
@@ -98,9 +109,9 @@ export default function CourseItem({ course }) {
         height: '160px',
       }}
     >
-      <IconButton onClick={menuActions.onOpen} sx={{ position: 'absolute', top: 20, right: 8 }}>
+      {/*       <IconButton onClick={menuActions.onOpen} sx={{ position: 'absolute', top: 20, right: 8 }}>
         <Iconify icon="eva:more-vertical-fill" />
-      </IconButton>
+      </IconButton> */}
       <Stack direction="column" spacing={2} mb={3}>
         {renderInfoBlock()}
         {renderSubNumber()}

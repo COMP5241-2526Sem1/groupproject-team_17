@@ -94,6 +94,8 @@ public class CreateCourseRequest
 }
 public class UpdateCourseRequest
 {
+    public bool? IsEnabled { get; set; }
+    public bool? IsArchived { get; set; }
     public int? AcademicYear { get; set; }
     public TeachingCourse.SemesterEnum? Semester { get; set; }
     public string? CourseCode { get; set; }

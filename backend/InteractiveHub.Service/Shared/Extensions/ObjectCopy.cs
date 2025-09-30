@@ -9,13 +9,14 @@ public static class ObjectCopy
         if (source == null) throw new ArgumentNullException(nameof(source));
 
         var targetType = typeof(T);
-   
+
         foreach (var sourceProp in typeof(TSrc).GetProperties())
         {
             var targetProp = targetType.GetProperty(sourceProp.Name);
-            if (targetProp != null && targetProp.CanWrite)
+            var value = sourceProp.GetValue(source);
+            if (targetProp != null && targetProp.CanWrite && value != null)
             {
-                var value = sourceProp.GetValue(source);
+
                 targetProp.SetValue(target, value);
             }
         }
