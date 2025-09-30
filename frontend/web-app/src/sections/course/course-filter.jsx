@@ -1,21 +1,119 @@
 import {
-  Box,
   Badge,
+  Box,
   Button,
-  Drawer,
+  Chip,
   Divider,
-  Tooltip,
+  Drawer,
   IconButton,
+  InputAdornment,
+  Stack,
+  TextField,
+  Tooltip,
   Typography,
-  useMediaQuery,
+  useMediaQuery
 } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
 
-export default function CourseFilter({ open, onOpen, onClose, filters, canReset = false }) {
+export default function CourseFilter({
+  open,
+  onOpen,
+  onClose,
+  onSearch,
+  searchKeyword = '',
+  canReset = false,
+  onReset
+}) {
   const mdUp = useMediaQuery((theme) => theme.breakpoints.up('md'));
 
-  const resetFilters = () => {};
+  const resetFilters = () => {
+    if (onReset) {
+      onReset();
+    }
+  };
+
+  const handleSearchChange = (event) => {
+    if (onSearch) {
+      onSearch(event.target.value);
+    }
+  };
+
+  const clearSearch = () => {
+    if (onSearch) {
+      onSearch('');
+    }
+  };
+
+  const renderContent = () => (
+    <Box sx={{ p: 2.5 }}>
+      <Stack spacing={3}>
+        {/* Search Section */}
+        <Box>
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>
+            Search
+          </Typography>
+          <TextField
+            fullWidth
+            placeholder="Search by course code, name, or description..."
+            value={searchKeyword}
+            onChange={handleSearchChange}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
+                </InputAdornment>
+              ),
+              endAdornment: searchKeyword && (
+                <InputAdornment position="end">
+                  <IconButton onClick={clearSearch} edge="end" size="small">
+                    <Iconify icon="eva:close-fill" />
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+        </Box>
+
+        {/* Quick Actions */}
+        <Box>
+          <Typography variant="subtitle2" sx={{ mb: 1 }}>
+            Quick Actions
+          </Typography>
+          <Stack spacing={1}>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<Iconify icon="eva:refresh-fill" />}
+              onClick={resetFilters}
+              disabled={!canReset}
+            >
+              Reset All Filters
+            </Button>
+          </Stack>
+        </Box>
+
+        {/* Active Filters */}
+        {(searchKeyword) && (
+          <Box>
+            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+              Active Filters
+            </Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap" gap={1}>
+              {searchKeyword && (
+                <Chip
+                  label={`Search: "${searchKeyword}"`}
+                  size="small"
+                  onDelete={clearSearch}
+                  deleteIcon={<Iconify icon="eva:close-fill" />}
+                />
+              )}
+            </Stack>
+          </Box>
+        )}
+      </Stack>
+    </Box>
+  );
 
   const renderHeader = () => (
     <>
@@ -72,17 +170,18 @@ export default function CourseFilter({ open, onOpen, onClose, filters, canReset 
           paper: {
             sx: mdUp
               ? {
-                  width: 320,
-                }
+                width: 320,
+              }
               : {
-                  height: '65%',
-                  borderTopLeftRadius: 16,
-                  borderTopRightRadius: 16,
-                },
+                height: '65%',
+                borderTopLeftRadius: 16,
+                borderTopRightRadius: 16,
+              },
           },
         }}
       >
         {renderHeader()}
+        {renderContent()}
       </Drawer>
     </>
   );

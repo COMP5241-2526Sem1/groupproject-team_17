@@ -100,8 +100,8 @@ public partial class ClassManager
             if (existingFromOther != null)
             {
 
-                _log?.LogError($"UpdateCourseAsync: Course with code [{request.CourseCode} in {request.AcademicYear} Semester{request.Semester}] already exists.", Operator: OwnerId);
-                return ServiceRes.Conflict(ResCode.CourseAlreadyExists, $"Course with code [{request.CourseCode} in {request.AcademicYear} Semester{request.Semester}] already exists.", traceId: _log?.TraceId);
+                _log?.LogError($"UpdateCourseAsync: Course {request.CourseCode} in {request.AcademicYear} Semester {request.Semester} already exists.", Operator: OwnerId);
+                return ServiceRes.Conflict(ResCode.CourseAlreadyExists, $"Course with code {request.CourseCode} in {request.AcademicYear} Semester {request.Semester} already exists.", traceId: _log?.TraceId);
 
             }
 
@@ -223,6 +223,7 @@ public partial class ClassManager
         try
         {
             var courses = await db.Courses
+                .Include(c => c.Students) // Include enrolled students for each course
                 .AsNoTracking()
                 .Where(c => c.OwnerId == OwnerId)
                 .ToListAsync();

@@ -1,30 +1,29 @@
 'use client';
 
-import * as z from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useBoolean } from 'minimal-shared/hooks';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useBoolean } from 'minimal-shared/hooks';
-import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 
-import Box from '@mui/material/Box';
-import Link from '@mui/material/Link';
+import { Divider, Stack } from '@mui/material';
 import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import { Stack, Divider } from '@mui/material';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
+import Link from '@mui/material/Link';
 
-import { paths } from 'src/routes/paths';
-import { useRouter } from 'src/routes/hooks';
 import { RouterLink } from 'src/routes/components';
+import { useRouter } from 'src/routes/hooks';
+import { paths } from 'src/routes/paths';
 
+import { Field, Form, schemaUtils } from 'src/components/hook-form';
 import { Iconify } from 'src/components/iconify';
-import { Form, Field, schemaUtils } from 'src/components/hook-form';
 
-import { useAuthContext } from '../../hooks';
-import { getErrorMessage } from '../../utils';
 import { FormHead } from '../../components/form-head';
 import { signInWithPassword } from '../../context/jwt';
+import { getErrorMessage } from '../../utils';
 
 // ----------------------------------------------------------------------
 
@@ -43,7 +42,6 @@ export function JwtSignInView() {
 
   const showPassword = useBoolean();
 
-  const { checkUserSession } = useAuthContext();
 
   const [errorMessage, setErrorMessage] = useState(null);
 
@@ -65,7 +63,7 @@ export function JwtSignInView() {
   const onSubmit = handleSubmit(async (data) => {
     try {
       await signInWithPassword({ email: data.email, password: data.password });
-      await checkUserSession?.();
+
 
       router.refresh();
     } catch (error) {

@@ -8,9 +8,29 @@ export const ClassManagementActions = {
     dispatch(classManActions.setLoadingCourses(true));
     const res = await courseAPI.getAllCourses();
     if (res.code === 0) {
+
+
+
       dispatch(classManActions.setAllCourses(res.data));
     }
     dispatch(classManActions.setLoadingCourses(false));
+  },
+  updateCourse: async (courseId, courseData) => {
+    const res = await courseAPI.updateCourse(courseId, courseData);
+    if (res.code === 0) {
+      // Optionally refresh course details after update
+      await ClassManagementActions.getCourseDetails(courseId);
+      await ClassManagementActions.getAllCourses();
+    }
+    return res;
+  },
+  deleteCourse: async (courseId) => {
+    const res = await courseAPI.deleteCourse(courseId);
+    if (res.code === 0) {
+      // Optionally refresh course list after deletion
+      await ClassManagementActions.getAllCourses();
+    }
+    return res;
   },
   getCourseDetails: async (courseId) => {
     dispatch(classManActions.setLoadingCourseDetails(true));

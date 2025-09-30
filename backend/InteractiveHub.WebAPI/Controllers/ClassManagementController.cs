@@ -52,7 +52,9 @@ namespace InteractiveHub.WebAPI.Controllers
                 {
                     return ReturnResponse(result.res);
                 }
-                return ReturnOK(result.teachingCourses);
+
+                var courses = result.teachingCourses.Select(c => c.ToDto());
+                return ReturnOK(courses);
             });
         }
         [HttpPost("CreateCourse")]

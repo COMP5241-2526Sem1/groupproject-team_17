@@ -3,14 +3,10 @@ import { useSetState } from 'minimal-shared/hooks';
 import {
     Box,
     Card,
-    Checkbox,
     IconButton,
     Table,
     TableBody,
-    TableCell,
-    TableRow,
-    Tooltip,
-    Typography
+    Tooltip
 } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
@@ -27,12 +23,14 @@ import {
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { ClassManagementActions } from 'src/redux/actions/reducerActions';
 import { useSelector } from 'src/redux/hooks';
-import CourseDetailsDeleteDialog from './course-details-delete-dialog';
+import CourseDetailsDeleteDialog from './course-details-delete-student-dialog';
 import CourseDetailsImportDialog from './course-details-import-dialog';
-import CourseDetailsStudentFormDialog from './course-details-student-form-dialog';
+import CourseDetailsStudentFormDialog from './course-details-students-form-dialog';
+import StudentTableRow from './course-details-students-table-row';
 import CourseDetailsStudentsTableToolbar from './course-details-students-table-toolbar';
+
+import { ClassManagementActions } from 'src/redux/actions/reducerActions';
 
 // ----------------------------------------------------------------------
 
@@ -162,15 +160,15 @@ export default function CourseDetailsStudents() {
 
     const handleConfirmDelete = async () => {
         try {
-            // TODO: Here you would typically call an API to delete the students
-            // Example: await deleteStudentsFromCourse(courseId, studentsToDelete.map(s => s.id));
-
             const studentIds = studentsToDelete.map(student => student.id || student.studentId);
             console.log('Confirming deletion of students:', studentIds);
 
             // Clear the selection after successful deletion
             table.onSelectAllRows(false, []);
-
+            // go back to first page if the current page is out of range after deletion
+            if ((table.page + 1) > Math.ceil((dataFiltered.length - studentIds.length) / table.rowsPerPage) && table.page > 0) {
+                table.onChangePage(table.page - 1);
+            }
             // Close the dialog
             handleCloseDeleteDialog();
 
@@ -416,74 +414,5 @@ export default function CourseDetailsStudents() {
                 isLoading={isSubmittingStudent}
             />
         </Card>
-    );
-}
-
-// ----------------------------------------------------------------------
-
-function StudentTableRow({ row, selected, onSelectRow, onDeleteRow, onEditRow }) {
-    return (
-        <TableRow hover selected={selected}>
-            <TableCell padding="checkbox">
-                <Checkbox checked={selected} onClick={onSelectRow} />
-            </TableCell>
-
-            <TableCell sx={{
-                width: '120px',
-            }}>{row.studentId}</TableCell>
-
-            <TableCell sx={{
-                whiteSpace: 'nowrap',
-                width: '150px'
-            }}>
-                <Typography
-                    sx={{
-                        maxWidth: 150,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                    }}
-                    variant="subtitle2" noWrap>
-                    {row.fullName || row.name}
-                </Typography>
-            </TableCell>
-
-            <TableCell
-                sx={{
-                    width: '220px',
-                }}>
-                <Typography
-                    sx={{
-                        maxWidth: 220,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                    }}
-                    variant="body2"
-                    noWrap>
-                    {row.email}
-                </Typography>
-            </TableCell>
-
-            <TableCell
-                sx={{
-
-                    whiteSpace: 'nowrap',
-                    width: '100px'
-                }}>
-                {'****'}
-            </TableCell>
-
-            <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                <Tooltip title="Edit Student">
-                    <IconButton onClick={onEditRow} sx={{ mr: 1 }}>
-                        <Iconify icon="solar:pen-bold" />
-                    </IconButton>
-                </Tooltip>
-                <Tooltip title="Delete Student">
-                    <IconButton onClick={onDeleteRow}>
-                        <Iconify icon="solar:trash-bin-trash-bold" />
-                    </IconButton>
-                </Tooltip>
-            </TableCell>
-        </TableRow>
     );
 }
