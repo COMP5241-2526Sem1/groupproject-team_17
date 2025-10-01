@@ -1,16 +1,17 @@
+import { useState, useEffect } from 'react';
+
 import {
-  Alert,
   Box,
+  Grid,
+  Alert,
   Button,
   Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Grid,
   TextField,
   Typography,
+  DialogTitle,
+  DialogActions,
+  DialogContent,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -56,16 +57,16 @@ export default function CourseDetailsStudentFormDialog({
 
   const handleInputChange = (field) => (event) => {
     const value = event.target.value;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
 
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [field]: ''
+        [field]: '',
       }));
     }
   };
@@ -119,7 +120,7 @@ export default function CourseDetailsStudentFormDialog({
       <DialogTitle id="student-form-dialog-title">
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Iconify
-            icon={isEditMode ? "solar:pen-bold" : "solar:user-plus-bold"}
+            icon={isEditMode ? 'solar:pen-bold' : 'solar:user-plus-bold'}
             sx={{ color: 'primary.main', width: 24, height: 24 }}
           />
           <Typography variant="h6" component="span">
@@ -129,9 +130,13 @@ export default function CourseDetailsStudentFormDialog({
       </DialogTitle>
 
       <DialogContent sx={{ pt: 2 }}>
-        <Grid sx={{
-          mt: 2
-        }} container spacing={2}>
+        <Grid
+          sx={{
+            mt: 2,
+          }}
+          container
+          spacing={2}
+        >
           <Grid item xs={12}>
             <TextField
               fullWidth
@@ -196,11 +201,7 @@ export default function CourseDetailsStudentFormDialog({
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 3 }}>
-        <Button
-          onClick={handleClose}
-          variant="outlined"
-          disabled={isLoading}
-        >
+        <Button onClick={handleClose} variant="outlined" disabled={isLoading}>
           Cancel
         </Button>
         <Button
@@ -208,10 +209,12 @@ export default function CourseDetailsStudentFormDialog({
           variant="contained"
           disabled={isLoading}
           startIcon={
-            isLoading ? undefined : <Iconify icon={isEditMode ? "solar:pen-bold" : "solar:user-plus-bold"} />
+            isLoading ? undefined : (
+              <Iconify icon={isEditMode ? 'solar:pen-bold' : 'solar:user-plus-bold'} />
+            )
           }
         >
-          {isLoading ? 'Saving...' : (isEditMode ? 'Update Student' : 'Add Student')}
+          {isLoading ? 'Saving...' : isEditMode ? 'Update Student' : 'Add Student'}
         </Button>
       </DialogActions>
     </Dialog>

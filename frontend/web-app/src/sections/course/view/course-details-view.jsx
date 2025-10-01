@@ -1,25 +1,25 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useTabs } from 'minimal-shared/hooks';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 
-import { Box, Button, Stack, Tab, Tabs, Typography } from '@mui/material';
+import { Box, Tab, Tabs, Stack, Button, Typography } from '@mui/material';
 
-import { RouterLink } from 'src/routes/components';
 import { paths } from 'src/routes/paths';
+import { RouterLink } from 'src/routes/components';
 
+import { useSelector } from 'src/redux/hooks';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { ClassManagementActions } from 'src/redux/actions/reducerActions';
-import { useSelector } from 'src/redux/hooks';
 
-import { Iconify } from 'src/components/iconify';
-
-import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 import { Label } from 'src/components/label';
-import CourseDetailsClassroom from '../course-details-classroom';
+import { Iconify } from 'src/components/iconify';
+import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
+
 import CourseDetailsSettings from '../course-details-settings';
 import CourseDetailsStudents from '../course-details-students';
+import CourseDetailsClassroom from '../course-details-classroom';
 
 const TABS = [
   { value: 'classroom', label: 'Classroom', icon: 'eva:home-fill' },
@@ -75,13 +75,15 @@ export default function CourseDetailsView({ sx, ...other }) {
   return (
     <DashboardContent>
       {renderToolBar()}
-      <CustomBreadcrumbs
-        heading={selectedCourse?.courseCode || 'Course Details'}
-      />
+      <CustomBreadcrumbs heading={selectedCourse?.courseCode || 'Course Details'} />
       <Stack sx={{ mb: 3 }}>
         <Typography variant="h6">{selectedCourse?.courseName}</Typography>
-        <Box sx={{ height: 8, width: 120 }} >
-          <Label color={selectedCourse?.isArchived ? 'warning' : (selectedCourse?.isEnabled ? 'info' : 'error')}>
+        <Box sx={{ height: 8, width: 120 }}>
+          <Label
+            color={
+              selectedCourse?.isArchived ? 'warning' : selectedCourse?.isEnabled ? 'info' : 'error'
+            }
+          >
             {`${selectedCourse?.academicYear}/${selectedCourse?.academicYear + 1} - SEM${selectedCourse?.semester}`}
           </Label>
         </Box>
@@ -89,7 +91,9 @@ export default function CourseDetailsView({ sx, ...other }) {
 
       {renderTabs()}
       {tabs.value === 'classroom' && <CourseDetailsClassroom />}
-      {tabs.value === 'students' && <CourseDetailsStudents studentsData={selectedCourse?.students} />}
+      {tabs.value === 'students' && (
+        <CourseDetailsStudents studentsData={selectedCourse?.students} />
+      )}
       {tabs.value === 'materials' && <div>Materials Section - To be implemented</div>}
       {tabs.value === 'settings' && <CourseDetailsSettings />}
     </DashboardContent>

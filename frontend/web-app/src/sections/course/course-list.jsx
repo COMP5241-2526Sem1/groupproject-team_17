@@ -7,9 +7,11 @@ import CourseItem from './course-item';
 export function CourseList({ course: courses = [] }) {
   return (
     <>
-      {courses.length === 0 && <Card sx={{ p: 5 }}>
-        <EmptyContent title="No courses found" />
-      </Card>}
+      {courses.length === 0 && (
+        <Card sx={{ p: 5 }}>
+          <EmptyContent title="No courses found" />
+        </Card>
+      )}
       <Grid container spacing={3}>
         {courses.map((course) => (
           <Grid

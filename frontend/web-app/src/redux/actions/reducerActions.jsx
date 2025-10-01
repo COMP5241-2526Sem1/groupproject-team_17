@@ -8,9 +8,6 @@ export const ClassManagementActions = {
     dispatch(classManActions.setLoadingCourses(true));
     const res = await courseAPI.getAllCourses();
     if (res.code === 0) {
-
-
-
       dispatch(classManActions.setAllCourses(res.data));
     }
     dispatch(classManActions.setLoadingCourses(false));
@@ -44,7 +41,7 @@ export const ClassManagementActions = {
   uploadStudents: async (courseId, students) => {
     const res = await courseAPI.addOrUpdateStudents(courseId, students);
     if (res.code === 0) {
-
+      // Success case - could add logging or additional processing here
     }
     return res;
   },

@@ -1,8 +1,8 @@
 // API Function Calls for InteractiveHub WebAPI
 // Auto-generated from backend controllers (excluding TestAuth and WeatherForecast)
 
-import { httpDelete, httpGet, httpPost, httpPut } from '../lib/axios';
 import { API_ENDPOINTS } from './api-endpoint';
+import { httpGet, httpPut, httpPost, httpDelete } from '../lib/axios';
 
 // Course Management API Functions
 export const courseAPI = {

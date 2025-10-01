@@ -1,8 +1,8 @@
 'use client';
 
+import { useId } from 'react';
 import { Icon } from '@iconify/react';
 import { mergeClasses } from 'minimal-shared/utils';
-import { useId } from 'react';
 
 import { styled } from '@mui/material/styles';
 

@@ -1,13 +1,6 @@
 import { usePopover } from 'minimal-shared/hooks';
 
-import {
-  Card,
-  ListItemText,
-  Stack,
-  Tooltip,
-  Typography,
-  useMediaQuery
-} from '@mui/material';
+import { Card, ListItemText, Stack, Tooltip, Typography, useMediaQuery } from '@mui/material';
 
 import { RouterLink } from 'src/routes/components';
 
@@ -19,17 +12,15 @@ export default function CourseItem({ course }) {
   const isDesktop = useMediaQuery((theme) => theme.breakpoints.up('md'));
   const menuActions = usePopover();
 
-  const getColor = (course) => {
-
-    if (course.isEnabled === true) {
+  const getColor = (courseData) => {
+    if (courseData.isEnabled === true) {
       return 'info';
     }
-    if (course.isArchived === true) {
+    if (courseData.isArchived === true) {
       return 'warning';
     }
     return 'error';
-  }
-
+  };
 
   const renderInfoBlock = () => (
     <ListItemText

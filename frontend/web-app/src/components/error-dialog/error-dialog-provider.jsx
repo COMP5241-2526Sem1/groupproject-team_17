@@ -1,10 +1,10 @@
 'use client';
 
-import PropTypes from 'prop-types';
 import { useEffect } from 'react';
+import PropTypes from 'prop-types';
 
 import ErrorDialog from './error-dialog';
-import { ErrorDialogProvider, useErrorDialog } from './error-dialog-context';
+import { useErrorDialog, ErrorDialogProvider } from './error-dialog-context';
 import { cleanupGlobalErrorDialog, initializeGlobalErrorDialog } from './global-error-functions';
 
 // ----------------------------------------------------------------------
@@ -68,5 +68,4 @@ ErrorDialogProviderWithManager.propTypes = {
 
 // Export individual components and hooks
 export { default as ErrorDialog } from './error-dialog';
-export { ErrorDialogProvider, useErrorDialog } from './error-dialog-context';
-
+export { useErrorDialog, ErrorDialogProvider } from './error-dialog-context';

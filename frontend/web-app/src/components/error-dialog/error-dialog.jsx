@@ -12,7 +12,7 @@ import {
   DialogContent,
   DialogTitle,
   Stack,
-  Typography
+  Typography,
 } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
@@ -77,6 +77,7 @@ export default function ErrorDialog({
 
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [open, autoHideDuration, onClose]);
 
   // Get icon based on severity
@@ -126,7 +127,7 @@ export default function ErrorDialog({
           <Button
             onClick={onConfirm}
             variant="contained"
-            color={`error`}
+            color="error"
             startIcon={<Iconify icon="eva:checkmark-fill" />}
           >
             Confirm
@@ -155,30 +156,18 @@ export default function ErrorDialog({
 
     // Default single action
     return (
-      <Button
-        onClick={onClose}
-        variant="contained"
-        color={getColor()}>
+      <Button onClick={onClose} variant="contained" color={getColor()}>
         OK
       </Button>
     );
   };
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      fullWidth
-
-    >
+    <Dialog open={open} onClose={onClose} fullWidth>
       <DialogTitle sx={{ pb: 1 }}>
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <Typography variant="h6" color={`${getColor()}`}>
-            <Iconify
-              icon={getIcon()}
-              width={28}
-              color={`${getColor()}.main`}
-            />
+            <Iconify icon={getIcon()} width={28} color={`${getColor()}.main`} />
           </Typography>
           <Typography variant="h6" color={`${getColor()}`}>
             {title}
@@ -188,16 +177,12 @@ export default function ErrorDialog({
 
       <DialogContent sx={{ pt: 1 }}>
         <Stack spacing={2}>
-          <Alert
-            severity={getColor()}
-            variant="outlined"
-            sx={{ mb: 1 }}
-          >
+          <Alert severity={getColor()} variant="outlined" sx={{ mb: 1 }}>
             <Typography
               variant="body1"
               sx={{
                 whiteSpace: 'pre-wrap',
-                wordBreak: 'break-word'
+                wordBreak: 'break-word',
               }}
             >
               {message}
@@ -232,8 +217,8 @@ export default function ErrorDialog({
                   sx={{
                     bgcolor: 'grey.50',
                     '& .MuiAlert-message': {
-                      width: '100%'
-                    }
+                      width: '100%',
+                    },
                   }}
                 >
                   <Stack spacing={1}>
@@ -293,9 +278,7 @@ export default function ErrorDialog({
         </Stack>
       </DialogContent>
 
-      <DialogActions sx={{ px: 3, pb: 3, pt: 1 }}>
-        {renderActions()}
-      </DialogActions>
+      <DialogActions sx={{ px: 3, pb: 3, pt: 1 }}>{renderActions()}</DialogActions>
     </Dialog>
   );
 }

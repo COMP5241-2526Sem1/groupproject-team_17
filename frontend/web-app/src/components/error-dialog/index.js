@@ -1,7 +1,7 @@
 // Main export for Error Dialog system
 export { default as ErrorDialog } from './error-dialog';
-export { ErrorDialogProvider as ErrorDialogContext, useErrorDialog } from './error-dialog-context';
 export { default as ErrorDialogProvider } from './error-dialog-provider';
+export { useErrorDialog, ErrorDialogProvider as ErrorDialogContext } from './error-dialog-context';
 
 // Global functions are automatically initialized when ErrorDialogProvider is used
 // No need to import anything - just use:

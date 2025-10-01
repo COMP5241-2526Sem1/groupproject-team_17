@@ -1,18 +1,20 @@
+import { useState } from 'react';
+
 import {
   Box,
+  Table,
   Button,
   Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Table,
+  TableRow,
   TableBody,
   TableCell,
   TableHead,
-  TableRow,
-  Typography
+  Typography,
+  DialogTitle,
+  DialogActions,
+  DialogContent,
 } from '@mui/material';
-import { useState } from 'react';
+
 import { ClassManagementActions } from 'src/redux/actions/reducerActions';
 
 export default function CourseDetailsImportDialog({
@@ -20,7 +22,7 @@ export default function CourseDetailsImportDialog({
   onClose,
   courseId,
   onConfirm,
-  importResult
+  importResult,
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const handleConfirm = async () => {
@@ -67,7 +69,10 @@ export default function CourseDetailsImportDialog({
               <Typography variant="body2" color="success.dark">
                 ✅ Successfully imported <strong>{importResult.importedCount}</strong> student(s)
                 {importResult.ignoredCount > 0 && (
-                  <><br />⚠️ Ignored <strong>{importResult.ignoredCount}</strong> row(s) with errors</>
+                  <>
+                    <br />
+                    ⚠️ Ignored <strong>{importResult.ignoredCount}</strong> row(s) with errors
+                  </>
                 )}
               </Typography>
             </Box>
@@ -95,7 +100,15 @@ export default function CourseDetailsImportDialog({
             <Typography variant="body1" sx={{ mb: 2 }}>
               <strong>Preview of Imported Students:</strong>
             </Typography>
-            <Box sx={{ maxHeight: 300, overflow: 'auto', border: 1, borderColor: 'divider', borderRadius: 1 }}>
+            <Box
+              sx={{
+                maxHeight: 300,
+                overflow: 'auto',
+                border: 1,
+                borderColor: 'divider',
+                borderRadius: 1,
+              }}
+            >
               <Table size="small">
                 <TableHead>
                   <TableRow>
@@ -122,7 +135,8 @@ export default function CourseDetailsImportDialog({
           /* Error Message */
           <Box sx={{ p: 2, bgcolor: 'error.lighter', borderRadius: 1 }}>
             <Typography variant="body2" color="error.dark">
-              ❌ <strong>Import Failed:</strong><br />
+              ❌ <strong>Import Failed:</strong>
+              <br />
               {importResult?.errorMessage}
             </Typography>
           </Box>
