@@ -1,6 +1,7 @@
-'use client'
+'use client';
+
 import PropTypes from 'prop-types';
-import { createContext, useCallback, useContext, useState } from 'react';
+import { useState, useContext, useCallback, createContext } from 'react';
 
 // Create the context
 const ErrorDialogContext = createContext(null);
@@ -32,7 +33,7 @@ export function ErrorDialogProvider({ children }) {
       type: 'error',
       title: 'Error',
       message: message || 'An unexpected error occurred',
-      details: details,
+      details,
       severity: 'error',
       autoHideDuration: autoHide ? 5000 : null,
       actions: null,
@@ -49,7 +50,7 @@ export function ErrorDialogProvider({ children }) {
       type: 'warning',
       title: 'Warning',
       message: message || 'Warning',
-      details: details,
+      details,
       severity: 'warning',
       autoHideDuration: autoHide ? 5000 : null,
       actions: null,
@@ -66,7 +67,7 @@ export function ErrorDialogProvider({ children }) {
       type: 'info',
       title: 'Information',
       message: message || 'Information',
-      details: details,
+      details,
       severity: 'info',
       autoHideDuration: autoHide ? 5000 : null,
       actions: null,
@@ -83,8 +84,8 @@ export function ErrorDialogProvider({ children }) {
       type: severity,
       title: title || 'Error',
       message: message || 'An unexpected error occurred',
-      details: details,
-      severity: severity,
+      details,
+      severity,
       autoHideDuration: null,
       actions: null,
       onClose: () => hideError(),
@@ -94,27 +95,30 @@ export function ErrorDialogProvider({ children }) {
   }, []);
 
   // Show confirmation error (with retry/cancel)
-  const showConfirmError = useCallback((title, message, onConfirm, onCancel = null, details = '') => {
-    setErrorState({
-      isOpen: true,
-      type: 'confirm',
-      title: title || 'Confirm Action',
-      message: message || 'Are you sure you want to continue?',
-      details: details,
-      severity: 'error',
-      autoHideDuration: null,
-      actions: ['cancel', 'confirm'],
-      onClose: () => hideError(),
-      onConfirm: () => {
-        hideError();
-        if (onConfirm) onConfirm();
-      },
-      onCancel: () => {
-        hideError();
-        if (onCancel) onCancel();
-      },
-    });
-  }, []);
+  const showConfirmError = useCallback(
+    (title, message, onConfirm, onCancel = null, details = '') => {
+      setErrorState({
+        isOpen: true,
+        type: 'confirm',
+        title: title || 'Confirm Action',
+        message: message || 'Are you sure you want to continue?',
+        details,
+        severity: 'error',
+        autoHideDuration: null,
+        actions: ['cancel', 'confirm'],
+        onClose: () => hideError(),
+        onConfirm: () => {
+          hideError();
+          if (onConfirm) onConfirm();
+        },
+        onCancel: () => {
+          hideError();
+          if (onCancel) onCancel();
+        },
+      });
+    },
+    []
+  );
 
   // Show network error
   const showNetworkError = useCallback((error, onRetry = null) => {
@@ -127,17 +131,19 @@ export function ErrorDialogProvider({ children }) {
     setErrorState({
       isOpen: true,
       type: onRetry ? 'confirm' : 'error',
-      title: title,
-      message: message,
+      title,
+      message,
       details: error?.details || error?.stack || '',
       severity: 'error',
       autoHideDuration: null,
       actions: onRetry ? ['cancel', 'retry'] : null,
       onClose: () => hideError(),
-      onConfirm: onRetry ? () => {
-        hideError();
-        onRetry();
-      } : null,
+      onConfirm: onRetry
+        ? () => {
+            hideError();
+            onRetry();
+          }
+        : null,
       onCancel: () => hideError(),
     });
   }, []);
@@ -148,10 +154,10 @@ export function ErrorDialogProvider({ children }) {
     setErrorState({
       isOpen: true,
       type: onRetry ? 'confirm' : 'error',
-      title: title,
-      message: message,
+      title,
+      message,
       detailsTitle: 'Trace ID: ',
-      details: details,
+      details,
       subDetails: 'Copy this value for support.',
       code: res?.code || null,
       traceId: res?.traceId || null,
@@ -159,19 +165,18 @@ export function ErrorDialogProvider({ children }) {
       autoHideDuration: null,
       actions: onRetry ? ['cancel', 'retry'] : null,
       onClose: () => hideError(),
-      onConfirm: onRetry ? () => {
-        hideError();
-        onRetry();
-      } : null,
+      onConfirm: onRetry
+        ? () => {
+            hideError();
+            onRetry();
+          }
+        : null,
       onCancel: () => hideError(),
     });
-
-
-
   }, []);
   // Hide error dialog
   const hideError = useCallback(() => {
-    setErrorState(prev => ({
+    setErrorState((prev) => ({
       ...prev,
       isOpen: false,
     }));
@@ -190,11 +195,7 @@ export function ErrorDialogProvider({ children }) {
     hideError,
   };
 
-  return (
-    <ErrorDialogContext.Provider value={contextValue}>
-      {children}
-    </ErrorDialogContext.Provider>
-  );
+  return <ErrorDialogContext.Provider value={contextValue}>{children}</ErrorDialogContext.Provider>;
 }
 
 // Hook to use error dialog context

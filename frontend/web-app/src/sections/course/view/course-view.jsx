@@ -13,7 +13,7 @@ import {
   Tab,
   Tabs,
   TextField,
-  Typography
+  Typography,
 } from '@mui/material';
 
 import { DashboardContent } from 'src/layouts/dashboard';
@@ -76,9 +76,14 @@ export function CourseView() {
     setField('sort', sort);
   };
   const totalCourses = classManagement?.courses?.length ?? 0;
-  const publishedCourses = classManagement?.courses?.filter((course) => course.isEnabled && !course.isArchived)?.length ?? 0;
-  const disabledCourses = classManagement?.courses?.filter((course) => !course.isEnabled && !course.isArchived)?.length ?? 0;
-  const archivedCourses = classManagement?.courses?.filter((course) => course.isArchived)?.length ?? 0;
+  const publishedCourses =
+    classManagement?.courses?.filter((course) => course.isEnabled && !course.isArchived)?.length ??
+    0;
+  const disabledCourses =
+    classManagement?.courses?.filter((course) => !course.isEnabled && !course.isArchived)?.length ??
+    0;
+  const archivedCourses =
+    classManagement?.courses?.filter((course) => course.isArchived)?.length ?? 0;
 
   // Memoized filtered courses for better performance
   const filteredCourses = useMemo(() => {
@@ -89,10 +94,14 @@ export function CourseView() {
     // Filter by publication status (tab)
     switch (state.publish) {
       case 'published':
-        filtered = classManagement.courses.filter((course) => course.isEnabled && !course.isArchived);
+        filtered = classManagement.courses.filter(
+          (course) => course.isEnabled && !course.isArchived
+        );
         break;
       case 'disabled':
-        filtered = classManagement.courses.filter((course) => !course.isEnabled && !course.isArchived);
+        filtered = classManagement.courses.filter(
+          (course) => !course.isEnabled && !course.isArchived
+        );
         break;
       case 'archived':
         filtered = classManagement.courses.filter((course) => course.isArchived);
@@ -128,7 +137,11 @@ export function CourseView() {
       filtered = filtered.filter((course) => filterState.status.includes(course.status));
     }
 
-    if (filterState.semester && Array.isArray(filterState.semester) && filterState.semester.length > 0) {
+    if (
+      filterState.semester &&
+      Array.isArray(filterState.semester) &&
+      filterState.semester.length > 0
+    ) {
       filtered = filtered.filter((course) => filterState.semester.includes(course.semester));
     }
 
@@ -136,7 +149,11 @@ export function CourseView() {
       filtered = filtered.filter((course) => filterState.year.includes(course.year?.toString()));
     }
 
-    if (filterState.students && Array.isArray(filterState.students) && filterState.students.length === 2) {
+    if (
+      filterState.students &&
+      Array.isArray(filterState.students) &&
+      filterState.students.length === 2
+    ) {
       const [min, max] = filterState.students;
       filtered = filtered.filter((course) => {
         const studentCount = course.students?.length || 0;
@@ -148,24 +165,28 @@ export function CourseView() {
     if (Array.isArray(filtered)) {
       filtered.sort((a, b) => {
         switch (state.sort) {
-          case 'latest':
+          case 'latest': {
             // Sort by creation date, fallback to modified date, then ID
             const aDate = new Date(a.createdAt || a.updatedAt || 0);
             const bDate = new Date(b.createdAt || b.updatedAt || 0);
             return bDate - aDate;
-          case 'oldest':
+          }
+          case 'oldest': {
             const aDateOld = new Date(a.createdAt || a.updatedAt || 0);
             const bDateOld = new Date(b.createdAt || b.updatedAt || 0);
             return aDateOld - bDateOld;
-          case 'az':
+          }
+          case 'az': {
             // Sort by course code, fallback to course name
             const aCode = (a.courseCode || a.courseName || '').toLowerCase();
             const bCode = (b.courseCode || b.courseName || '').toLowerCase();
             return aCode.localeCompare(bCode);
-          case 'za':
+          }
+          case 'za': {
             const aCodeZ = (a.courseCode || a.courseName || '').toLowerCase();
             const bCodeZ = (b.courseCode || b.courseName || '').toLowerCase();
             return bCodeZ.localeCompare(aCodeZ);
+          }
           default:
             return 0;
         }
@@ -188,7 +209,7 @@ export function CourseView() {
       default:
         return 0;
     }
-  }
+  };
 
   const renderFilterAndSort = () => (
     <Stack spacing={2}>
@@ -210,11 +231,7 @@ export function CourseView() {
             ),
             endAdornment: state.search && (
               <InputAdornment position="end">
-                <IconButton
-                  onClick={() => handleSearch('')}
-                  edge="end"
-                  size="small"
-                >
+                <IconButton onClick={() => handleSearch('')} edge="end" size="small">
                   <Iconify icon="eva:close-fill" />
                 </IconButton>
               </InputAdornment>
@@ -284,7 +301,6 @@ export function CourseView() {
         {/* Results count and active filters */}
         <Stack direction="row" spacing={2} alignItems="center" sx={{ minHeight: 32 }}>
           <Typography variant="body2" color="text.secondary">
-
             {filteredCourses.length} course{filteredCourses.length !== 1 ? 's' : ''} found
           </Typography>
 
@@ -298,7 +314,6 @@ export function CourseView() {
               variant="outlined"
             />
           )}
-
         </Stack>
 
         <CourseList course={filteredCourses} />

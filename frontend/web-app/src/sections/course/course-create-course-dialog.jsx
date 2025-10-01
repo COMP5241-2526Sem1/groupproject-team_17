@@ -1,24 +1,24 @@
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+import { useForm } from 'react-hook-form';
+import { useState, useEffect } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 import {
   Alert,
+  Stack,
   Button,
   Dialog,
+  MenuItem,
+  IconButton,
+  DialogTitle,
   DialogActions,
   DialogContent,
-  DialogTitle,
-  IconButton,
-  MenuItem,
-  Stack,
 } from '@mui/material';
 
 import { ClassManagementActions } from 'src/redux/actions/reducerActions';
 
-import { Form, RHFTextField } from 'src/components/hook-form';
 import { Iconify } from 'src/components/iconify';
+import { Form, RHFTextField } from 'src/components/hook-form';
 
 // if semester is not a number, show error
 const newCourseSchema = z.object({

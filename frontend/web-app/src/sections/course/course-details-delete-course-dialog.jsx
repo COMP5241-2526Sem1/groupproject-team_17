@@ -1,18 +1,18 @@
 import PropTypes from 'prop-types';
 
 import {
+  List,
+  Stack,
   Avatar,
   Button,
   Dialog,
+  ListItem,
+  Typography,
+  DialogTitle,
+  ListItemText,
   DialogActions,
   DialogContent,
-  DialogTitle,
-  List,
-  ListItem,
   ListItemAvatar,
-  ListItemText,
-  Stack,
-  Typography,
 } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
@@ -25,13 +25,12 @@ export default function CourseDetailsSettingsDeleteDialog({
   onConfirm,
   course = null,
 }) {
-
   const formatSemester = (semester) => {
     const semesterMap = {
       0: 'None',
       1: 'Semester 1',
       2: 'Semester 2',
-      3: 'Summer'
+      3: 'Summer',
     };
     return semesterMap[semester] || 'Unknown';
   };
@@ -47,7 +46,7 @@ export default function CourseDetailsSettingsDeleteDialog({
           borderColor: 'error.main',
           borderWidth: 2,
           borderStyle: 'solid',
-        }
+        },
       }}
     >
       <DialogTitle sx={{ color: 'error.main' }}>
@@ -130,11 +129,7 @@ export default function CourseDetailsSettingsDeleteDialog({
                   <Iconify icon="eva:hard-drive-fill" width={20} color="error.main" />
                 </ListItemAvatar>
                 <ListItemText
-                  primary={
-                    <Typography variant="body2">
-                      All course data and history
-                    </Typography>
-                  }
+                  primary={<Typography variant="body2">All course data and history</Typography>}
                 />
               </ListItem>
             </List>
@@ -147,10 +142,7 @@ export default function CourseDetailsSettingsDeleteDialog({
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 3 }}>
-        <Button
-          onClick={onClose}
-          variant="outlined"
-        >
+        <Button onClick={onClose} variant="outlined">
           Cancel
         </Button>
         <Button

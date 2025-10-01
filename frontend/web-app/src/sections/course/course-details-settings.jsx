@@ -1,3 +1,4 @@
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import {
@@ -19,13 +20,14 @@ import {
   Typography,
 } from '@mui/material';
 
-import { Iconify } from 'src/components/iconify';
+import { paths } from 'src/routes/paths';
+
+import { ClassManagementActions } from 'src/redux/actions/reducerActions';
 import { useSelector } from 'src/redux/hooks';
 
-import { useRouter } from 'next/navigation';
 import { useErrorDialog } from 'src/components/error-dialog';
-import { ClassManagementActions } from 'src/redux/actions/reducerActions';
-import { paths } from 'src/routes/paths';
+import { Iconify } from 'src/components/iconify';
+
 import CourseDetailsSettingsDeleteDialog from './course-details-delete-course-dialog';
 import CourseDetailsSettingsEditDialog from './course-details-edit-course-dialog';
 
@@ -68,7 +70,6 @@ export default function CourseDetailsSettings() {
 
       // Show success message
       console.log(`Successfully updated course: ${courseData.courseCode}`);
-
     } catch (error) {
       console.error('Error updating course:', error);
       alert('Error updating course. Please try again.');
@@ -107,7 +108,7 @@ export default function CourseDetailsSettings() {
 
   const handleConfirmDisable = async () => {
     const res = await ClassManagementActions.updateCourse(selectedCourse.id, {
-      isEnabled: selectedCourse.isEnabled ? false : true
+      isEnabled: selectedCourse.isEnabled ? false : true,
     });
     if (res?.code !== 0) {
       await errorDialog.showResError(res, 'Failed to disable course. Please try again.');
@@ -126,7 +127,7 @@ export default function CourseDetailsSettings() {
 
   const handleConfirmArchive = async () => {
     const res = await ClassManagementActions.updateCourse(selectedCourse.id, {
-      isArchived: selectedCourse.isArchived ? false : true
+      isArchived: selectedCourse.isArchived ? false : true,
     });
     if (res?.code !== 0) {
       await errorDialog.showResError(res, 'Failed to archive course. Please try again.');
@@ -139,13 +140,21 @@ export default function CourseDetailsSettings() {
       0: 'None',
       1: 'Semester 1',
       2: 'Semester 2',
-      3: 'Summer'
+      3: 'Summer',
     };
     return semesterMap[semester] || 'Unknown';
   };
 
-  const status = selectedCourse.isArchived ? 'Archived' : selectedCourse.isEnabled ? 'Active' : 'Inactive';
-  const statusColor = selectedCourse.isArchived ? 'warning.main' : selectedCourse.isEnabled ? 'success.main' : 'error.main';
+  const status = selectedCourse.isArchived
+    ? 'Archived'
+    : selectedCourse.isEnabled
+      ? 'Active'
+      : 'Inactive';
+  const statusColor = selectedCourse.isArchived
+    ? 'warning.main'
+    : selectedCourse.isEnabled
+      ? 'success.main'
+      : 'error.main';
   const renderCourseInfo = () => (
     <Card>
       <CardHeader
@@ -209,7 +218,7 @@ export default function CourseDetailsSettings() {
         </Grid>
       </CardContent>
     </Card>
-  )
+  );
 
   const renderStatistics = () => (
     <Card>
@@ -270,7 +279,8 @@ export default function CourseDetailsSettings() {
               Disable Course
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Disabling a course will make it inactive but preserve all data. Students won't be able to access the course, but it can be re-enabled later.
+              Disabling a course will make it inactive but preserve all data. Students won&apos;t be
+              able to access the course, but it can be re-enabled later.
             </Typography>
             <Button
               variant="outlined"
@@ -288,14 +298,14 @@ export default function CourseDetailsSettings() {
               Archive Course
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Archiving a course will move it to the archived section. All data is preserved but the course becomes read-only and is hidden from active views.
+              Archiving a course will move it to the archived section. All data is preserved but the
+              course becomes read-only and is hidden from active views.
             </Typography>
             <Button
               variant="outlined"
               color={!selectedCourse?.isArchived ? 'warning' : 'success'}
               startIcon={<Iconify icon="solar:archive-bold" />}
               onClick={handleOpenArchiveDialog}
-
             >
               {selectedCourse?.isArchived ? 'Unarchive Course' : 'Archive Course'}
             </Button>
@@ -307,7 +317,8 @@ export default function CourseDetailsSettings() {
               Delete Course
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Once you delete a course, all associated data including students, classes, and activities will be permanently removed. This action cannot be undone.
+              Once you delete a course, all associated data including students, classes, and
+              activities will be permanently removed. This action cannot be undone.
             </Typography>
             <Button
               variant="outlined"
@@ -368,16 +379,20 @@ export default function CourseDetailsSettings() {
         <DialogTitle>{selectedCourse?.isEnabled ? 'Disable Course' : 'Enable Course'}</DialogTitle>
         <DialogContent>
           <Typography variant="body1" gutterBottom>
-            Are you sure you want to {selectedCourse?.isEnabled ? 'disable' : 'enable'} "{selectedCourse?.courseCode}"?
+            Are you sure you want to {selectedCourse?.isEnabled ? 'disable' : 'enable'} &quot;
+            {selectedCourse?.courseCode}&quot;?
           </Typography>
-          {
-            selectedCourse?.isEnabled ? <Alert severity='error'>
-              {'Disabling course will make it inactive. Students won\'t be able to access the course, but you can re-enable it later if needed.'}
-            </Alert> : <Alert severity='success'>
-              {'Enabling course will restore student access to the course.'}
+          {selectedCourse?.isEnabled ? (
+            <Alert severity="error">
+              {
+                "Disabling course will make it inactive. Students won't be able to access the course, but you can re-enable it later if needed."
+              }
             </Alert>
-          }
-
+          ) : (
+            <Alert severity="success">
+              Enabling course will restore student access to the course.
+            </Alert>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDisableDialog}>Cancel</Button>
@@ -385,7 +400,13 @@ export default function CourseDetailsSettings() {
             onClick={handleConfirmDisable}
             variant="contained"
             color={selectedCourse?.isEnabled ? 'error' : 'success'}
-            startIcon={selectedCourse?.isEnabled ? <Iconify icon="solar:eye-closed-bold" /> : <Iconify icon="solar:eye-bold" />}
+            startIcon={
+              selectedCourse?.isEnabled ? (
+                <Iconify icon="solar:eye-closed-bold" />
+              ) : (
+                <Iconify icon="solar:eye-bold" />
+              )
+            }
           >
             {selectedCourse?.isEnabled ? 'Disable Course' : 'Enable Course'}
           </Button>
@@ -394,17 +415,20 @@ export default function CourseDetailsSettings() {
 
       {/* Archive Course Dialog */}
       <Dialog open={showArchiveDialog} onClose={handleCloseArchiveDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>{selectedCourse?.isArchived ? 'Unarchive Course' : 'Archive Course'}</DialogTitle>
+        <DialogTitle>
+          {selectedCourse?.isArchived ? 'Unarchive Course' : 'Archive Course'}
+        </DialogTitle>
         <DialogContent>
           <Typography variant="body1" gutterBottom>
             {`Are you sure you want to ${selectedCourse?.isArchived ? 'unarchive' : 'archive'} "${selectedCourse?.courseCode}"?`}
           </Typography>
-          {selectedCourse?.isArchived ? <Alert severity='success'>
-            {'Unarchiving course will restore it to active views.'}
-          </Alert> : <Alert severity='warning'>
-            {'Archiving course will make it read-only and hidden from active views.'}
-          </Alert>}
-
+          {selectedCourse?.isArchived ? (
+            <Alert severity="success">Unarchiving course will restore it to active views.</Alert>
+          ) : (
+            <Alert severity="warning">
+              Archiving course will make it read-only and hidden from active views.
+            </Alert>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseArchiveDialog}>Cancel</Button>

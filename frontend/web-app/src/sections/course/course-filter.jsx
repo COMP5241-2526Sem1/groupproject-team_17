@@ -1,17 +1,17 @@
 import {
-  Badge,
   Box,
-  Button,
   Chip,
-  Divider,
-  Drawer,
-  IconButton,
-  InputAdornment,
+  Badge,
   Stack,
-  TextField,
+  Button,
+  Drawer,
+  Divider,
   Tooltip,
+  TextField,
+  IconButton,
   Typography,
-  useMediaQuery
+  useMediaQuery,
+  InputAdornment,
 } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
@@ -23,7 +23,7 @@ export default function CourseFilter({
   onSearch,
   searchKeyword = '',
   canReset = false,
-  onReset
+  onReset,
 }) {
   const mdUp = useMediaQuery((theme) => theme.breakpoints.up('md'));
 
@@ -94,7 +94,7 @@ export default function CourseFilter({
         </Box>
 
         {/* Active Filters */}
-        {(searchKeyword) && (
+        {searchKeyword && (
           <Box>
             <Typography variant="subtitle2" sx={{ mb: 1 }}>
               Active Filters
@@ -170,13 +170,13 @@ export default function CourseFilter({
           paper: {
             sx: mdUp
               ? {
-                width: 320,
-              }
+                  width: 320,
+                }
               : {
-                height: '65%',
-                borderTopLeftRadius: 16,
-                borderTopRightRadius: 16,
-              },
+                  height: '65%',
+                  borderTopLeftRadius: 16,
+                  borderTopRightRadius: 16,
+                },
           },
         }}
       >

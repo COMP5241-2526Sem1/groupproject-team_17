@@ -111,7 +111,8 @@ export function initializeGlobalErrorDialog(contextFunctions) {
     // Convenience functions for common use cases
     window.showAPIError = (error, onRetry = null) => {
       const title = 'API Error';
-      const message = error?.response?.data?.message || error?.message || 'Failed to communicate with the server';
+      const message =
+        error?.response?.data?.message || error?.message || 'Failed to communicate with the server';
       const details = error?.response?.data?.details || error?.stack || '';
 
       if (onRetry) {

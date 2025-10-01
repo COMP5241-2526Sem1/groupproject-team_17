@@ -1,11 +1,4 @@
-import {
-  Checkbox,
-  IconButton,
-  TableCell,
-  TableRow,
-  Tooltip,
-  Typography,
-} from '@mui/material';
+import { Tooltip, Checkbox, TableRow, TableCell, IconButton, Typography } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -18,31 +11,37 @@ export default function StudentTableRow({ row, selected, onSelectRow, onDeleteRo
         <Checkbox checked={selected} onClick={onSelectRow} />
       </TableCell>
 
-      <TableCell sx={{
-        width: '120px',
-      }}>
+      <TableCell
+        sx={{
+          width: '120px',
+        }}
+      >
         {/*the student ID should be showing the under line only when mouse is hover*/}
-        <Typography variant="body2"
+        <Typography
+          variant="body2"
           noWrap
           onClick={onEditRow}
           sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
-
         >
           {row.studentId}
         </Typography>
       </TableCell>
 
-      <TableCell sx={{
-        whiteSpace: 'nowrap',
-        width: '150px'
-      }}>
+      <TableCell
+        sx={{
+          whiteSpace: 'nowrap',
+          width: '150px',
+        }}
+      >
         <Typography
           sx={{
             maxWidth: 150,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
           }}
-          variant="subtitle2" noWrap>
+          variant="subtitle2"
+          noWrap
+        >
           {row.fullName || row.name}
         </Typography>
       </TableCell>
@@ -50,7 +49,8 @@ export default function StudentTableRow({ row, selected, onSelectRow, onDeleteRo
       <TableCell
         sx={{
           width: '220px',
-        }}>
+        }}
+      >
         <Typography
           sx={{
             maxWidth: 220,
@@ -58,7 +58,8 @@ export default function StudentTableRow({ row, selected, onSelectRow, onDeleteRo
             textOverflow: 'ellipsis',
           }}
           variant="body2"
-          noWrap>
+          noWrap
+        >
           {row.email}
         </Typography>
       </TableCell>
@@ -66,9 +67,10 @@ export default function StudentTableRow({ row, selected, onSelectRow, onDeleteRo
       <TableCell
         sx={{
           whiteSpace: 'nowrap',
-          width: '100px'
-        }}>
-        {'****'}
+          width: '100px',
+        }}
+      >
+        ****
       </TableCell>
 
       <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>

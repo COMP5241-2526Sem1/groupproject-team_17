@@ -1,5 +1,20 @@
-import { Box, Button, Card, Chip, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, InputAdornment, TextField, Tooltip, Typography } from '@mui/material';
 import { useState } from 'react';
+
+import {
+    Box,
+    Button,
+    Card,
+    Chip,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    IconButton,
+    InputAdornment,
+    TextField,
+    Tooltip,
+    Typography,
+} from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -9,7 +24,7 @@ export default function CourseDetailsStudentsTableToolbar({
     resultsCount = 0,
     totalCount = 0,
     onImportCSV,
-    onAddStudent
+    onAddStudent,
 }) {
     const { state: currentFilters, setState: updateFilters } = filters;
     const [showFormatDialog, setShowFormatDialog] = useState(false);
@@ -28,8 +43,8 @@ export default function CourseDetailsStudentsTableToolbar({
         fileInput?.click();
     };
 
-    const processCSVFile = (file) => {
-        return new Promise((resolve, reject) => {
+    const processCSVFile = (file) =>
+        new Promise((resolve, reject) => {
             const reader = new FileReader();
 
             reader.onload = (e) => {
@@ -48,7 +63,6 @@ export default function CourseDetailsStudentsTableToolbar({
 
             reader.readAsText(file);
         });
-    };
 
     const parseCSVToStudents = (csvText) => {
         const lines = csvText.trim().split('\n');
@@ -58,23 +72,25 @@ export default function CourseDetailsStudentsTableToolbar({
         }
 
         // Get header row and normalize it
-        const headers = lines[0].split(',').map(header => header.trim().toLowerCase().replace(/['"]/g, ''));
+        const headers = lines[0]
+            .split(',')
+            .map((header) => header.trim().toLowerCase().replace(/['"]/g, ''));
 
         // Create flexible mapping for different possible column names
         const columnMappings = {
             studentId: ['student id', 'studentid', 'student_id', 'id', 'student number', 'student no'],
             fullName: ['name', 'student name', 'full name', 'fullname'],
             email: ['email', 'email address', 'e-mail', 'mail'],
-            pin: ['pin', 'password', 'access code', 'code']
+            pin: ['pin', 'password', 'access code', 'code'],
         };
 
         // Find the actual column indices
         const columnIndices = {};
 
-        Object.keys(columnMappings).forEach(key => {
+        Object.keys(columnMappings).forEach((key) => {
             const possibleNames = columnMappings[key];
-            const foundIndex = headers.findIndex(header =>
-                possibleNames.some(name => header.includes(name))
+            const foundIndex = headers.findIndex((header) =>
+                possibleNames.some((name) => header.includes(name))
             );
             if (foundIndex !== -1) {
                 columnIndices[key] = foundIndex;
@@ -94,7 +110,7 @@ export default function CourseDetailsStudentsTableToolbar({
             const line = lines[i].trim();
             if (!line) continue; // Skip empty lines
 
-            const values = line.split(',').map(value => value.trim().replace(/^["']|["']$/g, ''));
+            const values = line.split(',').map((value) => value.trim().replace(/^["']|["']$/g, ''));
 
             if (values.length < headers.length) {
                 errors.push(`Row ${i + 1}: Expected ${headers.length} columns but got ${values.length}`);
@@ -107,7 +123,7 @@ export default function CourseDetailsStudentsTableToolbar({
                 studentId: columnIndices.studentId !== undefined ? values[columnIndices.studentId] : '',
                 fullName: columnIndices.fullName !== undefined ? values[columnIndices.fullName] : '',
                 email: columnIndices.email !== undefined ? values[columnIndices.email] : '',
-                pin: columnIndices.pin !== undefined ? values[columnIndices.pin] : ''
+                pin: columnIndices.pin !== undefined ? values[columnIndices.pin] : '',
             };
 
             // Validate that Student ID exists (required)
@@ -132,7 +148,7 @@ export default function CourseDetailsStudentsTableToolbar({
         const result = {
             students,
             errors,
-            hasErrors: errors.length > 0
+            hasErrors: errors.length > 0,
         };
 
         if (errors.length > 0) {
@@ -168,7 +184,7 @@ export default function CourseDetailsStudentsTableToolbar({
                 // No valid students found
                 onImportCSV?.({
                     success: false,
-                    errorMessage: 'No valid student data found in the CSV file.'
+                    errorMessage: 'No valid student data found in the CSV file.',
                 });
                 return;
             }
@@ -178,16 +194,15 @@ export default function CourseDetailsStudentsTableToolbar({
                 success: true,
                 students: result.students,
                 ignoredCount: result.errors.length,
-                errors: result.errors
+                errors: result.errors,
             });
-
         } catch (error) {
             console.warn('CSV processing error:', error);
 
             // Call the parent callback with error result
             onImportCSV?.({
                 success: false,
-                errorMessage: error.message
+                errorMessage: error.message,
             });
         }
 
@@ -367,7 +382,8 @@ STU003,Alice Johnson,alice.johnson@example.com,9012`;
                 </DialogTitle>
                 <DialogContent id="format-dialog-description">
                     <Typography variant="body2" sx={{ mb: 2 }}>
-                        Your CSV file can have columns in any order. The system will automatically detect the column names.
+                        Your CSV file can have columns in any order. The system will automatically detect the
+                        column names.
                     </Typography>
 
                     <Typography variant="subtitle2" sx={{ mb: 1 }}>
@@ -375,31 +391,45 @@ STU003,Alice Johnson,alice.johnson@example.com,9012`;
                     </Typography>
                     <Card sx={{ mb: 2, p: 2 }}>
                         <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                            <strong>Student ID:</strong> "Student ID", "StudentID", "ID", "Student Number" <em>(Required)</em><br />
-                            <strong>Name:</strong> "Name", "Student Name", "Full Name"<br />
-                            <strong>Email:</strong> "Email", "Email Address", "E-mail"<br />
-                            <strong>PIN:</strong> "PIN", "Password", "Access Code", "Code"
+                            <strong>Student ID:</strong> &quot;Student ID&quot;, &quot;StudentID&quot;,
+                            &quot;ID&quot;, &quot;Student Number&quot; <em>(Required)</em>
+                            <br />
+                            <strong>Name:</strong> &quot;Name&quot;, &quot;Student Name&quot;, &quot;Full
+                            Name&quot;
+                            <br />
+                            <strong>Email:</strong> &quot;Email&quot;, &quot;Email Address&quot;,
+                            &quot;E-mail&quot;
+                            <br />
+                            <strong>PIN:</strong> &quot;PIN&quot;, &quot;Password&quot;, &quot;Access Code&quot;,
+                            &quot;Code&quot;
                         </Typography>
                     </Card>
                     <Typography variant="subtitle2" sx={{ mb: 1 }}>
                         Example (columns can be in any order):
                     </Typography>
                     <Card sx={{ mb: 2, p: 2 }}>
-                        <Typography variant="body2" sx={{ fontFamily: 'monospace', }}>
-                            Name,Email,Student ID,PIN<br />
-                            John Doe,john.doe@example.com,STU001,1234<br />
-                            Jane Smith,jane.smith@example.com,STU002,5678<br />
+                        <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                            Name,Email,Student ID,PIN
+                            <br />
+                            John Doe,john.doe@example.com,STU001,1234
+                            <br />
+                            Jane Smith,jane.smith@example.com,STU002,5678
+                            <br />
                             Alice Johnson,alice.johnson@example.com,STU003,9012
                         </Typography>
                     </Card>
                     <Typography variant="body2" color="text.secondary">
-                        <strong>Notes:</strong><br />
-                        • "Student ID" column is <strong>required</strong><br />
-                        • Rows without Student ID will be ignored<br />
-                        • Columns can be in any order<br />
-                        • Column names are case-insensitive<br />
-                        • Missing Names will be auto-generated from Student ID<br />
-                        • Email and PIN are optional
+                        <strong>Notes:</strong>
+                        <br />• &quot;Student ID&quot; column is <strong>required</strong>
+                        <br />
+                        • Rows without Student ID will be ignored
+                        <br />
+                        • Columns can be in any order
+                        <br />
+                        • Column names are case-insensitive
+                        <br />
+                        • Missing Names will be auto-generated from Student ID
+                        <br />• Email and PIN are optional
                     </Typography>
 
                     <Typography variant="subtitle2" sx={{ mt: 3, mb: 1 }}>

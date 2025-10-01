@@ -1,30 +1,31 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import {
-  Alert,
-  Avatar,
-  Badge,
   Box,
-  Button,
   Card,
-  CardContent,
-  CardHeader,
   Chip,
   Grid,
-  IconButton,
-  LinearProgress,
   List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
+  Alert,
+  Badge,
   Paper,
   Stack,
+  Avatar,
+  Button,
   Tooltip,
-  Typography
+  ListItem,
+  CardHeader,
+  IconButton,
+  Typography,
+  CardContent,
+  ListItemText,
+  LinearProgress,
+  ListItemAvatar,
 } from '@mui/material';
 
-import { Iconify } from 'src/components/iconify';
 import { useSelector } from 'src/redux/hooks';
+
+import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
@@ -40,7 +41,7 @@ const mockClassroomData = {
     type: 'poll',
     title: 'Which topic should we cover next?',
     responses: 24,
-    timeLeft: 45
+    timeLeft: 45,
   },
   sessionMode: 'interactive', // interactive, quiz, discussion, presentation
   engagementScore: 85, // percentage
@@ -55,7 +56,7 @@ const mockActivities = [
     responses: 24,
     totalOptions: 4,
     timeLeft: 45,
-    icon: 'solar:chart-2-bold'
+    icon: 'solar:chart-2-bold',
   },
   {
     id: 2,
@@ -65,7 +66,7 @@ const mockActivities = [
     responses: 38,
     totalQuestions: 5,
     averageScore: 82,
-    icon: 'solar:question-circle-bold'
+    icon: 'solar:question-circle-bold',
   },
   {
     id: 3,
@@ -74,16 +75,51 @@ const mockActivities = [
     status: 'pending',
     questions: 6,
     answered: 3,
-    icon: 'solar:chat-round-dots-bold'
+    icon: 'solar:chat-round-dots-bold',
   },
 ];
 
 const mockStudentResponses = [
-  { id: 1, name: 'Alice Johnson', avatar: '/assets/images/avatar/avatar-1.jpg', lastActivity: 'Poll: React vs Vue', time: '2 min ago', score: 95 },
-  { id: 2, name: 'Bob Smith', avatar: '/assets/images/avatar/avatar-2.jpg', lastActivity: 'Quiz: JS Fundamentals', time: '5 min ago', score: 88 },
-  { id: 3, name: 'Carol Davis', avatar: '/assets/images/avatar/avatar-3.jpg', lastActivity: 'Q&A: Async/Await', time: '1 min ago', score: 92 },
-  { id: 4, name: 'David Wilson', avatar: '/assets/images/avatar/avatar-4.jpg', lastActivity: 'Word Cloud: APIs', time: '3 min ago', score: 79 },
-  { id: 5, name: 'Emma Brown', avatar: '/assets/images/avatar/avatar-5.jpg', lastActivity: 'Brainstorm: Features', time: '1 min ago', score: 87 },
+  {
+    id: 1,
+    name: 'Alice Johnson',
+    avatar: '/assets/images/avatar/avatar-1.jpg',
+    lastActivity: 'Poll: React vs Vue',
+    time: '2 min ago',
+    score: 95,
+  },
+  {
+    id: 2,
+    name: 'Bob Smith',
+    avatar: '/assets/images/avatar/avatar-2.jpg',
+    lastActivity: 'Quiz: JS Fundamentals',
+    time: '5 min ago',
+    score: 88,
+  },
+  {
+    id: 3,
+    name: 'Carol Davis',
+    avatar: '/assets/images/avatar/avatar-3.jpg',
+    lastActivity: 'Q&A: Async/Await',
+    time: '1 min ago',
+    score: 92,
+  },
+  {
+    id: 4,
+    name: 'David Wilson',
+    avatar: '/assets/images/avatar/avatar-4.jpg',
+    lastActivity: 'Word Cloud: APIs',
+    time: '3 min ago',
+    score: 79,
+  },
+  {
+    id: 5,
+    name: 'Emma Brown',
+    avatar: '/assets/images/avatar/avatar-5.jpg',
+    lastActivity: 'Brainstorm: Features',
+    time: '1 min ago',
+    score: 87,
+  },
 ];
 
 const mockQuestions = [
@@ -94,7 +130,7 @@ const mockQuestions = [
     time: '14:25',
     urgent: false,
     upvotes: 3,
-    answered: false
+    answered: false,
   },
   {
     id: 2,
@@ -103,7 +139,7 @@ const mockQuestions = [
     time: '14:22',
     urgent: true,
     upvotes: 7,
-    answered: false
+    answered: false,
   },
 ];
 
@@ -144,7 +180,11 @@ export default function CourseDetailsClassroom() {
             label={classroomData.isActive ? 'ACTIVE' : 'ENDED'}
             color={classroomData.isActive ? 'success' : 'default'}
             variant="filled"
-            icon={<Iconify icon={classroomData.isActive ? 'solar:play-circle-bold' : 'solar:pause-circle-bold'} />}
+            icon={
+              <Iconify
+                icon={classroomData.isActive ? 'solar:play-circle-bold' : 'solar:pause-circle-bold'}
+              />
+            }
           />
         }
       />
@@ -156,7 +196,10 @@ export default function CourseDetailsClassroom() {
                 <Typography variant="subtitle2" color="text.secondary">
                   Session Duration
                 </Typography>
-                <Typography variant="h4" color={classroomData.isActive ? 'success.main' : 'text.primary'}>
+                <Typography
+                  variant="h4"
+                  color={classroomData.isActive ? 'success.main' : 'text.primary'}
+                >
                   {getSessionDuration()}
                 </Typography>
               </Box>
@@ -211,9 +254,7 @@ export default function CourseDetailsClassroom() {
                 <Typography variant="subtitle2" color="text.secondary">
                   Activities Completed
                 </Typography>
-                <Typography variant="h6">
-                  {classroomData.activitiesCompleted}
-                </Typography>
+                <Typography variant="h6">{classroomData.activitiesCompleted}</Typography>
               </Box>
 
               <Box>
@@ -278,7 +319,10 @@ export default function CourseDetailsClassroom() {
               </Typography>
               <LinearProgress
                 variant="determinate"
-                value={(classroomData.currentActivity?.responses / classroomData.activeStudents) * 100 || 0}
+                value={
+                  (classroomData.currentActivity?.responses / classroomData.activeStudents) * 100 ||
+                  0
+                }
                 sx={{ mt: 1 }}
                 color="info"
               />
@@ -308,7 +352,11 @@ export default function CourseDetailsClassroom() {
       <CardHeader
         title="Learning Activities"
         action={
-          <Button variant="outlined" size="small" startIcon={<Iconify icon="solar:add-circle-bold" />}>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<Iconify icon="solar:add-circle-bold" />}
+          >
             Create New
           </Button>
         }
@@ -325,8 +373,11 @@ export default function CourseDetailsClassroom() {
                     label={activity.status}
                     size="small"
                     color={
-                      activity.status === 'active' ? 'success' :
-                        activity.status === 'completed' ? 'primary' : 'default'
+                      activity.status === 'active'
+                        ? 'success'
+                        : activity.status === 'completed'
+                          ? 'primary'
+                          : 'default'
                     }
                   />
                   <IconButton size="small">
@@ -398,7 +449,9 @@ export default function CourseDetailsClassroom() {
                   <Chip
                     label={`${student.score}%`}
                     size="small"
-                    color={student.score >= 90 ? 'success' : student.score >= 70 ? 'warning' : 'error'}
+                    color={
+                      student.score >= 90 ? 'success' : student.score >= 70 ? 'warning' : 'error'
+                    }
                   />
                   <IconButton size="small">
                     <Iconify icon="solar:star-bold" sx={{ color: 'warning.main' }} />
@@ -432,7 +485,9 @@ export default function CourseDetailsClassroom() {
                 secondary={
                   <Stack spacing={0.5}>
                     <Typography variant="caption">{student.lastActivity}</Typography>
-                    <Typography variant="caption" color="text.disabled">{student.time}</Typography>
+                    <Typography variant="caption" color="text.disabled">
+                      {student.time}
+                    </Typography>
                   </Stack>
                 }
               />
@@ -449,7 +504,11 @@ export default function CourseDetailsClassroom() {
       <CardHeader
         title="Q&A Management"
         action={
-          <Button variant="contained" size="small" startIcon={<Iconify icon="solar:question-circle-bold" />}>
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<Iconify icon="solar:question-circle-bold" />}
+          >
             New Q&A
           </Button>
         }
@@ -460,15 +519,27 @@ export default function CourseDetailsClassroom() {
         ) : (
           <Stack spacing={2}>
             {mockQuestions.map((question) => (
-              <Paper key={question.id} sx={{ p: 2, border: question.urgent ? '1px solid' : 'none', borderColor: 'error.main' }}>
-                <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
+              <Paper
+                key={question.id}
+                sx={{
+                  p: 2,
+                  border: question.urgent ? '1px solid' : 'none',
+                  borderColor: 'error.main',
+                }}
+              >
+                <Stack
+                  direction="row"
+                  justifyContent="space-between"
+                  alignItems="flex-start"
+                  spacing={2}
+                >
                   <Box sx={{ flexGrow: 1 }}>
                     <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
                       <Typography variant="subtitle2">{question.student}</Typography>
-                      <Typography variant="caption" color="text.secondary">{question.time}</Typography>
-                      {question.urgent && (
-                        <Chip label="Urgent" size="small" color="error" />
-                      )}
+                      <Typography variant="caption" color="text.secondary">
+                        {question.time}
+                      </Typography>
+                      {question.urgent && <Chip label="Urgent" size="small" color="error" />}
                       <Chip
                         label={`${question.upvotes} upvotes`}
                         size="small"
@@ -521,20 +592,12 @@ export default function CourseDetailsClassroom() {
             </Button>
           </Grid>
           <Grid item xs={6}>
-            <Button
-              fullWidth
-              variant="outlined"
-              startIcon={<Iconify icon="solar:quiz-bold" />}
-            >
+            <Button fullWidth variant="outlined" startIcon={<Iconify icon="solar:quiz-bold" />}>
               Quick Quiz
             </Button>
           </Grid>
           <Grid item xs={6}>
-            <Button
-              fullWidth
-              variant="outlined"
-              startIcon={<Iconify icon="solar:cloud-bold" />}
-            >
+            <Button fullWidth variant="outlined" startIcon={<Iconify icon="solar:cloud-bold" />}>
               Word Cloud
             </Button>
           </Grid>
@@ -548,11 +611,7 @@ export default function CourseDetailsClassroom() {
             </Button>
           </Grid>
           <Grid item xs={6}>
-            <Button
-              fullWidth
-              variant="outlined"
-              startIcon={<Iconify icon="solar:graph-bold" />}
-            >
+            <Button fullWidth variant="outlined" startIcon={<Iconify icon="solar:graph-bold" />}>
               Show Results
             </Button>
           </Grid>

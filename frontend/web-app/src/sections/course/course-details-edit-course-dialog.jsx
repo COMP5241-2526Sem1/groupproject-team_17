@@ -1,26 +1,26 @@
-import { zodResolver } from '@hookform/resolvers/zod';
-import PropTypes from 'prop-types';
-import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+import PropTypes from 'prop-types';
+import { useForm } from 'react-hook-form';
+import { useState, useEffect } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 import {
   Alert,
+  Stack,
   Button,
   Dialog,
+  MenuItem,
+  IconButton,
+  DialogTitle,
   DialogActions,
   DialogContent,
-  DialogTitle,
-  IconButton,
-  MenuItem,
-  Stack,
 } from '@mui/material';
 
-import { useErrorDialog } from 'src/components/error-dialog';
-
-import { Form, RHFTextField } from 'src/components/hook-form';
-import { Iconify } from 'src/components/iconify';
 import { ClassManagementActions } from 'src/redux/actions/reducerActions';
+
+import { Iconify } from 'src/components/iconify';
+import { useErrorDialog } from 'src/components/error-dialog';
+import { Form, RHFTextField } from 'src/components/hook-form';
 
 // ----------------------------------------------------------------------
 
@@ -112,14 +112,13 @@ export default function CourseDetailsSettingsEditDialog({
   }, [open, isSubmitting, isLoading]);
 
   const onSubmitForm = handleSubmit(async (data) => {
-    const res = await ClassManagementActions.updateCourse(course.id, data)
+    const res = await ClassManagementActions.updateCourse(course.id, data);
 
     if (res?.code !== 0) {
       errorDialog.showResError(res, 'Failed to update course. Please try again.');
       return;
     }
     onClose();
-
   });
 
   const handleClose = () => {
@@ -130,11 +129,7 @@ export default function CourseDetailsSettingsEditDialog({
 
   const renderForm = () => (
     <Stack spacing={3} sx={{ pt: 1 }}>
-      {submitError && (
-        <Alert severity="error">
-          {submitError}
-        </Alert>
-      )}
+      {submitError && <Alert severity="error">{submitError}</Alert>}
 
       <RHFTextField
         name="courseCode"
@@ -158,12 +153,7 @@ export default function CourseDetailsSettingsEditDialog({
         disabled={isSubmitting || isLoading}
       />
 
-      <RHFTextField
-        name="semester"
-        label="Semester"
-        select
-        disabled={isSubmitting || isLoading}
-      >
+      <RHFTextField name="semester" label="Semester" select disabled={isSubmitting || isLoading}>
         {SEMESTER_OPTIONS.map((option) => (
           <MenuItem key={option.value} value={option.value}>
             {option.label}
@@ -200,16 +190,16 @@ export default function CourseDetailsSettingsEditDialog({
           // Ensure dialog content is not hidden from assistive technology
           '&:focus-visible': {
             outline: 'none',
-          }
-        }
+          },
+        },
       }}
       slotProps={{
         backdrop: {
           sx: {
             // Prevent backdrop from interfering with focus management
             pointerEvents: isSubmitting || isLoading ? 'none' : 'auto',
-          }
-        }
+          },
+        },
       }}
       BackdropProps={{
         // Prevent backdrop from blocking assistive technology
@@ -236,7 +226,7 @@ export default function CourseDetailsSettingsEditDialog({
                 '&.Mui-disabled': {
                   pointerEvents: 'none',
                   opacity: 0.5,
-                }
+                },
               }}
             >
               <Iconify icon="mingcute:close-line" />
@@ -244,9 +234,7 @@ export default function CourseDetailsSettingsEditDialog({
           </Stack>
         </DialogTitle>
 
-        <DialogContent id="edit-course-dialog-description">
-          {renderForm()}
-        </DialogContent>
+        <DialogContent id="edit-course-dialog-description">{renderForm()}</DialogContent>
 
         <DialogActions sx={{ px: 3, pb: 3 }}>
           <Button
