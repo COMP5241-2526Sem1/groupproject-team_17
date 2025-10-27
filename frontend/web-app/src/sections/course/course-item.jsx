@@ -1,11 +1,11 @@
 import { usePopover } from 'minimal-shared/hooks';
 
-import { Card, ListItemText, Stack, Tooltip, Typography, useMediaQuery } from '@mui/material';
+import { Card, Stack, Tooltip, Typography, ListItemText, useMediaQuery } from '@mui/material';
 
 import { RouterLink } from 'src/routes/components';
 
-import { Iconify } from 'src/components/iconify';
 import { Label } from 'src/components/label';
+import { Iconify } from 'src/components/iconify';
 
 export default function CourseItem({ course }) {
   // Check if screen is desktop

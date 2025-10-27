@@ -1,7 +1,7 @@
 import { courseAPI } from 'src/api/api-function-call';
 
-import { sliceActions as classManActions } from '../slices/classManagement';
 import { dispatch } from '../store';
+import { sliceActions as classManActions } from '../slices/classManagement';
 
 export const ClassManagementActions = {
   getAllCourses: async () => {
@@ -51,6 +51,11 @@ export const ClassManagementActions = {
   },
   createCourse: async (courseData) => {
     const res = await courseAPI.createCourse(courseData);
+    if (res.code === 0) {
+      // Optionally refresh course list after creation
+      await ClassManagementActions.getAllCourses();
+    }
+
     return res;
   },
 

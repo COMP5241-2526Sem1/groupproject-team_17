@@ -15,6 +15,7 @@ export function GuestGuard({ children }) {
   const { user, isLoading } = useUser();
 
   const router = useRouter();
+
   const searchParams = useSearchParams();
 
   const returnTo = searchParams.get('returnTo') ?? CONFIG.auth.redirectPath;

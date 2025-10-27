@@ -17,6 +17,8 @@ import {
 
 import { ClassManagementActions } from 'src/redux/actions/reducerActions';
 
+import { useErrorDialog } from 'src/components/error-dialog';
+
 export default function CourseDetailsImportDialog({
   open,
   onClose,
@@ -24,16 +26,22 @@ export default function CourseDetailsImportDialog({
   onConfirm,
   importResult,
 }) {
+  const errorDialog = useErrorDialog();
+
   const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleConfirm = async () => {
     setIsSubmitting(true);
-    console.log('Import confirmed:', importResult);
+    //console.log('Import confirmed:', importResult);
     const studentsToImport = importResult?.importedStudents || [];
     if (studentsToImport.length > 0) {
       // Dispatch action to upload students
       var res = await ClassManagementActions.uploadStudents(courseId, studentsToImport);
       if (res?.code == 0) {
         ClassManagementActions.getCourseDetails(courseId);
+      }
+      else {
+        errorDialog.showResError(res, 'Failed to import students');
       }
     }
 

@@ -1,35 +1,35 @@
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 import {
-  Alert,
   Box,
-  Button,
   Card,
-  CardContent,
-  CardHeader,
+  Grid,
+  Alert,
+  Stack,
+  Button,
   Dialog,
+  Divider,
+  Tooltip,
+  CardHeader,
+  IconButton,
+  Typography,
+  CardContent,
+  DialogTitle,
   DialogActions,
   DialogContent,
-  DialogTitle,
-  Divider,
-  Grid,
-  IconButton,
-  Stack,
-  Tooltip,
-  Typography,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 
-import { ClassManagementActions } from 'src/redux/actions/reducerActions';
 import { useSelector } from 'src/redux/hooks';
+import { ClassManagementActions } from 'src/redux/actions/reducerActions';
 
-import { useErrorDialog } from 'src/components/error-dialog';
 import { Iconify } from 'src/components/iconify';
+import { useErrorDialog } from 'src/components/error-dialog';
 
-import CourseDetailsSettingsDeleteDialog from './course-details-delete-course-dialog';
 import CourseDetailsSettingsEditDialog from './course-details-edit-course-dialog';
+import CourseDetailsSettingsDeleteDialog from './course-details-delete-course-dialog';
 
 // ----------------------------------------------------------------------
 
@@ -384,9 +384,7 @@ export default function CourseDetailsSettings() {
           </Typography>
           {selectedCourse?.isEnabled ? (
             <Alert severity="error">
-              {
-                "Disabling course will make it inactive. Students won't be able to access the course, but you can re-enable it later if needed."
-              }
+              Disabling course will make it inactive. Students won't be able to access the course, but you can re-enable it later if needed.
             </Alert>
           ) : (
             <Alert severity="success">
