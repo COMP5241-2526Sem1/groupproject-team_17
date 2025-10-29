@@ -19,6 +19,90 @@ namespace InteractiveHub.Service.ClassRelated.Migrations
                 .HasAnnotation("ProductVersion", "9.0.6")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
+            modelBuilder.Entity("InteractiveHub.Service.Activity", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(0);
+
+                    b.Property<string>("CourseId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("HasBeenActivated")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("CourseId", "IsActive");
+
+                    b.ToTable("Activities");
+
+                    b.HasDiscriminator<int>("Type");
+
+                    b.UseTphMappingStrategy();
+                });
+
+            modelBuilder.Entity("InteractiveHub.Service.ClassManagement.RealtimeClass", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(0);
+
+                    b.Property<string>("CourseId")
+                        .IsRequired()
+                        .HasColumnType("varchar(256)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("OwnerId");
+
+                    b.ToTable("RealtimeClass");
+                });
+
             modelBuilder.Entity("InteractiveHub.Service.ClassManagement.Student", b =>
                 {
                     b.Property<string>("Id")
@@ -73,52 +157,6 @@ namespace InteractiveHub.Service.ClassRelated.Migrations
                     b.ToTable("Students");
                 });
 
-            modelBuilder.Entity("InteractiveHub.Service.ClassManagement.TeachingClass", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("varchar(256)")
-                        .HasColumnOrder(0);
-
-                    b.Property<string>("CourseId")
-                        .IsRequired()
-                        .HasColumnType("varchar(256)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateOnly>("Date")
-                        .HasColumnType("date");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<TimeOnly>("From")
-                        .HasColumnType("time");
-
-                    b.Property<string>("Identifier")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("OwnerId")
-                        .IsRequired()
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<TimeOnly>("To")
-                        .HasColumnType("time");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CourseId");
-
-                    b.HasIndex("OwnerId");
-
-                    b.ToTable("TeachingClass");
-                });
-
             modelBuilder.Entity("InteractiveHub.Service.ClassManagement.TeachingCourse", b =>
                 {
                     b.Property<string>("Id")
@@ -149,6 +187,13 @@ namespace InteractiveHub.Service.ClassRelated.Migrations
                     b.Property<bool>("IsEnabled")
                         .HasColumnType("tinyint(1)");
 
+                    b.PrimitiveCollection<string>("JoinCheckingModes")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<long>("JoinCode")
+                        .HasColumnType("bigint");
+
                     b.Property<string>("OwnerId")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
@@ -169,6 +214,57 @@ namespace InteractiveHub.Service.ClassRelated.Migrations
                     b.ToTable("Courses");
                 });
 
+            modelBuilder.Entity("InteractiveHub.Service.Submission", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("varchar(256)")
+                        .HasColumnOrder(0);
+
+                    b.Property<string>("ActivityId")
+                        .IsRequired()
+                        .HasColumnType("varchar(256)");
+
+                    b.Property<string>("CourseId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("StudentId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<DateTime>("SubmittedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActivityId");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("CourseId", "ActivityId");
+
+                    b.HasIndex("StudentId", "ActivityId");
+
+                    b.ToTable("Submissions");
+
+                    b.HasDiscriminator<int>("Type");
+
+                    b.UseTphMappingStrategy();
+                });
+
             modelBuilder.Entity("StudentTeachingCourse", b =>
                 {
                     b.Property<string>("CoursesId")
@@ -184,11 +280,120 @@ namespace InteractiveHub.Service.ClassRelated.Migrations
                     b.ToTable("StudentTeachingCourse");
                 });
 
-            modelBuilder.Entity("InteractiveHub.Service.ClassManagement.TeachingClass", b =>
+            modelBuilder.Entity("InteractiveHub.Service.Discussion", b =>
                 {
-                    b.HasOne("InteractiveHub.Service.ClassManagement.TeachingCourse", null)
+                    b.HasBaseType("InteractiveHub.Service.Activity");
+
+                    b.Property<bool>("Discussion_AllowAnonymous")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("Discussion_MaxLength")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("Discussion_RequireApproval")
+                        .HasColumnType("tinyint(1)");
+
+                    b.HasDiscriminator().HasValue(3);
+                });
+
+            modelBuilder.Entity("InteractiveHub.Service.Poll", b =>
+                {
+                    b.HasBaseType("InteractiveHub.Service.Activity");
+
+                    b.Property<bool>("Poll_AllowMultipleSelections")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("Poll_IsAnonymous")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Poll_OptionsJson")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasDiscriminator().HasValue(2);
+                });
+
+            modelBuilder.Entity("InteractiveHub.Service.Quiz", b =>
+                {
+                    b.HasBaseType("InteractiveHub.Service.Activity");
+
+                    b.Property<string>("Quiz_QuestionsJson")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("Quiz_ShowCorrectAnswers")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("Quiz_ShuffleQuestions")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("Quiz_TimeLimit")
+                        .HasColumnType("int");
+
+                    b.HasDiscriminator().HasValue(1);
+                });
+
+            modelBuilder.Entity("InteractiveHub.Service.DiscussionSubmission", b =>
+                {
+                    b.HasBaseType("InteractiveHub.Service.Submission");
+
+                    b.Property<bool>("Discussion_IsAnonymous")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("Discussion_IsApproved")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Discussion_Text")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasDiscriminator().HasValue(3);
+                });
+
+            modelBuilder.Entity("InteractiveHub.Service.PollSubmission", b =>
+                {
+                    b.HasBaseType("InteractiveHub.Service.Submission");
+
+                    b.Property<string>("Poll_SelectedOptionsJson")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasDiscriminator().HasValue(2);
+                });
+
+            modelBuilder.Entity("InteractiveHub.Service.QuizSubmission", b =>
+                {
+                    b.HasBaseType("InteractiveHub.Service.Submission");
+
+                    b.Property<string>("Quiz_AnswersJson")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<double>("Quiz_Score")
+                        .HasColumnType("double");
+
+                    b.Property<int>("Quiz_TimeSpent")
+                        .HasColumnType("int");
+
+                    b.HasDiscriminator().HasValue(1);
+                });
+
+            modelBuilder.Entity("InteractiveHub.Service.ClassManagement.RealtimeClass", b =>
+                {
+                    b.HasOne("InteractiveHub.Service.ClassManagement.TeachingCourse", "Course")
                         .WithMany("Classes")
                         .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+                });
+
+            modelBuilder.Entity("InteractiveHub.Service.Submission", b =>
+                {
+                    b.HasOne("InteractiveHub.Service.Activity", null)
+                        .WithMany()
+                        .HasForeignKey("ActivityId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

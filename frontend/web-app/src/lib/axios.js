@@ -57,7 +57,7 @@ const handleResponse = (response) => {
 
 // Helper function to handle errors
 const handleError = (error) => {
-  const response = error.response;
+  const response = error;
   const data = response?.data;
   if (data && data.code && Number.isInteger(data.code)) {
     console.warn(`[API Error ${data.code}]`, data.message || 'Unknown error');

@@ -12,8 +12,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers( options =>
-{ 
+builder.Services.AddControllers(options =>
+{
     options.Filters.Add<BadRequestActionFilter>();
 });
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -55,7 +55,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     (int)ResCode.Unauthorized,
                     null,
                     "Authentication failed: Invalid or missing token"
-                    
+
                 );
 
                 var json = System.Text.Json.JsonSerializer.Serialize(errorResponse, new System.Text.Json.JsonSerializerOptions
@@ -136,5 +136,9 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+app.UseWebSockets(new WebSocketOptions
+{
+    KeepAliveInterval = TimeSpan.FromSeconds(120),
+});
 
 app.Run();

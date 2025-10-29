@@ -13,6 +13,45 @@ export const API_ENDPOINTS = {
     REMOVE_STUDENT: (courseId, studentId) => `/api/Course/${courseId}/RemoveStudent/${studentId}`,
     REMOVE_STUDENTS: (courseId) => `/api/Course/${courseId}/RemoveStudents`,
   },
+
+  // RealTime Class Management (RealTimeClassController)
+  REALTIME_CLASS: {
+    // Join/Auth endpoints
+    GET_COURSE_JOIN_INFO: (joinCode) => `/api/RealTimeClass/${joinCode}`,
+    STUDENT_JOIN_COURSE: '/api/RealTimeClass/StudentJoin',
+    VALIDATE_JOIN_TOKEN: '/api/RealTimeClass/ValidateJoinToken',
+    CONNECT_WEBSOCKET: (token) => `/api/RealTimeClass/Connect/${encodeURIComponent(token)}`,
+    CONNECT_INSTRUCTOR_WEBSOCKET: (courseId) => `/api/RealTimeClass/ConnectInstructor/${courseId}`,
+
+    // Classroom status
+    GET_CLASSROOM_STATUS: (courseId) => `/api/RealTimeClass/Course/${courseId}/Status`,
+  },
+
+  // Activity Management (RealTimeClassController)
+  ACTIVITY: {
+    // Create activity
+    CREATE_ACTIVITY: (courseId) => `/api/RealTimeClass/Course/${courseId}/Activity`,
+
+    // Get activities
+    GET_ACTIVITY: (activityId) => `/api/RealTimeClass/Activity/${activityId}`,
+    GET_COURSE_ACTIVITIES: (courseId) => `/api/RealTimeClass/Course/${courseId}/Activities`,
+    GET_COURSE_QUIZZES: (courseId) => `/api/RealTimeClass/Course/${courseId}/Quizzes`,
+    GET_COURSE_POLLS: (courseId) => `/api/RealTimeClass/Course/${courseId}/Polls`,
+
+    // Update/Delete activity
+    UPDATE_ACTIVITY: (activityId) => `/api/RealTimeClass/Activity/${activityId}`,
+    DELETE_ACTIVITY: (activityId) => `/api/RealTimeClass/Activity/${activityId}`,
+    DEACTIVATE_ACTIVITY: (activityId) => `/api/RealTimeClass/Activity/${activityId}/Deactivate`,
+
+    // Submissions
+    GET_ACTIVITY_SUBMISSIONS: (activityId) => `/api/RealTimeClass/Activity/${activityId}/Submissions`,
+    GET_STUDENT_SUBMISSION: (activityId, studentId) => `/api/RealTimeClass/Activity/${activityId}/Student/${studentId}/Submission`,
+    GET_QUIZ_SUBMISSIONS: (quizId) => `/api/RealTimeClass/Quiz/${quizId}/Submissions`,
+
+    // Submit responses
+    SUBMIT_QUIZ: (quizId) => `/api/RealTimeClass/Quiz/${quizId}/Submit`,
+    SUBMIT_POLL: (pollId) => `/api/RealTimeClass/Poll/${pollId}/Submit`,
+  },
 };
 
 // Helper function to build endpoint URLs

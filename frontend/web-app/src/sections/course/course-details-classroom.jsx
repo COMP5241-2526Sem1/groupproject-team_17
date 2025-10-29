@@ -1,643 +1,405 @@
-import { useState, useEffect } from 'react';
+'use client';
+import { useEffect, useState } from 'react';
 
 import {
-  Box,
-  Card,
-  Chip,
-  Grid,
-  List,
   Alert,
-  Badge,
-  Paper,
-  Stack,
-  Avatar,
+  Box,
   Button,
-  Tooltip,
-  ListItem,
-  CardHeader,
-  IconButton,
-  Typography,
+  Card,
   CardContent,
-  ListItemText,
-  LinearProgress,
-  ListItemAvatar,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Grid,
+  Typography,
 } from '@mui/material';
 
 import { useSelector } from 'src/redux/hooks';
 
-import { Iconify } from 'src/components/iconify';
+import { activityAPI, realtimeClassAPI } from 'src/api/api-function-call';
+import { useInstructorWebSocket } from 'src/contexts';
+import CreatePollDialog from './classroom-create-activity/create-poll-dialog';
+import EditPollDialog from './classroom-create-activity/edit-poll-dialog';
+import {
+  InteractiveActivitiesCard,
+  LearningActivitiesCard,
+  SessionStatusCard,
+} from './classroom-session';
 
 // ----------------------------------------------------------------------
 
-// Mock data for demonstration
-const mockClassroomData = {
-  isActive: true,
-  sessionStartTime: '2025-09-30T14:00:00',
-  totalStudents: 45,
-  activeStudents: 38,
-  activitiesCompleted: 12,
-  pendingResponses: 8,
-  currentActivity: {
-    type: 'poll',
-    title: 'Which topic should we cover next?',
-    responses: 24,
-    timeLeft: 45,
-  },
-  sessionMode: 'interactive', // interactive, quiz, discussion, presentation
-  engagementScore: 85, // percentage
-};
-
-const mockActivities = [
-  {
-    id: 1,
-    type: 'poll',
-    title: 'Which programming language do you prefer?',
-    status: 'active',
-    responses: 24,
-    totalOptions: 4,
-    timeLeft: 45,
-    icon: 'solar:chart-2-bold',
-  },
-  {
-    id: 2,
-    type: 'quiz',
-    title: 'React Fundamentals Quiz',
-    status: 'completed',
-    responses: 38,
-    totalQuestions: 5,
-    averageScore: 82,
-    icon: 'solar:question-circle-bold',
-  },
-  {
-    id: 3,
-    type: 'qna',
-    title: 'Open Q&A Session',
-    status: 'pending',
-    questions: 6,
-    answered: 3,
-    icon: 'solar:chat-round-dots-bold',
-  },
-];
-
-const mockStudentResponses = [
-  {
-    id: 1,
-    name: 'Alice Johnson',
-    avatar: '/assets/images/avatar/avatar-1.jpg',
-    lastActivity: 'Poll: React vs Vue',
-    time: '2 min ago',
-    score: 95,
-  },
-  {
-    id: 2,
-    name: 'Bob Smith',
-    avatar: '/assets/images/avatar/avatar-2.jpg',
-    lastActivity: 'Quiz: JS Fundamentals',
-    time: '5 min ago',
-    score: 88,
-  },
-  {
-    id: 3,
-    name: 'Carol Davis',
-    avatar: '/assets/images/avatar/avatar-3.jpg',
-    lastActivity: 'Q&A: Async/Await',
-    time: '1 min ago',
-    score: 92,
-  },
-  {
-    id: 4,
-    name: 'David Wilson',
-    avatar: '/assets/images/avatar/avatar-4.jpg',
-    lastActivity: 'Word Cloud: APIs',
-    time: '3 min ago',
-    score: 79,
-  },
-  {
-    id: 5,
-    name: 'Emma Brown',
-    avatar: '/assets/images/avatar/avatar-5.jpg',
-    lastActivity: 'Brainstorm: Features',
-    time: '1 min ago',
-    score: 87,
-  },
-];
-
-const mockQuestions = [
-  {
-    id: 1,
-    student: 'Alice Johnson',
-    question: 'Can you explain the difference between useEffect and useLayoutEffect?',
-    time: '14:25',
-    urgent: false,
-    upvotes: 3,
-    answered: false,
-  },
-  {
-    id: 2,
-    student: 'Bob Smith',
-    question: 'How do we handle error boundaries in React?',
-    time: '14:22',
-    urgent: true,
-    upvotes: 7,
-    answered: false,
-  },
-];
-
 export default function CourseDetailsClassroom() {
   const { selectedCourse } = useSelector((state) => state.classManagement);
-  const [classroomData, setClassroomData] = useState(mockClassroomData);
-  const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Update current time every second
+  // Mock classroom data for UI display (can be replaced with API data later)
+  const [classroomData] = useState({
+    isActive: true,
+    sessionMode: 'interactive',
+    engagementScore: 85,
+    activitiesCompleted: 12,
+    pendingResponses: 8,
+  });
+
+  const [activities, setActivities] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Real-time classroom status
+  const [joinedStudentsCount, setJoinedStudentsCount] = useState(0);
+  const [currentActivity, setCurrentActivity] = useState(null);
+  const [isClassroomActive, setIsClassroomActive] = useState(false);
+
+  // Dialog states
+  const [createPollOpen, setCreatePollOpen] = useState(false);
+  const [editPollOpen, setEditPollOpen] = useState(false);
+  const [editingActivity, setEditingActivity] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingActivityId, setDeletingActivityId] = useState(null);
+
+  // WebSocket connection from context
+  const { isConnected, subscribeMessage, unsubscribeMessage } = useInstructorWebSocket();
+
+  // Handle WebSocket messages
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
+    const handleMessage = (message) => {
+      if (!message || !message.Type) return;
 
-    return () => clearInterval(timer);
-  }, []);
+      console.log('[Classroom] WebSocket message:', message);
 
-  // Calculate session duration
-  const getSessionDuration = () => {
-    if (!classroomData.isActive) return '00:00:00';
+      switch (message.Type) {
+        case 'CONNECTED':
+          console.log('[Classroom] Instructor connected:', message.Payload);
+          // Update joined students count from CONNECTED message
+          if (message.Payload?.activeStudents !== undefined) {
+            setJoinedStudentsCount(message.Payload.activeStudents);
+          }
+          break;
 
-    const startTime = new Date(classroomData.sessionStartTime);
-    const diff = Math.floor((currentTime - startTime) / 1000);
-    const hours = Math.floor(diff / 3600);
-    const minutes = Math.floor((diff % 3600) / 60);
-    const seconds = diff % 60;
+        case 'ACTIVITY_CREATED':
+          console.log('[Classroom] New activity created:', message.Payload);
+          // Fetch the updated list to show the new activity
+          fetchActivities();
+          fetchClassroomStatus(); // Refresh status to get current activity if any
+          break;
 
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        case 'ACTIVITY_UPDATED':
+          console.log('[Classroom] Activity updated:', message.Payload);
+          setActivities((prev) =>
+            prev.map((activity) => {
+              if (activity.id === message.Payload.activityId) {
+                const isActive = message.Payload.isActive;
+                const hasBeenActivated = message.Payload.hasBeenActivated !== undefined
+                  ? message.Payload.hasBeenActivated
+                  : activity.hasBeenActivated;
+
+                // Calculate status based on isActive and hasBeenActivated
+                let status;
+                if (isActive) {
+                  status = 'active';
+                } else if (hasBeenActivated) {
+                  status = 'completed';
+                } else {
+                  status = 'pending';
+                }
+
+                return {
+                  ...activity,
+                  isActive: isActive,
+                  hasBeenActivated: hasBeenActivated,
+                  status: status,
+                  title: message.Payload.title || activity.title,
+                  description: message.Payload.description || activity.description,
+                };
+              }
+              return activity;
+            })
+          );
+          fetchClassroomStatus(); // Refresh to update current activity
+          break;
+
+        case 'ACTIVITY_DELETED':
+          console.log('[Classroom] Activity deleted:', message.Payload);
+          setActivities((prev) =>
+            prev.filter((activity) => activity.id !== message.Payload.activityId)
+          );
+          fetchClassroomStatus();
+          break;
+
+        case 'ACTIVITY_DEACTIVATED':
+          console.log('[Classroom] Activity deactivated:', message.Payload);
+          setActivities((prev) =>
+            prev.map((activity) =>
+              activity.id === message.Payload.activityId
+                ? { ...activity, isActive: false, status: 'completed' }
+                : activity
+            )
+          );
+          fetchClassroomStatus();
+          break;
+
+        case 'NEW_SUBMISSION':
+          console.log('[Classroom] New submission received:', message.Payload);
+          break;
+
+        case 'STUDENT_JOINED':
+          console.log('[Classroom] Student joined:', message.Payload);
+          // Update count from payload which includes the accurate online count
+          if (message.Payload?.onlineStudentsCount !== undefined) {
+            setJoinedStudentsCount(message.Payload.onlineStudentsCount);
+          }
+          break;
+
+        case 'STUDENT_LEFT':
+          console.log('[Classroom] Student left:', message.Payload);
+          // Update count from payload which includes the accurate online count
+          if (message.Payload?.onlineStudentsCount !== undefined) {
+            setJoinedStudentsCount(message.Payload.onlineStudentsCount);
+          }
+          break;
+
+        default:
+          console.log('[Classroom] Unknown message type:', message.Type);
+      }
+    };
+
+    // Subscribe to WebSocket messages
+    const unsubscribe = subscribeMessage(handleMessage);
+
+    // Cleanup on unmount
+    return () => {
+      unsubscribe();
+    };
+  }, [subscribeMessage, unsubscribeMessage]);
+
+  // Fetch classroom status (current activity and joined students)
+  const fetchClassroomStatus = async () => {
+    if (!selectedCourse?.id) return;
+
+    try {
+      const response = await realtimeClassAPI.getClassroomStatus(selectedCourse.id);
+
+      if (response.code === 0 && response.data) {
+        setJoinedStudentsCount(response.data.joinedStudentsCount || 0);
+        setCurrentActivity(response.data.currentActivity || null);
+        setIsClassroomActive(response.data.isClassroomActive || false);
+      }
+    } catch (err) {
+      console.error('Failed to fetch classroom status:', err);
+    }
   };
 
-  // Interactive Session Status Card
-  const renderSessionStatus = () => (
-    <Card>
-      <CardHeader
-        title="Interactive Session Status"
-        action={
-          <Chip
-            label={classroomData.isActive ? 'ACTIVE' : 'ENDED'}
-            color={classroomData.isActive ? 'success' : 'default'}
-            variant="filled"
-            icon={
-              <Iconify
-                icon={classroomData.isActive ? 'solar:play-circle-bold' : 'solar:pause-circle-bold'}
-              />
-            }
-          />
+  // Fetch activities from API
+  const fetchActivities = async () => {
+    if (!selectedCourse?.id) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Get all activities for the course
+      const response = await activityAPI.getCourseActivities(selectedCourse.id, false);
+
+      // Check if API call was successful
+      if (response.code !== 0 || !response.data) {
+        throw new Error(response.message || 'Failed to fetch activities');
+      }
+
+      // Transform API data to match component structure
+      const transformedActivities = response.data.map((activity) => {
+        // Calculate status based on isActive and hasBeenActivated
+        let status;
+        if (activity.isActive) {
+          status = 'active';
+        } else if (activity.hasBeenActivated) {
+          status = 'completed';
+        } else {
+          status = 'pending';
         }
-      />
-      <CardContent>
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
-            <Stack spacing={2}>
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Session Duration
-                </Typography>
-                <Typography
-                  variant="h4"
-                  color={classroomData.isActive ? 'success.main' : 'text.primary'}
-                >
-                  {getSessionDuration()}
-                </Typography>
-              </Box>
 
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Current Activity
-                </Typography>
-                <Typography variant="body1">
-                  {classroomData.currentActivity?.title || 'No active activity'}
-                </Typography>
-                {classroomData.currentActivity?.timeLeft && (
-                  <Typography variant="caption" color="warning.main">
-                    {classroomData.currentActivity.timeLeft}s remaining
-                  </Typography>
-                )}
-              </Box>
+        return {
+          id: activity.id,
+          type: activity.type === 1 ? 'quiz' : activity.type === 2 ? 'poll' : 'discussion',
+          title: activity.title,
+          description: activity.description,
+          status: status,
+          isActive: activity.isActive,
+          hasBeenActivated: activity.hasBeenActivated || false,
+          createdAt: activity.createdAt,
+          expiresAt: activity.expiresAt,
+          // Type-specific data
+          ...(activity.type === 1 && {
+            // Quiz
+            questions: activity.questions || [],
+            timeLimit: activity.quiz_TimeLimit,
+            showCorrectAnswers: activity.quiz_ShowCorrectAnswers,
+          }),
+          ...(activity.type === 2 && {
+            // Poll
+            options: activity.options || [],
+            allowMultipleSelections: activity.poll_AllowMultipleSelections,
+            isAnonymous: activity.poll_IsAnonymous,
+          }),
+          ...(activity.type === 3 && {
+            // Discussion
+            maxLength: activity.discussion_MaxLength,
+            allowAnonymous: activity.discussion_AllowAnonymous,
+          }),
+        };
+      });
 
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Engagement Score
-                </Typography>
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <LinearProgress
-                    variant="determinate"
-                    value={classroomData.engagementScore}
-                    sx={{ flexGrow: 1, height: 8, borderRadius: 4 }}
-                  />
-                  <Typography variant="body2" color="success.main">
-                    {classroomData.engagementScore}%
-                  </Typography>
-                </Stack>
-              </Box>
-            </Stack>
-          </Grid>
+      setActivities(transformedActivities);
+    } catch (err) {
+      console.error('Failed to fetch activities:', err);
+      setError(err.message || 'Failed to load activities');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-          <Grid item xs={12} md={6}>
-            <Stack spacing={2}>
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Session Mode
-                </Typography>
-                <Chip
-                  label={classroomData.sessionMode.toUpperCase()}
-                  color="primary"
-                  variant="outlined"
-                  sx={{ textTransform: 'capitalize' }}
-                />
-              </Box>
+  // Fetch activities from API
+  useEffect(() => {
+    fetchActivities();
+    fetchClassroomStatus(); // Also fetch classroom status
+  }, [selectedCourse?.id]);
 
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Activities Completed
-                </Typography>
-                <Typography variant="h6">{classroomData.activitiesCompleted}</Typography>
-              </Box>
+  // Handle creating a new poll
+  const handleCreatePoll = async (pollData) => {
+    if (!selectedCourse?.id) return;
 
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Pending Responses
-                </Typography>
-                <Typography variant="h6" color="warning.main">
-                  {classroomData.pendingResponses}
-                </Typography>
-              </Box>
-            </Stack>
-          </Grid>
-        </Grid>
-      </CardContent>
-    </Card>
-  );
+    try {
+      // Prepare the activity data for API
+      const activityData = {
+        type: 'Polling', // ActivityType.Polling = 2
+        activityData: {
+          title: pollData.title,
+          description: pollData.description,
+          expiresAt: pollData.expiresAt,
+          options: pollData.options,
+          allowMultipleSelections: pollData.allowMultipleSelections,
+          isAnonymous: pollData.isAnonymous,
+        },
+      };
 
-  // Student Engagement Analytics Card
-  const renderEngagementAnalytics = () => (
-    <Card>
-      <CardHeader title="Student Engagement Analytics" />
-      <CardContent>
-        <Grid container spacing={3}>
-          <Grid item xs={6} md={3}>
-            <Box sx={{ textAlign: 'center' }}>
-              <Typography variant="h3" color="primary.main">
-                {classroomData.activeStudents}
-              </Typography>
-              <Typography variant="subtitle2" color="text.secondary">
-                Active Participants
-              </Typography>
-              <Typography variant="caption" color="text.disabled">
-                of {classroomData.totalStudents} enrolled
-              </Typography>
-            </Box>
-          </Grid>
+      // Call API to create activity
+      const response = await activityAPI.createActivity(selectedCourse.id, activityData);
 
-          <Grid item xs={6} md={3}>
-            <Box sx={{ textAlign: 'center' }}>
-              <Typography variant="h3" color="success.main">
-                {classroomData.activitiesCompleted}
-              </Typography>
-              <Typography variant="subtitle2" color="text.secondary">
-                Activities Completed
-              </Typography>
-              <LinearProgress
-                variant="determinate"
-                value={(classroomData.activitiesCompleted / 15) * 100}
-                sx={{ mt: 1 }}
-                color="success"
-              />
-            </Box>
-          </Grid>
+      if (response.code === 0) {
+        console.log('[Classroom] Poll created successfully:', response.data);
+        // Refresh activities list
+        await fetchActivities();
+        await fetchClassroomStatus();
+      } else {
+        throw new Error(response.message || 'Failed to create poll');
+      }
+    } catch (err) {
+      console.error('[Classroom] Error creating poll:', err);
+      throw err;
+    }
+  };
 
-          <Grid item xs={6} md={3}>
-            <Box sx={{ textAlign: 'center' }}>
-              <Typography variant="h3" color="info.main">
-                {classroomData.currentActivity?.responses || 0}
-              </Typography>
-              <Typography variant="subtitle2" color="text.secondary">
-                Current Responses
-              </Typography>
-              <LinearProgress
-                variant="determinate"
-                value={
-                  (classroomData.currentActivity?.responses / classroomData.activeStudents) * 100 ||
-                  0
-                }
-                sx={{ mt: 1 }}
-                color="info"
-              />
-            </Box>
-          </Grid>
+  // Handle toggling activity active status
+  const handleToggleActivity = async (activityId, currentStatus) => {
+    try {
+      const newStatus = !currentStatus;
+      const response = await activityAPI.updateActivity(activityId, {
+        isActive: newStatus,
+      });
 
-          <Grid item xs={6} md={3}>
-            <Box sx={{ textAlign: 'center' }}>
-              <Badge badgeContent={mockQuestions.length} color="error">
-                <Typography variant="h3" color="warning.main">
-                  {mockQuestions.reduce((sum, q) => sum + q.upvotes, 0)}
-                </Typography>
-              </Badge>
-              <Typography variant="subtitle2" color="text.secondary">
-                Question Upvotes
-              </Typography>
-            </Box>
-          </Grid>
-        </Grid>
-      </CardContent>
-    </Card>
-  );
+      if (response.code === 0) {
+        console.log(`[Classroom] Activity ${activityId} ${newStatus ? 'activated' : 'deactivated'}`);
+        // Update will be handled by WebSocket message
+      } else {
+        throw new Error(response.message || 'Failed to update activity');
+      }
+    } catch (err) {
+      console.error('[Classroom] Error toggling activity:', err);
+      setError(err.message || 'Failed to update activity');
+    }
+  };
 
-  // Active Activities Overview
-  const renderActiveActivities = () => (
-    <Card>
-      <CardHeader
-        title="Learning Activities"
-        action={
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<Iconify icon="solar:add-circle-bold" />}
-          >
-            Create New
-          </Button>
-        }
-      />
-      <CardContent sx={{ pt: 0 }}>
-        <List>
-          {mockActivities.map((activity, index) => (
-            <ListItem
-              key={activity.id}
-              divider={index < mockActivities.length - 1}
-              secondaryAction={
-                <Stack direction="row" spacing={1}>
-                  <Chip
-                    label={activity.status}
-                    size="small"
-                    color={
-                      activity.status === 'active'
-                        ? 'success'
-                        : activity.status === 'completed'
-                          ? 'primary'
-                          : 'default'
-                    }
-                  />
-                  <IconButton size="small">
-                    <Iconify icon="solar:menu-dots-bold" />
-                  </IconButton>
-                </Stack>
-              }
-            >
-              <ListItemAvatar>
-                <Avatar sx={{ bgcolor: 'primary.main' }}>
-                  <Iconify icon={activity.icon} />
-                </Avatar>
-              </ListItemAvatar>
-              <ListItemText
-                primary={activity.title}
-                secondary={
-                  <Stack direction="row" spacing={2} sx={{ mt: 0.5 }}>
-                    {activity.type === 'poll' && (
-                      <>
-                        <Typography variant="caption">{activity.responses} responses</Typography>
-                        {activity.timeLeft && (
-                          <Typography variant="caption" color="warning.main">
-                            {activity.timeLeft}s left
-                          </Typography>
-                        )}
-                      </>
-                    )}
-                    {activity.type === 'quiz' && (
-                      <>
-                        <Typography variant="caption">{activity.responses} completed</Typography>
-                        <Typography variant="caption">Avg: {activity.averageScore}%</Typography>
-                      </>
-                    )}
-                    {activity.type === 'qna' && (
-                      <>
-                        <Typography variant="caption">{activity.questions} questions</Typography>
-                        <Typography variant="caption">{activity.answered} answered</Typography>
-                      </>
-                    )}
-                  </Stack>
-                }
-              />
-            </ListItem>
-          ))}
-        </List>
-      </CardContent>
-    </Card>
-  );
+  // Handle editing activity - automatically detect type and open appropriate dialog
+  const handleEditActivity = (activity) => {
+    console.log('[Classroom] Edit activity:', activity);
+    setEditingActivity(activity);
 
-  // Student Participation List
-  const renderStudentParticipation = () => (
-    <Card>
-      <CardHeader
-        title="Student Participation"
-        action={
-          <Button variant="outlined" size="small" startIcon={<Iconify icon="solar:ranking-bold" />}>
-            Leaderboard
-          </Button>
-        }
-      />
-      <CardContent sx={{ pt: 0 }}>
-        <List>
-          {mockStudentResponses.map((student, index) => (
-            <ListItem
-              key={student.id}
-              divider={index < mockStudentResponses.length - 1}
-              secondaryAction={
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <Chip
-                    label={`${student.score}%`}
-                    size="small"
-                    color={
-                      student.score >= 90 ? 'success' : student.score >= 70 ? 'warning' : 'error'
-                    }
-                  />
-                  <IconButton size="small">
-                    <Iconify icon="solar:star-bold" sx={{ color: 'warning.main' }} />
-                  </IconButton>
-                </Stack>
-              }
-            >
-              <ListItemAvatar>
-                <Badge
-                  overlap="circular"
-                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                  badgeContent={
-                    <Box
-                      sx={{
-                        width: 12,
-                        height: 12,
-                        borderRadius: '50%',
-                        bgcolor: 'success.main',
-                        border: '2px solid white',
-                      }}
-                    />
-                  }
-                >
-                  <Avatar src={student.avatar} alt={student.name}>
-                    {student.name.charAt(0)}
-                  </Avatar>
-                </Badge>
-              </ListItemAvatar>
-              <ListItemText
-                primary={student.name}
-                secondary={
-                  <Stack spacing={0.5}>
-                    <Typography variant="caption">{student.lastActivity}</Typography>
-                    <Typography variant="caption" color="text.disabled">
-                      {student.time}
-                    </Typography>
-                  </Stack>
-                }
-              />
-            </ListItem>
-          ))}
-        </List>
-      </CardContent>
-    </Card>
-  );
+    // Auto-detect activity type and open corresponding dialog
+    switch (activity.type) {
+      case 'poll':
+        setEditPollOpen(true);
+        break;
+      case 'quiz':
+        // TODO: Open quiz edit dialog
+        console.log('Quiz editing not implemented yet');
+        break;
+      case 'discussion':
+        // TODO: Open discussion edit dialog
+        console.log('Discussion editing not implemented yet');
+        break;
+      default:
+        console.error('Unknown activity type:', activity.type);
+    }
+  };
 
-  // Interactive Q&A Management
-  const renderQuestionsQueue = () => (
-    <Card>
-      <CardHeader
-        title="Q&A Management"
-        action={
-          <Button
-            variant="contained"
-            size="small"
-            startIcon={<Iconify icon="solar:question-circle-bold" />}
-          >
-            New Q&A
-          </Button>
-        }
-      />
-      <CardContent sx={{ pt: 0 }}>
-        {mockQuestions.length === 0 ? (
-          <Alert severity="info">No pending questions</Alert>
-        ) : (
-          <Stack spacing={2}>
-            {mockQuestions.map((question) => (
-              <Paper
-                key={question.id}
-                sx={{
-                  p: 2,
-                  border: question.urgent ? '1px solid' : 'none',
-                  borderColor: 'error.main',
-                }}
-              >
-                <Stack
-                  direction="row"
-                  justifyContent="space-between"
-                  alignItems="flex-start"
-                  spacing={2}
-                >
-                  <Box sx={{ flexGrow: 1 }}>
-                    <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
-                      <Typography variant="subtitle2">{question.student}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {question.time}
-                      </Typography>
-                      {question.urgent && <Chip label="Urgent" size="small" color="error" />}
-                      <Chip
-                        label={`${question.upvotes} upvotes`}
-                        size="small"
-                        color="primary"
-                        variant="outlined"
-                      />
-                    </Stack>
-                    <Typography variant="body2">{question.question}</Typography>
-                  </Box>
-                  <Stack direction="row" spacing={1}>
-                    <Tooltip title="Upvote">
-                      <IconButton size="small" color="primary">
-                        <Iconify icon="solar:like-bold" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Answer">
-                      <IconButton size="small" color="success">
-                        <Iconify icon="solar:check-circle-bold" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Pin to Top">
-                      <IconButton size="small" color="warning">
-                        <Iconify icon="solar:pin-bold" />
-                      </IconButton>
-                    </Tooltip>
-                  </Stack>
-                </Stack>
-              </Paper>
-            ))}
-          </Stack>
-        )}
-      </CardContent>
-    </Card>
-  );
+  // Handle updating poll
+  const handleUpdatePoll = async (pollData) => {
+    if (!editingActivity?.id) return;
 
-  // Quick Actions
-  const renderQuickActions = () => (
-    <Card>
-      <CardHeader title="Interactive Activities" />
-      <CardContent>
-        <Grid container spacing={2}>
-          <Grid item xs={6}>
-            <Button
-              fullWidth
-              variant="outlined"
-              startIcon={<Iconify icon="solar:poll-bold" />}
-              disabled={classroomData.pollActive}
-            >
-              Create Poll
-            </Button>
-          </Grid>
-          <Grid item xs={6}>
-            <Button fullWidth variant="outlined" startIcon={<Iconify icon="solar:quiz-bold" />}>
-              Quick Quiz
-            </Button>
-          </Grid>
-          <Grid item xs={6}>
-            <Button fullWidth variant="outlined" startIcon={<Iconify icon="solar:cloud-bold" />}>
-              Word Cloud
-            </Button>
-          </Grid>
-          <Grid item xs={6}>
-            <Button
-              fullWidth
-              variant="outlined"
-              startIcon={<Iconify icon="solar:lightbulb-bold" />}
-            >
-              Brainstorm
-            </Button>
-          </Grid>
-          <Grid item xs={6}>
-            <Button fullWidth variant="outlined" startIcon={<Iconify icon="solar:graph-bold" />}>
-              Show Results
-            </Button>
-          </Grid>
-          <Grid item xs={6}>
-            <Button
-              fullWidth
-              variant="outlined"
-              startIcon={<Iconify icon="solar:download-square-bold" />}
-            >
-              Export Data
-            </Button>
-          </Grid>
-          <Grid item xs={12}>
-            <Button
-              fullWidth
-              variant="contained"
-              color="error"
-              startIcon={<Iconify icon="solar:power-bold" />}
-            >
-              End Session
-            </Button>
-          </Grid>
-        </Grid>
-      </CardContent>
-    </Card>
-  );
+    try {
+      const response = await activityAPI.updateActivity(editingActivity.id, {
+        title: pollData.title,
+        description: pollData.description,
+        expiresAt: pollData.expiresAt,
+        options: pollData.options,
+        allowMultipleSelections: pollData.allowMultipleSelections,
+        isAnonymous: pollData.isAnonymous,
+      });
+
+      if (response.code === 0) {
+        console.log('[Classroom] Poll updated successfully:', response.data);
+        // Refresh activities list
+        await fetchActivities();
+        await fetchClassroomStatus();
+        setEditPollOpen(false);
+        setEditingActivity(null);
+      } else {
+        throw new Error(response.message || 'Failed to update poll');
+      }
+    } catch (err) {
+      console.error('[Classroom] Error updating poll:', err);
+      throw err;
+    }
+  };
+
+  // Handle deleting activity
+  const handleDeleteActivity = (activityId) => {
+    setDeletingActivityId(activityId);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteActivity = async () => {
+    if (!deletingActivityId) return;
+
+    try {
+      const response = await activityAPI.deleteActivity(deletingActivityId);
+
+      if (response.code === 0) {
+        console.log('[Classroom] Activity deleted successfully');
+        // Refresh activities list
+        await fetchActivities();
+        await fetchClassroomStatus();
+      } else {
+        throw new Error(response.message || 'Failed to delete activity');
+      }
+    } catch (err) {
+      console.error('[Classroom] Error deleting activity:', err);
+      setError(err.message || 'Failed to delete activity');
+    } finally {
+      setDeleteDialogOpen(false);
+      setDeletingActivityId(null);
+    }
+  };
 
   if (!selectedCourse) {
     return (
@@ -659,35 +421,92 @@ export default function CourseDetailsClassroom() {
 
       <Grid container spacing={3}>
         {/* Session Status */}
-        <Grid item xs={12} md={6} lg={4}>
-          {renderSessionStatus()}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <SessionStatusCard
+            isConnected={isConnected}
+            isClassroomActive={isClassroomActive}
+            currentActivity={currentActivity}
+            engagementScore={classroomData.engagementScore}
+            joinedStudentsCount={joinedStudentsCount}
+            totalStudents={selectedCourse?.studentCount || 0}
+            sessionMode={classroomData.sessionMode}
+            activitiesCompleted={classroomData.activitiesCompleted}
+            pendingResponses={classroomData.pendingResponses}
+          />
         </Grid>
 
         {/* Quick Actions */}
-        <Grid item xs={12} md={6} lg={4}>
-          {renderQuickActions()}
-        </Grid>
-
-        {/* Student Participation */}
-        <Grid item xs={12} md={6} lg={4}>
-          {renderStudentParticipation()}
-        </Grid>
-
-        {/* Engagement Analytics */}
-        <Grid item xs={12} md={8}>
-          {renderEngagementAnalytics()}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <InteractiveActivitiesCard
+            onCreatePoll={() => setCreatePollOpen(true)}
+            onCreateQuiz={() => {
+              // TODO: Implement quiz creation
+              console.log('Create quiz clicked');
+            }}
+          />
         </Grid>
 
         {/* Active Activities */}
-        <Grid item xs={12} md={4}>
-          {renderActiveActivities()}
-        </Grid>
-
-        {/* Q&A Management */}
-        <Grid item xs={12}>
-          {renderQuestionsQueue()}
+        <Grid size={{ xs: 12 }}>
+          <LearningActivitiesCard
+            activities={activities}
+            loading={loading}
+            error={error}
+            onToggleActivity={handleToggleActivity}
+            onCreateNew={() => setCreatePollOpen(true)}
+            onEditActivity={handleEditActivity}
+            onDeleteActivity={handleDeleteActivity}
+          />
         </Grid>
       </Grid>
+
+      {/* Create Poll Dialog */}
+      <CreatePollDialog
+        open={createPollOpen}
+        onClose={() => setCreatePollOpen(false)}
+        onSubmit={handleCreatePoll}
+      />
+
+      {/* Edit Poll Dialog */}
+      <EditPollDialog
+        open={editPollOpen}
+        onClose={() => {
+          setEditPollOpen(false);
+          setEditingActivity(null);
+        }}
+        onSubmit={handleUpdatePoll}
+        activity={editingActivity}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => {
+          setDeleteDialogOpen(false);
+          setDeletingActivityId(null);
+        }}
+      >
+        <DialogTitle>Delete Activity</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this activity? This action cannot be undone, and all
+            related submissions will be deleted as well.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setDeleteDialogOpen(false);
+              setDeletingActivityId(null);
+            }}
+          >
+            Cancel
+          </Button>
+          <Button onClick={confirmDeleteActivity} color="error" variant="contained">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

@@ -28,10 +28,33 @@ public partial class ClassManager
             _log?.LogError($"CreateCourseAsync: Missing required field [{missingField}].", Operator: OwnerId);
             return ServiceRes.BadRequest(ResCode.CourseRequiredFieldMissing, $"Missing required field [{missingField}].");
         }
+
+        // Generate a well-dispersed random 6-digit join code (100000 to 999999)
+        // Using Random.Shared for better distribution
+        long joinCode;
+        int maxAttempts = 10;
+        int attempts = 0;
+
+        do
+        {
+            joinCode = Random.Shared.NextInt64(100000, 1000000);
+            attempts++;
+        }
+        while (await db.Courses.AnyAsync(c => c.JoinCode == joinCode && c.OwnerId == OwnerId) && attempts < maxAttempts);
+
+        // Fallback: if still collision after max attempts, find next available code
+        if (await db.Courses.AnyAsync(c => c.JoinCode == joinCode && c.OwnerId == OwnerId))
+        {
+            var maxJoinCode = await db.Courses
+                .Where(c => c.OwnerId == OwnerId)
+                .MaxAsync(c => (long?)c.JoinCode) ?? 100000;
+            joinCode = maxJoinCode + 1;
+        }
+
         var course = new TeachingCourse();
         course.CopyFrom(request);
         course.OwnerId = OwnerId;
-
+        course.JoinCode = joinCode;
         try
         {
             var existing = await db.Courses.FirstOrDefaultAsync(c => c.CourseCode == course.CourseCode
