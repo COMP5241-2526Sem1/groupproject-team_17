@@ -70,14 +70,14 @@ export function PollActivity({ activity, onSubmitSuccess }) {
     // Count votes for each option
     pollResults.forEach((submission) => {
       console.log('[PollActivity] Processing submission:', submission);
-      
+
       // Try different possible field names (case-insensitive)
-      const selectedOptions = 
-        submission.selectedOptions || 
-        submission.SelectedOptions || 
+      const selectedOptions =
+        submission.selectedOptions ||
+        submission.SelectedOptions ||
         submission.poll_SelectedOptions ||
         [];
-      
+
       if (Array.isArray(selectedOptions)) {
         selectedOptions.forEach((optionIndex) => {
           if (typeof optionIndex === 'number' && optionIndex >= 0 && optionIndex < optionCounts.length) {
