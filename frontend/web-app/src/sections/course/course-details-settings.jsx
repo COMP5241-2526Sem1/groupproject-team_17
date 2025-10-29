@@ -1,35 +1,37 @@
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 import {
-  Box,
-  Card,
-  Grid,
   Alert,
-  Stack,
+  Box,
   Button,
-  Dialog,
-  Divider,
-  Tooltip,
-  CardHeader,
-  IconButton,
-  Typography,
+  Card,
   CardContent,
-  DialogTitle,
+  CardHeader,
+  Dialog,
   DialogActions,
   DialogContent,
+  DialogTitle,
+  Divider,
+  Grid,
+  IconButton,
+  Stack,
+  Tooltip,
+  Typography,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 
-import { useSelector } from 'src/redux/hooks';
 import { ClassManagementActions } from 'src/redux/actions/reducerActions';
+import { useSelector } from 'src/redux/hooks';
 
-import { Iconify } from 'src/components/iconify';
 import { useErrorDialog } from 'src/components/error-dialog';
+import { Iconify } from 'src/components/iconify';
 
-import CourseDetailsSettingsEditDialog from './course-details-edit-course-dialog';
+import { Label } from 'src/components/label';
+
 import CourseDetailsSettingsDeleteDialog from './course-details-delete-course-dialog';
+import CourseDetailsSettingsEditDialog from './course-details-edit-course-dialog';
 
 // ----------------------------------------------------------------------
 
@@ -220,6 +222,428 @@ export default function CourseDetailsSettings() {
     </Card>
   );
 
+  const renderCourseJoinInfo = () => {
+    const [editingJoinMode, setEditingJoinMode] = useState(false);
+    const [currentCombination, setCurrentCombination] = useState(1); // Start with Student ID (1)
+    const [savedCombinations, setSavedCombinations] = useState([]);
+    const [isSaving, setIsSaving] = useState(false);
+
+    const handleStartEdit = () => {
+      const initial = selectedCourse.joinCheckingModes || [0];
+      setSavedCombinations(initial);
+      setCurrentCombination(1); // Always start with Student ID
+      setEditingJoinMode(true);
+    };
+
+    const joinCheckingModes = [
+      { value: 1, label: 'Student ID', icon: 'solar:user-id-bold', color: 'primary' },
+      { value: 2, label: 'Student Name', icon: 'solar:user-bold', color: 'info' },
+      { value: 4, label: 'Email', icon: 'solar:letter-bold', color: 'success' },
+      { value: 8, label: 'PIN', icon: 'solar:key-bold', color: 'warning' },
+    ];
+
+    const hasFlag = (mode, flag) => (mode & flag) === flag;
+
+    const toggleFlag = (flag) => {
+      // Prevent deselecting Student ID (value 1)
+      if (flag === 1) {
+        return; // Student ID is mandatory, cannot be toggled off
+      }
+      setCurrentCombination((prev) => prev ^ flag);
+    };
+
+    const addCombination = () => {
+      if (currentCombination > 0) {
+        const filtered = savedCombinations.filter((c) => c !== 0);
+        if (!filtered.includes(currentCombination)) {
+          setSavedCombinations([...filtered, currentCombination]);
+        }
+        setCurrentCombination(1); // Reset to Student ID only
+      }
+    };
+
+    const removeCombination = (combination) => {
+      const filtered = savedCombinations.filter((c) => c !== combination);
+      setSavedCombinations(filtered.length > 0 ? filtered : [0]);
+    };
+
+    const clearAll = () => {
+      setSavedCombinations([0]);
+      setCurrentCombination(1); // Reset to Student ID only
+    };
+
+    const handleSaveJoinMode = async () => {
+      setIsSaving(true);
+      try {
+        const res = await ClassManagementActions.updateCourse(selectedCourse.id, {
+          joinCheckingModes: savedCombinations,
+        });
+        if (res?.code !== 0) {
+          await errorDialog.showResError(
+            res,
+            'Failed to update join checking mode. Please try again.'
+          );
+        } else {
+          setEditingJoinMode(false);
+        }
+      } finally {
+        setIsSaving(false);
+      }
+    };
+
+    const handleCancelEdit = () => {
+      setCurrentCombination(1); // Reset to Student ID only
+      setSavedCombinations(selectedCourse.joinCheckingModes || [0]);
+      setEditingJoinMode(false);
+    };
+
+
+    const getJoinModeDisplay = (modesArray) => {
+      if (
+        !modesArray ||
+        modesArray.length === 0 ||
+        (modesArray.length === 1 && modesArray[0] === 0)
+      ) {
+        return (
+          <Box
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 1,
+              px: 2,
+              py: 1,
+              borderRadius: 2,
+              bgcolor: 'action.hover',
+            }}
+          >
+            <Typography sx={{ pt: 0.5 }} variant="subtitle2" >
+              <Iconify icon="solar:lock-keyhole-bold" width={20} />
+            </Typography>
+            <Typography variant="body2" color="error">
+              No verification required
+            </Typography>
+          </Box>
+        );
+      }
+
+      return (
+        <Stack spacing={1.5}>
+          {modesArray.map((combination, comboIndex) => {
+            if (combination === 0) return null;
+            const modes = joinCheckingModes.filter((m) => hasFlag(combination, m.value));
+            return (
+              <Box
+                key={`combo-${combination}-${comboIndex}`}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  flexWrap: 'wrap',
+                  p: 1.5,
+                  borderRadius: 2,
+                  border: 1,
+                  borderColor: 'divider',
+                  bgcolor: 'background.neutral',
+                }}
+              >
+                <Typography variant="caption" color="text.secondary" sx={{ minWidth: 60 }}>
+                  Option {comboIndex + 1}:
+                </Typography>
+                {modes.map((m, mIndex) => (
+                  <Box key={m.value} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Label color={m.color} variant="soft">
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <Iconify icon={m.icon} width={16} />
+                        {m.label}
+                      </Box>
+                    </Label>
+                    {mIndex < modes.length - 1 && (
+                      <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'text.secondary' }}>
+                        +
+                      </Typography>
+                    )}
+                  </Box>
+                ))}
+              </Box>
+            );
+          })}
+        </Stack>
+      );
+    };
+
+    return (
+      <Card>
+        <CardHeader
+          sx={{ pb: 2.5 }}
+          title="Course Join Information"
+          action={
+            !editingJoinMode && (
+              <Tooltip title="Edit Join Settings">
+                <IconButton onClick={handleStartEdit}>
+                  <Iconify icon="solar:pen-bold" />
+                </IconButton>
+              </Tooltip>
+            )
+          }
+        />
+        <Divider />
+        <CardContent>
+          <Grid container spacing={3}>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                  Class Id
+                </Typography>
+                <Typography variant="h3" sx={{ mb: 2 }} color={'error'}>
+                  {selectedCourse.joinCode || 'N/A'}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Students will need this Class Id to join the course.
+                </Typography>
+              </Box>
+            </Grid>
+            {/*  divider will appear when the width is smaller than md */}
+            <Grid size={{ xs: 12, md: 6 }}>
+              <Divider sx={{ display: { xs: 'block', md: 'none' }, my: 2 }} />
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                  Join Verification Mode
+                </Typography>
+                {!editingJoinMode ? (
+                  <Box sx={{ mb: 2 }}>
+                    {getJoinModeDisplay(selectedCourse.joinCheckingModes)}
+                  </Box>
+                ) : (
+                  <Box sx={{ width: '100%' }}>
+                    {/* Instructions */}
+                    <Alert severity="info" sx={{ mb: 3 }}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        How to set verification combinations:
+                      </Typography>
+                      <Typography variant="body2" component="div">
+                        1. Select fields below to create a combination
+                        <br />
+                        2. Click "Add Combination" to save it
+                        <br />
+                        3. Repeat to add more options (e.g., "ID+Email" OR "ID+PIN")
+                        <br />
+                        4. Students can join using ANY saved combination
+                      </Typography>
+                    </Alert>
+
+                    {/* Saved Combinations Section */}
+                    {savedCombinations.length > 0 && savedCombinations[0] !== 0 && (
+                      <Box sx={{ mb: 3 }}>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            mb: 2,
+                          }}
+                        >
+                          <Typography variant="subtitle2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Iconify icon="solar:check-circle-bold" color="success.main" />
+                            Saved Verification Options
+                          </Typography>
+                          <Button
+                            size="small"
+                            color="error"
+                            variant="text"
+                            onClick={clearAll}
+                            startIcon={<Iconify icon="solar:trash-bin-trash-bold" />}
+                          >
+                            Clear All
+                          </Button>
+                        </Box>
+                        <Stack spacing={1.5}>
+                          {savedCombinations.map((combination, index) => {
+                            if (combination === 0) return null;
+                            const modes = joinCheckingModes.filter((m) =>
+                              hasFlag(combination, m.value)
+                            );
+                            return (
+                              <Box
+                                key={`saved-${combination}-${index}`}
+                                sx={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  p: 2,
+                                  borderRadius: 2,
+                                  border: 2,
+                                  borderColor: 'success.main',
+                                  bgcolor: 'success.lighter',
+                                }}
+                              >
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                                  <Typography variant="body2" color="text.secondary" sx={{ minWidth: 60 }}>
+                                    Option {index + 1}:
+                                  </Typography>
+                                  {modes.map((m, mIndex) => (
+                                    <Box key={m.value} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                      <Label color={m.color} variant="filled">
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                          <Iconify icon={m.icon} width={16} />
+                                          {m.label}
+                                        </Box>
+                                      </Label>
+                                      {mIndex < modes.length - 1 && (
+                                        <Typography variant="h6" sx={{ fontWeight: 'bold', mx: 0.5 }}>
+                                          +
+                                        </Typography>
+                                      )}
+                                    </Box>
+                                  ))}
+                                </Box>
+                                <IconButton
+                                  size="small"
+                                  color="error"
+                                  onClick={() => removeCombination(combination)}
+                                  sx={{ ml: 2 }}
+                                >
+                                  <Iconify icon="solar:trash-bin-trash-bold" />
+                                </IconButton>
+                              </Box>
+                            );
+                          })}
+                        </Stack>
+                      </Box>
+                    )}
+
+                    <Divider sx={{ my: 3 }} />
+
+                    {/* Combination Builder Section */}
+                    <Box>
+                      <Typography variant="subtitle2" gutterBottom sx={{ mb: 2 }}>
+                        <Iconify icon="solar:add-circle-bold" sx={{ mr: 1 }} />
+                        Build New Combination
+                      </Typography>
+
+                      <Alert severity="info" sx={{ mb: 2 }}>
+                        <Typography variant="body2">
+                          <strong>Student ID is required</strong> for all verification combinations.
+                        </Typography>
+                      </Alert>
+
+                      <Grid container spacing={2} sx={{ mb: 2 }}>
+                        {joinCheckingModes.map((mode) => (
+                          <Grid key={mode.value} size={{ xs: 12, sm: 6 }}>
+                            <Box
+                              onClick={() => toggleFlag(mode.value)}
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                p: 2,
+                                borderRadius: 2,
+                                border: 2,
+                                borderColor: hasFlag(currentCombination, mode.value)
+                                  ? `${mode.color}.main`
+                                  : 'divider',
+                                bgcolor: hasFlag(currentCombination, mode.value)
+                                  ? `${mode.color}.lighter`
+                                  : 'background.paper',
+                                cursor: mode.value === 1 ? 'not-allowed' : 'pointer', // Student ID cannot be clicked
+                                opacity: mode.value === 1 ? 0.7 : 1, // Slightly dimmed for required field
+                                transition: 'all 0.2s',
+                                '&:hover': mode.value === 1 ? {} : {
+                                  borderColor: `${mode.color}.main`,
+                                  bgcolor: `${mode.color}.lighter`,
+                                  transform: 'translateY(-2px)',
+                                  boxShadow: 2,
+                                },
+                              }}
+                            >
+                              <Box
+                                sx={{
+                                  width: 40,
+                                  height: 40,
+                                  borderRadius: '50%',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  bgcolor: hasFlag(currentCombination, mode.value)
+                                    ? `${mode.color}.main`
+                                    : 'action.hover',
+                                  color: hasFlag(currentCombination, mode.value) ? 'white' : 'text.secondary',
+                                  mr: 2,
+                                }}
+                              >
+                                <Iconify
+                                  icon={
+                                    hasFlag(currentCombination, mode.value)
+                                      ? 'solar:check-circle-bold'
+                                      : mode.icon
+                                  }
+                                  width={24}
+                                />
+                              </Box>
+                              <Box sx={{ flex: 1 }}>
+                                <Typography variant="subtitle2">
+                                  {mode.label}
+                                  {mode.value === 1 && (
+                                    <Label color="error" variant="soft" sx={{ ml: 1 }}>
+                                      Required
+                                    </Label>
+                                  )}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          </Grid>
+                        ))}
+                      </Grid>
+
+                      {/* Current Combination Preview */}
+
+                      {currentCombination >= 1 && (
+                        <Button
+                          variant="contained"
+                          color="success"
+                          onClick={addCombination}
+                          startIcon={<Iconify icon="solar:add-circle-bold" />}
+                        >
+                          Add Combination
+                        </Button>
+                      )}
+
+                    </Box>
+                    <Divider sx={{ my: 3 }} />
+                    {/* Action Buttons */}
+                    <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ mt: 3 }}>
+
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={handleSaveJoinMode}
+                        startIcon={<Iconify icon="solar:diskette-bold" />}
+                        disabled={isSaving}
+                        loading={isSaving}
+                      >
+                        Save All
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        onClick={handleCancelEdit}
+                        startIcon={<Iconify icon="solar:close-circle-bold" />}
+                        disabled={isSaving}
+                      >
+                        Cancel
+                      </Button>
+                    </Stack>
+                  </Box>
+                )}
+                {!editingJoinMode ? <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                  {savedCombinations.length > 0 ? `Students will need to provide one of the above verification combinations when
+                  joining the course.` : 'Students can join the course without any verification.'}
+                </Typography> : null}
+              </Box>
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
+    );
+  };
+
   const renderStatistics = () => (
     <Card>
       <CardHeader sx={{ pb: 2 }} title="Course Statistics" />
@@ -350,7 +774,8 @@ export default function CourseDetailsSettings() {
     <Stack spacing={3}>
       {/* Course Information Card */}
       {renderCourseInfo()}
-
+      {/* Course Join Information Card */}
+      {renderCourseJoinInfo()}
       {/* Course Statistics Card */}
       {renderStatistics()}
 

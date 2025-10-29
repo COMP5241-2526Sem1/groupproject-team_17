@@ -55,6 +55,7 @@ public struct ServiceRes
 public enum ResCode
 {
     OK = 0,
+    ExpectedWSRequest = 100,
 
     [Description("Unauthorized access.")]
     Unauthorized = 401,
@@ -101,5 +102,28 @@ public enum ResCode
 
     [Description("Invalid pagination parameters.")]
     InvalidPaginationParameters,
+
+
+    [Description("Unauthorized to join the course.")]
+    UnauthorizedStudent,
+
+    [Description("Invalid join token.")]
+    InvalidJoinToken,
+
+    [Description("The activity already exists.")]
+    ActivityAlreadyExists,
+    [Description("The activity was not found.")]
+    ActivityNotFound,
+    [Description("Invalid activity type.")]
+    InvalidActivityType,
+    [Description("The activity has expired or is not active.")]
+    ActivityExpired,
+
+    [Description("The submission already exists.")]
+    AlreadySubmitted,
+    [Description("The submission was not found.")]
+    SubmissionNotFound,
+    [Description("Invalid submission data.")]
+    InvalidSubmissionData
 
 }

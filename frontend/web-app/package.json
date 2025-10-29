@@ -45,6 +45,7 @@
     "@reduxjs/toolkit": "^2.9.0",
     "autosuggest-highlight": "^3.3.4",
     "axios": "^1.11.0",
+    "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
     "es-toolkit": "^1.39.8",
     "framer-motion": "^12.23.12",
