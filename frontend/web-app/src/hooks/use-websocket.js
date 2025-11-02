@@ -1,5 +1,6 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+
+import { useRef, useState, useEffect } from 'react';
 
 /**
  * Custom hook for WebSocket connection

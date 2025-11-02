@@ -51,6 +51,7 @@ export const API_ENDPOINTS = {
     // Submit responses
     SUBMIT_QUIZ: (quizId) => `/api/RealTimeClass/Quiz/${quizId}/Submit`,
     SUBMIT_POLL: (pollId) => `/api/RealTimeClass/Poll/${pollId}/Submit`,
+    SUBMIT_DISCUSSION: (discussionId) => `/api/RealTimeClass/Discussion/${discussionId}/Submit`,
   },
 };
 

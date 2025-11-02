@@ -112,6 +112,10 @@ export const activityAPI = {
   // Submit poll vote
   submitPoll: async (pollId, submissionData) =>
     httpPost(API_ENDPOINTS.ACTIVITY.SUBMIT_POLL(pollId), submissionData),
+
+  // Submit discussion response
+  submitDiscussion: async (discussionId, submissionData) =>
+    httpPost(API_ENDPOINTS.ACTIVITY.SUBMIT_DISCUSSION(discussionId), submissionData),
 };
 
 // Usage Examples:

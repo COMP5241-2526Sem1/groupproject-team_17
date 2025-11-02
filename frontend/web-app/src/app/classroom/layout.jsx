@@ -1,8 +1,9 @@
 
 // ----------------------------------------------------------------------
 
-import { ClassroomProvider } from "auth-classroom";
-import { ClassroomGuard } from "auth-classroom/classroom-guard";
+import { ClassroomProvider } from 'auth-classroom';
+import { ClassroomGuard } from 'auth-classroom/classroom-guard';
+
 import ClassroomLayout from "src/sections/realtime-class/class-room-layout";
 
 

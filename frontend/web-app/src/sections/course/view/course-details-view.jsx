@@ -1,30 +1,31 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useTabs } from 'minimal-shared/hooks';
 import { useParams, useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
-import { Box, Tab, Tabs, Stack, Button, Typography } from '@mui/material';
+import { Box, Button, Stack, Tab, Tabs, Typography } from '@mui/material';
 
-import { paths } from 'src/routes/paths';
 import { RouterLink } from 'src/routes/components';
+import { paths } from 'src/routes/paths';
 
-import { useSelector } from 'src/redux/hooks';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { ClassManagementActions } from 'src/redux/actions/reducerActions';
+import { useSelector } from 'src/redux/hooks';
 
-import { Label } from 'src/components/label';
-import { Iconify } from 'src/components/iconify';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
+import { Iconify } from 'src/components/iconify';
+import { Label } from 'src/components/label';
 
+import CourseDetailsClassroom from '../course-details-classroom';
+import CourseDetailsLeaderboard from '../course-details-leaderboard';
 import CourseDetailsSettings from '../course-details-settings';
 import CourseDetailsStudents from '../course-details-students';
-import CourseDetailsClassroom from '../course-details-classroom';
 
 const TABS = [
   { value: 'classroom', label: 'Classroom', icon: 'eva:home-fill' },
   { value: 'students', label: 'Students', icon: 'eva:people-fill' },
-  { value: 'materials', label: 'Materials', icon: 'eva:book-fill' },
+  { value: 'leaderboard', label: 'LeaderBoard', icon: 'eva:book-fill' },
   { value: 'settings', label: 'Settings', icon: 'eva:settings-2-fill' },
 ];
 
@@ -94,7 +95,7 @@ export default function CourseDetailsView({ sx, ...other }) {
       {tabs.value === 'students' && (
         <CourseDetailsStudents studentsData={selectedCourse?.students} />
       )}
-      {tabs.value === 'materials' && <div>Materials Section - To be implemented</div>}
+      {tabs.value === 'leaderboard' && <CourseDetailsLeaderboard />}
       {tabs.value === 'settings' && <CourseDetailsSettings />}
     </DashboardContent>
   );

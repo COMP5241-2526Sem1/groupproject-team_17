@@ -1,4 +1,5 @@
 'use client';
+
 import { useEffect, useState } from 'react';
 
 import {
@@ -16,13 +17,18 @@ import {
   Typography,
 } from '@mui/material';
 
-import { useSelector } from 'src/redux/hooks';
-
 import { activityAPI, realtimeClassAPI } from 'src/api/api-function-call';
 import { useInstructorWebSocket } from 'src/contexts';
+import { useSelector } from 'src/redux/hooks';
+
+import CreateDiscussionDialog from './classroom-create-activity/create-discussion-dialog';
 import CreatePollDialog from './classroom-create-activity/create-poll-dialog';
+import CreateQuizDialog from './classroom-create-activity/create-quiz-dialog';
+import EditDiscussionDialog from './classroom-create-activity/edit-discussion-dialog';
 import EditPollDialog from './classroom-create-activity/edit-poll-dialog';
+import EditQuizDialog from './classroom-create-activity/edit-quiz-dialog';
 import {
+  ActiveActivityStats,
   InteractiveActivitiesCard,
   LearningActivitiesCard,
   SessionStatusCard,
@@ -32,15 +38,6 @@ import {
 
 export default function CourseDetailsClassroom() {
   const { selectedCourse } = useSelector((state) => state.classManagement);
-
-  // Mock classroom data for UI display (can be replaced with API data later)
-  const [classroomData] = useState({
-    isActive: true,
-    sessionMode: 'interactive',
-    engagementScore: 85,
-    activitiesCompleted: 12,
-    pendingResponses: 8,
-  });
 
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -53,13 +50,22 @@ export default function CourseDetailsClassroom() {
 
   // Dialog states
   const [createPollOpen, setCreatePollOpen] = useState(false);
+  const [createQuizOpen, setCreateQuizOpen] = useState(false);
+  const [createDiscussionOpen, setCreateDiscussionOpen] = useState(false);
   const [editPollOpen, setEditPollOpen] = useState(false);
+  const [editQuizOpen, setEditQuizOpen] = useState(false);
+  const [editDiscussionOpen, setEditDiscussionOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingActivityId, setDeletingActivityId] = useState(null);
 
   // WebSocket connection from context
   const { isConnected, subscribeMessage, unsubscribeMessage } = useInstructorWebSocket();
+
+  // Debug: Monitor currentActivity changes
+  useEffect(() => {
+    console.log('[Classroom] currentActivity changed:', currentActivity);
+  }, [currentActivity]);
 
   // Handle WebSocket messages
   useEffect(() => {
@@ -86,6 +92,8 @@ export default function CourseDetailsClassroom() {
 
         case 'ACTIVITY_UPDATED':
           console.log('[Classroom] Activity updated:', message.Payload);
+
+          // Update activities list
           setActivities((prev) =>
             prev.map((activity) => {
               if (activity.id === message.Payload.activityId) {
@@ -104,19 +112,57 @@ export default function CourseDetailsClassroom() {
                   status = 'pending';
                 }
 
-                return {
+                // Transform activity type from backend enum value to frontend string
+                const activityType = message.Payload.activityType === 'Polling' ? 'poll'
+                  : message.Payload.activityType === 'Quiz' ? 'quiz'
+                    : 'discussion';
+
+                const updatedActivity = {
                   ...activity,
-                  isActive: isActive,
-                  hasBeenActivated: hasBeenActivated,
-                  status: status,
+                  isActive,
+                  hasBeenActivated,
+                  status,
                   title: message.Payload.title || activity.title,
                   description: message.Payload.description || activity.description,
+                  type: activityType,
+                  // Include type-specific data from WebSocket message
+                  ...(activityType === 'poll' && {
+                    options: message.Payload.options || [],
+                    allowMultipleSelections: message.Payload.poll_AllowMultipleSelections,
+                    isAnonymous: message.Payload.poll_IsAnonymous,
+                  }),
+                  ...(activityType === 'quiz' && {
+                    timeLimit: message.Payload.timeLimit,
+                    questions: message.Payload.questions || [],
+                    showCorrectAnswers: message.Payload.quiz_ShowCorrectAnswers,
+                  }),
+                  ...(activityType === 'discussion' && {
+                    maxLength: message.Payload.discussion_MaxLength,
+                    allowAnonymous: message.Payload.discussion_AllowAnonymous,
+                  }),
                 };
+
+                console.log('[Classroom] Updated activity in list:', updatedActivity);
+
+                // If this activity is now active, update currentActivity immediately
+                if (isActive) {
+                  console.log('[Classroom] Setting currentActivity from ACTIVITY_UPDATED with options:', updatedActivity.options);
+                  setCurrentActivity(updatedActivity);
+                }
+
+                return updatedActivity;
               }
               return activity;
             })
           );
-          fetchClassroomStatus(); // Refresh to update current activity
+
+          // Also fetch from server to ensure we have complete data
+          console.log('[Classroom] Fetching classroom status after ACTIVITY_UPDATED...');
+          setTimeout(() => {
+            fetchClassroomStatus().then(() => {
+              console.log('[Classroom] Classroom status refreshed');
+            });
+          }, 100); // Small delay to ensure state updates
           break;
 
         case 'ACTIVITY_DELETED':
@@ -178,15 +224,57 @@ export default function CourseDetailsClassroom() {
     if (!selectedCourse?.id) return;
 
     try {
+      console.log('[Classroom] Fetching classroom status for course:', selectedCourse.id);
       const response = await realtimeClassAPI.getClassroomStatus(selectedCourse.id);
+      console.log('[Classroom] Classroom status response:', response);
 
       if (response.code === 0 && response.data) {
         setJoinedStudentsCount(response.data.joinedStudentsCount || 0);
-        setCurrentActivity(response.data.currentActivity || null);
         setIsClassroomActive(response.data.isClassroomActive || false);
+
+        console.log('[Classroom] Raw currentActivity:', response.data.currentActivity);
+
+        // Transform currentActivity data to match component structure
+        if (response.data.currentActivity) {
+          const activity = response.data.currentActivity;
+          const transformedActivity = {
+            id: activity.id,
+            type: activity.type === 1 ? 'quiz' : activity.type === 2 ? 'poll' : 'discussion',
+            title: activity.title,
+            description: activity.description,
+            isActive: activity.isActive,
+            hasBeenActivated: activity.hasBeenActivated || false,
+            createdAt: activity.createdAt,
+            expiresAt: activity.expiresAt,
+            // Backend returns lowercase field names from SerializeActivityWithOptions
+            ...(activity.type === 1 && {
+              // Quiz
+              questions: activity.questions || activity.Questions || [],
+              timeLimit: activity.quiz_TimeLimit ?? activity.Quiz_TimeLimit ?? activity.timeLimit ?? 0,
+              showCorrectAnswers: activity.quiz_ShowCorrectAnswers ?? activity.Quiz_ShowCorrectAnswers ?? activity.showCorrectAnswers ?? false,
+            }),
+            ...(activity.type === 2 && {
+              // Poll
+              options: activity.options || activity.Options || [],
+              allowMultipleSelections: activity.poll_AllowMultipleSelections ?? activity.Poll_AllowMultipleSelections ?? activity.allowMultipleSelections ?? false,
+              isAnonymous: activity.poll_IsAnonymous ?? activity.Poll_IsAnonymous ?? activity.isAnonymous ?? true,
+            }),
+            ...(activity.type === 3 && {
+              // Discussion
+              maxLength: activity.discussion_MaxLength ?? activity.Discussion_MaxLength ?? activity.maxLength ?? 500,
+              allowAnonymous: activity.discussion_AllowAnonymous ?? activity.Discussion_AllowAnonymous ?? activity.allowAnonymous ?? false,
+            }),
+          };
+
+          console.log('[Classroom] Transformed and setting currentActivity:', transformedActivity);
+          setCurrentActivity(transformedActivity);
+        } else {
+          console.log('[Classroom] No current activity, setting to null');
+          setCurrentActivity(null);
+        }
       }
     } catch (err) {
-      console.error('Failed to fetch classroom status:', err);
+      console.error('[Classroom] Failed to fetch classroom status:', err);
     }
   };
 
@@ -206,8 +294,46 @@ export default function CourseDetailsClassroom() {
         throw new Error(response.message || 'Failed to fetch activities');
       }
 
+      console.log('[Classroom] Raw activities from API:', response.data);
+      console.log('[Classroom] First activity sample:', response.data[0]);
+
+      // Debug: Log all field names of first activity
+      if (response.data.length > 0) {
+        const firstActivity = response.data[0];
+        console.log('[Classroom] First activity ALL fields:', Object.keys(firstActivity));
+        console.log('[Classroom] First activity type:', firstActivity.type);
+        if (firstActivity.type === 1) {
+          console.log('[Classroom] Quiz fields check:', {
+            questions: firstActivity.questions,
+            Questions: firstActivity.Questions,
+            quiz_TimeLimit: firstActivity.quiz_TimeLimit,
+            Quiz_TimeLimit: firstActivity.Quiz_TimeLimit,
+            timeLimit: firstActivity.timeLimit,
+            quiz_QuestionsJson: firstActivity.quiz_QuestionsJson,
+            Quiz_QuestionsJson: firstActivity.Quiz_QuestionsJson,
+          });
+        }
+        if (firstActivity.type === 2) {
+          console.log('[Classroom] Poll fields check:', {
+            options: firstActivity.options,
+            Options: firstActivity.Options,
+            poll_AllowMultipleSelections: firstActivity.poll_AllowMultipleSelections,
+            Poll_AllowMultipleSelections: firstActivity.Poll_AllowMultipleSelections,
+            poll_OptionsJson: firstActivity.poll_OptionsJson,
+            Poll_OptionsJson: firstActivity.Poll_OptionsJson,
+          });
+        }
+      }
+
       // Transform API data to match component structure
       const transformedActivities = response.data.map((activity) => {
+        console.log('[Classroom] Transforming activity:', {
+          id: activity.id,
+          type: activity.type,
+          title: activity.title,
+          rawActivity: activity,
+        });
+
         // Calculate status based on isActive and hasBeenActivated
         let status;
         if (activity.isActive) {
@@ -218,35 +344,40 @@ export default function CourseDetailsClassroom() {
           status = 'pending';
         }
 
-        return {
+        const transformed = {
           id: activity.id,
           type: activity.type === 1 ? 'quiz' : activity.type === 2 ? 'poll' : 'discussion',
           title: activity.title,
           description: activity.description,
-          status: status,
+          status,
           isActive: activity.isActive,
           hasBeenActivated: activity.hasBeenActivated || false,
           createdAt: activity.createdAt,
           expiresAt: activity.expiresAt,
-          // Type-specific data
+          // Backend now returns PascalCase field names from transformed objects
           ...(activity.type === 1 && {
-            // Quiz
-            questions: activity.questions || [],
-            timeLimit: activity.quiz_TimeLimit,
-            showCorrectAnswers: activity.quiz_ShowCorrectAnswers,
+            // Quiz - backend returns Questions (PascalCase)
+            questions: activity.questions || activity.Questions || [],
+            // Backend returns TimeLimit (PascalCase)
+            timeLimit: activity.timeLimit ?? activity.TimeLimit ?? 0,
+            showCorrectAnswers: activity.showCorrectAnswers ?? activity.ShowCorrectAnswers ?? false,
           }),
           ...(activity.type === 2 && {
-            // Poll
-            options: activity.options || [],
-            allowMultipleSelections: activity.poll_AllowMultipleSelections,
-            isAnonymous: activity.poll_IsAnonymous,
+            // Poll - backend returns Options (PascalCase)
+            options: activity.options || activity.Options || [],
+            // Backend returns AllowMultipleSelections (PascalCase)
+            allowMultipleSelections: activity.allowMultipleSelections ?? activity.AllowMultipleSelections ?? false,
+            isAnonymous: activity.isAnonymous ?? activity.IsAnonymous ?? true,
           }),
           ...(activity.type === 3 && {
-            // Discussion
-            maxLength: activity.discussion_MaxLength,
-            allowAnonymous: activity.discussion_AllowAnonymous,
+            // Discussion - backend returns MaxLength (PascalCase)
+            maxLength: activity.maxLength ?? activity.MaxLength ?? 500,
+            allowAnonymous: activity.allowAnonymous ?? activity.AllowAnonymous ?? false,
           }),
         };
+
+        console.log('[Classroom] Transformed activity:', transformed);
+        return transformed;
       });
 
       setActivities(transformedActivities);
@@ -299,6 +430,76 @@ export default function CourseDetailsClassroom() {
     }
   };
 
+  // Handle creating a new quiz
+  const handleCreateQuiz = async (quizData) => {
+    if (!selectedCourse?.id) return;
+
+    try {
+      // Prepare the activity data for API
+      const activityData = {
+        type: 'Quiz', // ActivityType.Quiz = 1
+        activityData: {
+          title: quizData.title,
+          description: quizData.description,
+          expiresAt: quizData.expiresAt,
+          questions: quizData.questions,
+          timeLimit: quizData.timeLimit,
+          showCorrectAnswers: quizData.showCorrectAnswers,
+          shuffleQuestions: quizData.shuffleQuestions,
+        },
+      };
+
+      // Call API to create activity
+      const response = await activityAPI.createActivity(selectedCourse.id, activityData);
+
+      if (response.code === 0) {
+        console.log('[Classroom] Quiz created successfully:', response.data);
+        // Refresh activities list
+        await fetchActivities();
+        await fetchClassroomStatus();
+      } else {
+        throw new Error(response.message || 'Failed to create quiz');
+      }
+    } catch (err) {
+      console.error('[Classroom] Error creating quiz:', err);
+      throw err;
+    }
+  };
+
+  // Handle creating a new discussion
+  const handleCreateDiscussion = async (discussionData) => {
+    if (!selectedCourse?.id) return;
+
+    try {
+      // Prepare the activity data for API
+      const activityData = {
+        type: 'Discussion', // ActivityType.Discussion = 3
+        activityData: {
+          title: discussionData.title,
+          description: discussionData.description,
+          maxLength: discussionData.maxLength,
+          allowAnonymous: discussionData.allowAnonymous,
+          requireApproval: discussionData.requireApproval,
+        },
+      };
+
+      // Call API to create activity
+      const response = await activityAPI.createActivity(selectedCourse.id, activityData);
+
+      if (response.code === 0) {
+        console.log('[Classroom] Discussion created successfully:', response.data);
+        // Refresh activities list
+        await fetchActivities();
+        await fetchClassroomStatus();
+      } else {
+        throw new Error(response.message || 'Failed to create discussion');
+      }
+    } catch (err) {
+      console.error('[Classroom] Error creating discussion:', err);
+      throw err;
+    }
+  };
+
   // Handle toggling activity active status
   const handleToggleActivity = async (activityId, currentStatus) => {
     try {
@@ -330,12 +531,10 @@ export default function CourseDetailsClassroom() {
         setEditPollOpen(true);
         break;
       case 'quiz':
-        // TODO: Open quiz edit dialog
-        console.log('Quiz editing not implemented yet');
+        setEditQuizOpen(true);
         break;
       case 'discussion':
-        // TODO: Open discussion edit dialog
-        console.log('Discussion editing not implemented yet');
+        setEditDiscussionOpen(true);
         break;
       default:
         console.error('Unknown activity type:', activity.type);
@@ -368,6 +567,66 @@ export default function CourseDetailsClassroom() {
       }
     } catch (err) {
       console.error('[Classroom] Error updating poll:', err);
+      throw err;
+    }
+  };
+
+  // Handle updating quiz
+  const handleUpdateQuiz = async (quizData) => {
+    if (!editingActivity?.id) return;
+
+    try {
+      const response = await activityAPI.updateActivity(editingActivity.id, {
+        title: quizData.title,
+        description: quizData.description,
+        expiresAt: quizData.expiresAt,
+        questions: quizData.questions,
+        timeLimit: quizData.timeLimit,
+        showCorrectAnswers: quizData.showCorrectAnswers,
+        shuffleQuestions: quizData.shuffleQuestions,
+      });
+
+      if (response.code === 0) {
+        console.log('[Classroom] Quiz updated successfully:', response.data);
+        // Refresh activities list
+        await fetchActivities();
+        await fetchClassroomStatus();
+        setEditQuizOpen(false);
+        setEditingActivity(null);
+      } else {
+        throw new Error(response.message || 'Failed to update quiz');
+      }
+    } catch (err) {
+      console.error('[Classroom] Error updating quiz:', err);
+      throw err;
+    }
+  };
+
+  // Handle updating discussion
+  const handleUpdateDiscussion = async (discussionData) => {
+    if (!editingActivity?.id) return;
+
+    try {
+      const response = await activityAPI.updateActivity(editingActivity.id, {
+        title: discussionData.title,
+        description: discussionData.description,
+        maxLength: discussionData.maxLength,
+        allowAnonymous: discussionData.allowAnonymous,
+        requireApproval: discussionData.requireApproval,
+      });
+
+      if (response.code === 0) {
+        console.log('[Classroom] Discussion updated successfully:', response.data);
+        // Refresh activities list
+        await fetchActivities();
+        await fetchClassroomStatus();
+        setEditDiscussionOpen(false);
+        setEditingActivity(null);
+      } else {
+        throw new Error(response.message || 'Failed to update discussion');
+      }
+    } catch (err) {
+      console.error('[Classroom] Error updating discussion:', err);
       throw err;
     }
   };
@@ -426,25 +685,34 @@ export default function CourseDetailsClassroom() {
             isConnected={isConnected}
             isClassroomActive={isClassroomActive}
             currentActivity={currentActivity}
-            engagementScore={classroomData.engagementScore}
             joinedStudentsCount={joinedStudentsCount}
             totalStudents={selectedCourse?.studentCount || 0}
-            sessionMode={classroomData.sessionMode}
-            activitiesCompleted={classroomData.activitiesCompleted}
-            pendingResponses={classroomData.pendingResponses}
           />
         </Grid>
 
         {/* Quick Actions */}
         <Grid size={{ xs: 12, md: 6 }}>
           <InteractiveActivitiesCard
+            onCreateMCQuestion={() => setCreateQuizOpen(true)}
             onCreatePoll={() => setCreatePollOpen(true)}
-            onCreateQuiz={() => {
-              // TODO: Implement quiz creation
-              console.log('Create quiz clicked');
-            }}
+            onCreateQuiz={() => setCreateQuizOpen(true)}
+            onCreateDiscussion={() => setCreateDiscussionOpen(true)}
           />
         </Grid>
+
+        {/* Active Activity Statistics - Show when there's an active activity */}
+        {currentActivity ? (
+          <Grid size={{ xs: 12 }}>
+            <ActiveActivityStats
+              key={`stats-${currentActivity.id}-${currentActivity.isActive}`}
+              activity={currentActivity}
+              joinedStudentsCount={joinedStudentsCount}
+              totalStudents={selectedCourse?.studentCount || 0}
+            />
+          </Grid>
+        ) : (
+          console.log('[Classroom] No currentActivity to display ActiveActivityStats')
+        )}
 
         {/* Active Activities */}
         <Grid size={{ xs: 12 }}>
@@ -452,6 +720,7 @@ export default function CourseDetailsClassroom() {
             activities={activities}
             loading={loading}
             error={error}
+            totalStudents={selectedCourse?.studentCount || 0}
             onToggleActivity={handleToggleActivity}
             onCreateNew={() => setCreatePollOpen(true)}
             onEditActivity={handleEditActivity}
@@ -467,6 +736,20 @@ export default function CourseDetailsClassroom() {
         onSubmit={handleCreatePoll}
       />
 
+      {/* Create Quiz Dialog */}
+      <CreateQuizDialog
+        open={createQuizOpen}
+        onClose={() => setCreateQuizOpen(false)}
+        onSubmit={handleCreateQuiz}
+      />
+
+      {/* Create Discussion Dialog */}
+      <CreateDiscussionDialog
+        open={createDiscussionOpen}
+        onClose={() => setCreateDiscussionOpen(false)}
+        onSubmit={handleCreateDiscussion}
+      />
+
       {/* Edit Poll Dialog */}
       <EditPollDialog
         open={editPollOpen}
@@ -475,6 +758,28 @@ export default function CourseDetailsClassroom() {
           setEditingActivity(null);
         }}
         onSubmit={handleUpdatePoll}
+        activity={editingActivity}
+      />
+
+      {/* Edit Quiz Dialog */}
+      <EditQuizDialog
+        open={editQuizOpen}
+        onClose={() => {
+          setEditQuizOpen(false);
+          setEditingActivity(null);
+        }}
+        onSubmit={handleUpdateQuiz}
+        activity={editingActivity}
+      />
+
+      {/* Edit Discussion Dialog */}
+      <EditDiscussionDialog
+        open={editDiscussionOpen}
+        onClose={() => {
+          setEditDiscussionOpen(false);
+          setEditingActivity(null);
+        }}
+        onSubmit={handleUpdateDiscussion}
         activity={editingActivity}
       />
 

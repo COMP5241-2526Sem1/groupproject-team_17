@@ -1,22 +1,22 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { removeCookie } from 'minimal-shared/utils';
+import { useClassroomContext } from 'auth-classroom';
 
+import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
 import AppBar from '@mui/material/AppBar';
 import Avatar from '@mui/material/Avatar';
-import Box from '@mui/material/Box';
-import Container from '@mui/material/Container';
-import IconButton from '@mui/material/IconButton';
-import Stack from '@mui/material/Stack';
 import Toolbar from '@mui/material/Toolbar';
 import Tooltip from '@mui/material/Tooltip';
+import Container from '@mui/material/Container';
+import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 
-import { Iconify } from 'src/components/iconify';
-
-import { useClassroomContext } from 'auth-classroom';
-import { removeCookie } from 'minimal-shared/utils';
 import { SettingsButton } from 'src/layouts/components/settings-button';
+
+import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
@@ -30,7 +30,6 @@ export default function ClassroomLayout({ children }) {
     leaveClassroom,
   } = useClassroomContext();
 
-  const courseName = classroomState.courseName || 'Classroom';
   const courseCode = classroomState.courseCode || '';
   const studentId = studentState.studentId || '';
   const studentName = studentState.studentName || '';

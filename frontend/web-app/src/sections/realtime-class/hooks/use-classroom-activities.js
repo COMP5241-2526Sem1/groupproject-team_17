@@ -1,68 +1,38 @@
 import { useClassroomContext } from 'auth-classroom';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
 import { activityAPI } from 'src/api/api-function-call';
 
 // ----------------------------------------------------------------------
 
 export function useClassroomActivities() {
-  const { classroomState, isAuthencated, subscribeMessage } = useClassroomContext();
+  const { classroomState, isAuthencated, subscribeMessage, studentState } = useClassroomContext();
   const [currentActivity, setCurrentActivity] = useState(null);
   const [activities, setActivities] = useState([]);
   const [onlineCount, setOnlineCount] = useState(0);
   const [error, setError] = useState(null);
 
   const courseId = classroomState.courseId;
+  const studentId = studentState?.studentId;
 
-  // Fetch all activities for the course
-  const fetchActivities = useCallback(async () => {
-    if (!courseId) return;
-
-    try {
-      const response = await activityAPI.getCourseActivities(courseId, false);
-      if (response.code === 0 && response.data) {
-        const transformedActivities = response.data.map((activity) => {
-          let status;
-          if (activity.isActive) {
-            status = 'active';
-          } else if (activity.hasBeenActivated) {
-            status = 'completed';
-          } else {
-            status = 'pending';
-          }
-
-          return {
-            id: activity.id,
-            type: activity.type === 1 ? 'quiz' : activity.type === 2 ? 'poll' : 'discussion',
-            title: activity.title,
-            description: activity.description,
-            status,
-            isActive: activity.isActive,
-            hasBeenActivated: activity.hasBeenActivated || false,
-            expiresAt: activity.expiresAt,
-          };
-        });
-
-        setActivities(transformedActivities);
-
-        // Find current active activity
-        const activeActivity = response.data.find((a) => a.isActive);
-        if (activeActivity) {
-          fetchActivityDetails(activeActivity.id);
-        } else {
-          // No active activity, clear current activity
-          setCurrentActivity(null);
-        }
-      }
-    } catch (err) {
-      console.error('[useClassroomActivities] Failed to fetch activities:', err);
-      setError(err.message);
-    }
-  }, [courseId]);
+  // Store current activity ID to avoid unnecessary re-fetches
+  const currentActivityIdRef = useRef(null);
 
   // Fetch detailed activity data
   const fetchActivityDetails = useCallback(async (activityId) => {
     try {
+      console.log('[useClassroomActivities] 📥 Fetching activity details for:', activityId);
       const response = await activityAPI.getActivity(activityId);
+
+      console.log('[useClassroomActivities] 📦 Raw activity response:', {
+        code: response.code,
+        hasData: !!response.data,
+        activityId: response.data?.id,
+        type: response.data?.type,
+        createdAt: response.data?.createdAt,
+        timeLimit: response.data?.quiz_TimeLimit,
+      });
+
       if (response.code === 0 && response.data) {
         const activity = response.data;
         const transformedActivity = {
@@ -72,6 +42,7 @@ export function useClassroomActivities() {
           description: activity.description,
           isActive: activity.isActive,
           expiresAt: activity.expiresAt,
+          createdAt: activity.createdAt, // Add createdAt for timer calculation
           // Type-specific data
           ...(activity.type === 1 && {
             // Quiz
@@ -94,13 +65,94 @@ export function useClassroomActivities() {
           }),
         };
 
+        console.log('[useClassroomActivities] ✅ Transformed activity:', {
+          id: transformedActivity.id,
+          type: transformedActivity.type,
+          isActive: transformedActivity.isActive,
+          createdAt: transformedActivity.createdAt,
+          timeLimit: transformedActivity.timeLimit,
+          hasCreatedAt: !!transformedActivity.createdAt,
+          hasTimeLimit: !!transformedActivity.timeLimit,
+        });
+
         setCurrentActivity(transformedActivity);
       }
     } catch (err) {
-      console.error('[useClassroomActivities] Failed to fetch activity details:', err);
+      console.error('[useClassroomActivities] ❌ Failed to fetch activity details:', err);
       setError(err.message);
     }
   }, []);
+
+  // Fetch all activities for the course
+  const fetchActivities = useCallback(async () => {
+    if (!courseId) return;
+
+    try {
+      const response = await activityAPI.getCourseActivities(courseId, false);
+      if (response.code === 0 && response.data) {
+        const transformedActivities = await Promise.all(
+          response.data.map(async (activity) => {
+            let status;
+            if (activity.isActive) {
+              status = 'active';
+            } else if (activity.hasBeenActivated) {
+              status = 'completed';
+            } else {
+              status = 'pending';
+            }
+
+            // Check if student has submitted for this activity
+            let hasSubmitted = false;
+            if (studentId && activity.id) {
+              try {
+                const submissionResponse = await activityAPI.getStudentSubmission(
+                  activity.id,
+                  studentId
+                );
+                hasSubmitted = submissionResponse.code === 0 && submissionResponse.data?.id;
+              } catch {
+                // If 404 or error, student hasn't submitted
+                hasSubmitted = false;
+              }
+            }
+
+            return {
+              id: activity.id,
+              type: activity.type === 1 ? 'quiz' : activity.type === 2 ? 'poll' : 'discussion',
+              title: activity.title,
+              description: activity.description,
+              status,
+              isActive: activity.isActive,
+              hasBeenActivated: activity.hasBeenActivated || false,
+              expiresAt: activity.expiresAt,
+              hasSubmitted, // Add submission status
+            };
+          })
+        );
+
+        setActivities(transformedActivities);
+
+        // Find current active activity
+        const activeActivity = response.data.find((a) => a.isActive);
+        if (activeActivity) {
+          // Only fetch details if the active activity changed
+          if (currentActivityIdRef.current !== activeActivity.id) {
+            currentActivityIdRef.current = activeActivity.id;
+            fetchActivityDetails(activeActivity.id);
+          }
+        } else {
+          // No active activity, clear current activity
+          if (currentActivityIdRef.current !== null) {
+            currentActivityIdRef.current = null;
+            setCurrentActivity(null);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[useClassroomActivities] Failed to fetch activities:', err);
+      setError(err.message);
+    }
+  }, [courseId, studentId, fetchActivityDetails]);
 
   // WebSocket message handler
   useEffect(() => {
@@ -130,7 +182,17 @@ export function useClassroomActivities() {
           break;
 
         case 'ACTIVITY_UPDATED':
-          console.log('[useClassroomActivities] Activity updated:', message.Payload);
+          console.log('[useClassroomActivities] 📡 Activity updated WebSocket message:', {
+            activityId: message.Payload.activityId,
+            isActive: message.Payload.isActive,
+            hasBeenActivated: message.Payload.hasBeenActivated,
+            hasCreatedAt: !!message.Payload.createdAt,
+            createdAt: message.Payload.createdAt,
+            hasTimeLimit: !!message.Payload.timeLimit,
+            timeLimit: message.Payload.timeLimit,
+            isCurrentActivity: currentActivity?.id === message.Payload.activityId,
+          });
+
           // Update activities list
           setActivities((prev) =>
             prev.map((activity) => {
@@ -148,23 +210,65 @@ export function useClassroomActivities() {
                   status = 'pending';
                 }
 
-                return {
+                const updated = {
                   ...activity,
                   isActive,
                   hasBeenActivated,
                   status,
                   title: message.Payload.title || activity.title,
                   description: message.Payload.description || activity.description,
+                  // Include createdAt and timeLimit from WebSocket message if available
+                  ...(message.Payload.createdAt && { createdAt: message.Payload.createdAt }),
+                  ...(message.Payload.timeLimit && { timeLimit: message.Payload.timeLimit }),
                 };
+
+                console.log('[useClassroomActivities] 🔄 Updated activity in list:', {
+                  id: updated.id,
+                  hasCreatedAt: !!updated.createdAt,
+                  createdAt: updated.createdAt,
+                  hasTimeLimit: !!updated.timeLimit,
+                  timeLimit: updated.timeLimit,
+                });
+
+                return updated;
               }
               return activity;
             })
           );
 
-          // If activity was activated, set it as current and fetch full details
-          if (message.Payload.isActive) {
+          // Update current activity if it's the one being updated
+          if (currentActivity?.id === message.Payload.activityId) {
+            console.log('[useClassroomActivities] 🔄 Updating current activity via WebSocket');
+            setCurrentActivity((prev) => {
+              const updated = {
+                ...prev,
+                isActive: message.Payload.isActive,
+                hasBeenActivated: message.Payload.hasBeenActivated,
+                title: message.Payload.title || prev.title,
+                description: message.Payload.description || prev.description,
+                // Include createdAt and timeLimit from WebSocket message if available
+                ...(message.Payload.createdAt && { createdAt: message.Payload.createdAt }),
+                ...(message.Payload.timeLimit && { timeLimit: message.Payload.timeLimit }),
+              };
+
+              console.log('[useClassroomActivities] ✅ Current activity updated:', {
+                id: updated.id,
+                type: updated.type,
+                isActive: updated.isActive,
+                hasCreatedAt: !!updated.createdAt,
+                createdAt: updated.createdAt,
+                hasTimeLimit: !!updated.timeLimit,
+                timeLimit: updated.timeLimit,
+              });
+
+              return updated;
+            });
+          }
+
+          // If activity was activated and not already current, fetch full details
+          if (message.Payload.isActive && currentActivity?.id !== message.Payload.activityId) {
             console.log(
-              '[useClassroomActivities] Fetching details for activated activity:',
+              '[useClassroomActivities] 📥 Activity activated - fetching full details:',
               message.Payload.activityId
             );
             fetchActivityDetails(message.Payload.activityId);
@@ -213,6 +317,21 @@ export function useClassroomActivities() {
           console.log('[useClassroomActivities] Student left:', message.Payload);
           if (message.Payload?.onlineStudentsCount !== undefined) {
             setOnlineCount(message.Payload.onlineStudentsCount);
+          }
+          break;
+
+        case 'NEW_SUBMISSION':
+          console.log('[useClassroomActivities] 📤 New submission received:', message.Payload);
+          // If current student submitted, update the hasSubmitted flag for that activity
+          if (message.Payload?.studentId === studentId && message.Payload?.activityId) {
+            console.log('[useClassroomActivities] ✅ Current student submitted, updating activities list');
+            setActivities((prev) =>
+              prev.map((activity) =>
+                activity.id === message.Payload.activityId
+                  ? { ...activity, hasSubmitted: true }
+                  : activity
+              )
+            );
           }
           break;
 

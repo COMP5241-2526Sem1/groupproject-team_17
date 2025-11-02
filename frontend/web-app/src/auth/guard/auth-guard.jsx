@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useUser, getAccessToken } from '@auth0/nextjs-auth0';
+import { getAccessToken, useUser } from '@auth0/nextjs-auth0';
+import { useEffect, useState } from 'react';
 
 import { useRouter } from 'src/routes/hooks';
 
 import { CONFIG } from 'src/global-config';
 import { setAxiosAuthToken } from 'src/lib/axios';
 
+import { removeCookie } from 'minimal-shared/utils';
 import { SplashScreen } from 'src/components/loading-screen';
 
 // ----------------------------------------------------------------------
@@ -34,11 +35,19 @@ export function AuthGuard({ children }) {
     }
     // authenticated - allow access
     // set token
-    const token = await getAccessToken();
+    try {
+      const token = await getAccessToken();
+      const bearer = `Bearer ${token}`;
+      console.log('bearer ', bearer);
+      setAxiosAuthToken(token);
+    }
+    catch (_) {
+      removeCookie('__session');
+      router.replace(CONFIG.auth.loginPath);
 
-    const bearer = `Bearer ${token}`;
-    console.log('bearer ', bearer);
-    setAxiosAuthToken(token);
+      return;
+    }
+
 
     setIsChecking(false);
   };

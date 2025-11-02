@@ -115,11 +115,10 @@ public class RealtimeClass : IHObject
 
     public async Task BroadcastActivityUpdatedAsync(Activity activity)
     {
-        var wsMessage = new WsMessage<object>
+        // Create payload with type-specific data
+        object payload = activity switch
         {
-            code = 0,
-            Type = "ACTIVITY_UPDATED",
-            Payload = new
+            Poll poll => new
             {
                 activityId = activity.Id,
                 activityType = activity.Type.ToString(),
@@ -127,8 +126,57 @@ public class RealtimeClass : IHObject
                 description = activity.Description,
                 isActive = activity.IsActive,
                 hasBeenActivated = activity.HasBeenActivated,
-                expiresAt = activity.ExpiresAt
+                expiresAt = activity.ExpiresAt,
+                createdAt = activity.CreatedAt,
+                options = poll.Options, // Include poll options
+                poll_AllowMultipleSelections = poll.Poll_AllowMultipleSelections,
+                poll_IsAnonymous = poll.Poll_IsAnonymous
+            },
+            Quiz quiz => new
+            {
+                activityId = activity.Id,
+                activityType = activity.Type.ToString(),
+                title = activity.Title,
+                description = activity.Description,
+                isActive = activity.IsActive,
+                hasBeenActivated = activity.HasBeenActivated,
+                expiresAt = activity.ExpiresAt,
+                createdAt = activity.CreatedAt,
+                timeLimit = quiz.Quiz_TimeLimit,
+                questions = quiz.Questions,
+                quiz_ShowCorrectAnswers = quiz.Quiz_ShowCorrectAnswers
+            },
+            Discussion discussion => new
+            {
+                activityId = activity.Id,
+                activityType = activity.Type.ToString(),
+                title = activity.Title,
+                description = activity.Description,
+                isActive = activity.IsActive,
+                hasBeenActivated = activity.HasBeenActivated,
+                expiresAt = activity.ExpiresAt,
+                createdAt = activity.CreatedAt,
+                discussion_MaxLength = discussion.Discussion_MaxLength,
+                discussion_AllowAnonymous = discussion.Discussion_AllowAnonymous
+            },
+            _ => new
+            {
+                activityId = activity.Id,
+                activityType = activity.Type.ToString(),
+                title = activity.Title,
+                description = activity.Description,
+                isActive = activity.IsActive,
+                hasBeenActivated = activity.HasBeenActivated,
+                expiresAt = activity.ExpiresAt,
+                createdAt = activity.CreatedAt
             }
+        };
+
+        var wsMessage = new WsMessage<object>
+        {
+            code = 0,
+            Type = "ACTIVITY_UPDATED",
+            Payload = payload
         };
         var messageString = System.Text.Json.JsonSerializer.Serialize(wsMessage);
         await BroadcastAsync(messageString);

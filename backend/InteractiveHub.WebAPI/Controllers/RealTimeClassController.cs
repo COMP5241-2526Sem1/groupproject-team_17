@@ -247,7 +247,71 @@ public partial class RealTimeClassController
         });
       }
 
-      return ReturnOK(activities);
+      // Transform activities to include [NotMapped] properties
+      var transformedActivities = activities.Select(activity =>
+      {
+        return activity switch
+        {
+          Poll poll => (object)new
+          {
+            poll.Id,
+            poll.CourseId,
+            poll.Title,
+            poll.Description,
+            poll.Type,
+            poll.ExpiresAt,
+            poll.IsActive,
+            poll.HasBeenActivated,
+            poll.CreatedAt,
+            Options = poll.Options, // [NotMapped] property
+            AllowMultipleSelections = poll.Poll_AllowMultipleSelections,
+            IsAnonymous = poll.Poll_IsAnonymous
+          },
+          Quiz quiz => (object)new
+          {
+            quiz.Id,
+            quiz.CourseId,
+            quiz.Title,
+            quiz.Description,
+            quiz.Type,
+            quiz.ExpiresAt,
+            quiz.IsActive,
+            quiz.HasBeenActivated,
+            quiz.CreatedAt,
+            Questions = quiz.Questions, // [NotMapped] property
+            TimeLimit = quiz.Quiz_TimeLimit,
+            ShowCorrectAnswers = quiz.Quiz_ShowCorrectAnswers
+          },
+          Discussion discussion => (object)new
+          {
+            discussion.Id,
+            discussion.CourseId,
+            discussion.Title,
+            discussion.Description,
+            discussion.Type,
+            discussion.ExpiresAt,
+            discussion.IsActive,
+            discussion.HasBeenActivated,
+            discussion.CreatedAt,
+            MaxLength = discussion.Discussion_MaxLength,
+            AllowAnonymous = discussion.Discussion_AllowAnonymous
+          },
+          _ => (object)new
+          {
+            activity.Id,
+            activity.CourseId,
+            activity.Title,
+            activity.Description,
+            activity.Type,
+            activity.ExpiresAt,
+            activity.IsActive,
+            activity.HasBeenActivated,
+            activity.CreatedAt
+          }
+        };
+      }).ToList();
+
+      return ReturnOK(transformedActivities);
     });
   }
 
@@ -398,7 +462,67 @@ public partial class RealTimeClassController
         });
       }
 
-      return ReturnOK(submissions);
+      // Convert to DTOs to ensure proper serialization
+      var submissionDtos = submissions.Select(s =>
+      {
+        if (s is PollSubmission pollSub)
+        {
+          return (object)new
+          {
+            id = pollSub.Id,
+            courseId = pollSub.CourseId,
+            studentId = pollSub.StudentId,
+            activityId = pollSub.ActivityId,
+            submittedAt = pollSub.SubmittedAt,
+            type = (int)pollSub.Type,
+            selectedOptions = pollSub.SelectedOptions
+          };
+        }
+        else if (s is QuizSubmission quizSub)
+        {
+          return (object)new
+          {
+            id = quizSub.Id,
+            courseId = quizSub.CourseId,
+            studentId = quizSub.StudentId,
+            activityId = quizSub.ActivityId,
+            submittedAt = quizSub.SubmittedAt,
+            type = (int)quizSub.Type,
+            answers = quizSub.Answers,
+            score = quizSub.Quiz_Score,
+            timeSpent = quizSub.Quiz_TimeSpent
+          };
+        }
+        else if (s is DiscussionSubmission discSub)
+        {
+          return (object)new
+          {
+            id = discSub.Id,
+            courseId = discSub.CourseId,
+            studentId = discSub.StudentId,
+            activityId = discSub.ActivityId,
+            submittedAt = discSub.SubmittedAt,
+            type = (int)discSub.Type,
+            text = discSub.Discussion_Text,
+            isApproved = discSub.Discussion_IsApproved,
+            isAnonymous = discSub.Discussion_IsAnonymous
+          };
+        }
+        else
+        {
+          return (object)new
+          {
+            id = s.Id,
+            courseId = s.CourseId,
+            studentId = s.StudentId,
+            activityId = s.ActivityId,
+            submittedAt = s.SubmittedAt,
+            type = (int)s.Type
+          };
+        }
+      }).ToList();
+
+      return ReturnOK(submissionDtos);
     });
   }
 
@@ -424,7 +548,65 @@ public partial class RealTimeClassController
         });
       }
 
-      return ReturnOK(submission);
+      // Convert to DTO to ensure proper serialization
+      object submissionDto;
+      if (submission is PollSubmission pollSub)
+      {
+        submissionDto = new
+        {
+          id = pollSub.Id,
+          courseId = pollSub.CourseId,
+          studentId = pollSub.StudentId,
+          activityId = pollSub.ActivityId,
+          submittedAt = pollSub.SubmittedAt,
+          type = (int)pollSub.Type,
+          selectedOptions = pollSub.SelectedOptions
+        };
+      }
+      else if (submission is QuizSubmission quizSub)
+      {
+        submissionDto = new
+        {
+          id = quizSub.Id,
+          courseId = quizSub.CourseId,
+          studentId = quizSub.StudentId,
+          activityId = quizSub.ActivityId,
+          submittedAt = quizSub.SubmittedAt,
+          type = (int)quizSub.Type,
+          answers = quizSub.Answers,
+          score = quizSub.Quiz_Score,
+          timeSpent = quizSub.Quiz_TimeSpent
+        };
+      }
+      else if (submission is DiscussionSubmission discSub)
+      {
+        submissionDto = new
+        {
+          id = discSub.Id,
+          courseId = discSub.CourseId,
+          studentId = discSub.StudentId,
+          activityId = discSub.ActivityId,
+          submittedAt = discSub.SubmittedAt,
+          type = (int)discSub.Type,
+          text = discSub.Discussion_Text,
+          isApproved = discSub.Discussion_IsApproved,
+          isAnonymous = discSub.Discussion_IsAnonymous
+        };
+      }
+      else
+      {
+        submissionDto = new
+        {
+          id = submission!.Id,
+          courseId = submission.CourseId,
+          studentId = submission.StudentId,
+          activityId = submission.ActivityId,
+          submittedAt = submission.SubmittedAt,
+          type = (int)submission.Type
+        };
+      }
+
+      return ReturnOK(submissionDto);
     });
   }
 
@@ -510,6 +692,32 @@ public partial class RealTimeClassController
         {
           Code = code,
           Message = code.ToDescriptionString() ?? "Failed to submit poll"
+        });
+      }
+
+      return ReturnOK(submission);
+    });
+  }
+
+  [HttpPost("Discussion/{discussionId}/Submit")]
+  public async Task<IActionResult> SubmitDiscussion(string discussionId, [FromBody] JsonObject value)
+  {
+    return await HandleWithResultAsync(async () =>
+    {
+      if (!value.ContainsKey("studentId"))
+      {
+        return ReturnResponse(ServiceRes.BadRequest(ResCode.InvalidSubmissionData, "Missing 'studentId' field"));
+      }
+
+      var studentId = value["studentId"]!.GetValue<string>();
+      var (code, submission) = await _classManager.SubmitDiscussionAsync(discussionId, studentId, value);
+
+      if (code != ResCode.OK)
+      {
+        return ReturnResponse(new ServiceRes
+        {
+          Code = code,
+          Message = code.ToDescriptionString() ?? "Failed to submit discussion"
         });
       }
 

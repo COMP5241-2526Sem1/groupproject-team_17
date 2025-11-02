@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import {
   Alert,
@@ -13,6 +13,7 @@ import {
   Chip,
   CircularProgress,
   IconButton,
+  LinearProgress,
   List,
   ListItem,
   ListItemAvatar,
@@ -23,7 +24,9 @@ import {
   Typography,
 } from '@mui/material';
 
+import { activityAPI } from 'src/api/api-function-call';
 import { Iconify } from 'src/components/iconify';
+import { useInstructorWebSocket } from 'src/contexts';
 
 // ----------------------------------------------------------------------
 
@@ -31,6 +34,7 @@ export default function LearningActivitiesCard({
   activities,
   loading,
   error,
+  totalStudents = 0,
   onToggleActivity,
   onCreateNew,
   onEditActivity,
@@ -38,6 +42,72 @@ export default function LearningActivitiesCard({
 }) {
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedActivity, setSelectedActivity] = useState(null);
+  const [submissionCounts, setSubmissionCounts] = useState({});
+
+  // WebSocket connection for real-time updates
+  const { subscribeMessage } = useInstructorWebSocket();
+
+  // Fetch submission counts for all activities
+  useEffect(() => {
+    const fetchSubmissionCounts = async () => {
+      if (!activities || activities.length === 0) return;
+
+      const counts = {};
+      await Promise.all(
+        activities.map(async (activity) => {
+          try {
+            const response = await activityAPI.getActivitySubmissions(activity.id);
+            if (response?.code === 0 && response?.data) {
+              counts[activity.id] = response.data.length;
+            } else {
+              counts[activity.id] = 0;
+            }
+          } catch (err) {
+            console.error(`Error fetching submissions for activity ${activity.id}:`, err);
+            counts[activity.id] = 0;
+          }
+        })
+      );
+      setSubmissionCounts(counts);
+    };
+
+    fetchSubmissionCounts();
+  }, [activities]);
+
+  // Subscribe to WebSocket for real-time submission updates
+  useEffect(() => {
+    if (!activities || activities.length === 0) return undefined;
+
+    const handleMessage = (message) => {
+      // Listen for NEW_SUBMISSION events
+      if (message?.Type === 'NEW_SUBMISSION' && message?.Payload?.activityId) {
+        const activityId = message.Payload.activityId;
+
+        console.log('[LearningActivities] NEW_SUBMISSION received for activity:', activityId);
+
+        // Update the submission count for this specific activity
+        activityAPI.getActivitySubmissions(activityId)
+          .then((response) => {
+            if (response?.code === 0 && response?.data) {
+              setSubmissionCounts((prev) => ({
+                ...prev,
+                [activityId]: response.data.length,
+              }));
+              console.log('[LearningActivities] Updated submission count for', activityId, ':', response.data.length);
+            }
+          })
+          .catch((err) => {
+            console.error('[LearningActivities] Error updating submission count:', err);
+          });
+      }
+    };
+
+    const unsubscribe = subscribeMessage(handleMessage);
+
+    return () => {
+      unsubscribe();
+    };
+  }, [activities, subscribeMessage]);
 
   const handleMenuOpen = (event, activity) => {
     setAnchorEl(event.currentTarget);
@@ -130,7 +200,7 @@ export default function LearningActivitiesCard({
                 }
               >
                 <ListItemAvatar>
-                  <Avatar sx={{ bgcolor: 'primary.main' }}>
+                  <Avatar >
                     <Iconify
                       icon={
                         activity.type === 'quiz'
@@ -145,35 +215,82 @@ export default function LearningActivitiesCard({
                 <ListItemText
                   primary={activity.title}
                   secondary={
-                    <Stack direction="row" spacing={2} sx={{ mt: 0.5 }}>
-                      {activity.type === 'quiz' && (
-                        <>
-                          <Typography variant="caption">
-                            {activity.questions?.length || 0} questions
-                          </Typography>
-                          <Typography variant="caption">
-                            {activity.timeLimit}s time limit
-                          </Typography>
-                        </>
-                      )}
-                      {activity.type === 'poll' && (
-                        <>
-                          <Typography variant="caption">
-                            {activity.options?.length || 0} options
-                          </Typography>
-                          {activity.allowMultipleSelections && (
-                            <Typography variant="caption" color="info.main">
-                              Multiple selections
+                    <Stack spacing={0.5} sx={{ mt: 0.5 }}>
+
+
+                      {/* Activity Details */}
+                      <Stack direction="row" spacing={2}>
+                        {activity.type === 'quiz' && (
+                          <>
+                            <Typography variant="caption" color="text.secondary">
+                              {activity.questions?.length || 0} question{activity.questions?.length !== 1 ? 's' : ''}
                             </Typography>
-                          )}
-                        </>
-                      )}
-                      {activity.type === 'discussion' && (
-                        <>
-                          <Typography variant="caption">
-                            Max {activity.maxLength} chars
+                            {(() => {
+                              // Backend returns TimeLimit (PascalCase) or timeLimit (camelCase)
+                              const timeLimit = activity.timeLimit ?? activity.TimeLimit ?? 0;
+                              return timeLimit ? (
+                                <Typography variant="caption" color="text.secondary">
+                                  {timeLimit}s limit
+                                </Typography>
+                              ) : null;
+                            })()}
+                          </>
+                        )}
+                        {activity.type === 'poll' && (
+                          <>
+                            <Typography variant="caption" color="text.secondary">
+                              {activity.options?.length || 0} option{activity.options?.length !== 1 ? 's' : ''}
+                            </Typography>
+                            {(() => {
+                              // Backend returns AllowMultipleSelections (PascalCase) or allowMultipleSelections (camelCase)
+                              const allowMultiple = activity.allowMultipleSelections ?? activity.AllowMultipleSelections ?? false;
+                              return allowMultiple ? (
+                                <Typography variant="caption" color="info.main">
+                                  Multiple
+                                </Typography>
+                              ) : null;
+                            })()}
+                          </>
+                        )}
+                        {activity.type === 'discussion' && (() => {
+                          // Backend returns MaxLength (PascalCase) or maxLength (camelCase)
+                          const maxLength = activity.maxLength ?? activity.MaxLength;
+                          return maxLength ? (
+                            <Typography variant="caption" color="text.secondary">
+                              Max {maxLength} chars
+                            </Typography>
+                          ) : null;
+                        })()}
+                      </Stack>
+
+                      {/* Completion Rate - Compact version */}
+                      {totalStudents > 0 && (
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Typography variant="caption" color="text.secondary">
+                            Completion:
                           </Typography>
-                        </>
+                          <Box sx={{ flex: 1, maxWidth: 120 }}>
+                            <LinearProgress
+                              variant="determinate"
+                              value={
+                                totalStudents > 0
+                                  ? ((submissionCounts[activity.id] || 0) / totalStudents) * 100
+                                  : 0
+                              }
+                              sx={{
+                                height: 6,
+                                borderRadius: 1,
+                                bgcolor: 'action.hover',
+                              }}
+                            />
+                          </Box>
+                          <Typography variant="caption" fontWeight="medium">
+                            {submissionCounts[activity.id] || 0}/{totalStudents} (
+                            {totalStudents > 0
+                              ? Math.round(((submissionCounts[activity.id] || 0) / totalStudents) * 100)
+                              : 0}%)
+                          </Typography>
+                        </Stack>
                       )}
                     </Stack>
                   }

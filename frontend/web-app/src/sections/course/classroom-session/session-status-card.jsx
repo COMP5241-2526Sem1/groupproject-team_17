@@ -20,12 +20,8 @@ export default function SessionStatusCard({
   isConnected,
   isClassroomActive,
   currentActivity,
-  engagementScore,
   joinedStudentsCount,
   totalStudents,
-  sessionMode,
-  activitiesCompleted,
-  pendingResponses,
 }) {
   return (
     <Card>
@@ -66,100 +62,52 @@ export default function SessionStatusCard({
       <CardContent>
         <Grid container spacing={3}>
           <Grid size={{ xs: 12, md: 6 }}>
-            <Stack spacing={2}>
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Current Activity
-                </Typography>
-                {currentActivity ? (
-                  <>
-                    <Typography variant="body1" fontWeight="medium">
-                      {currentActivity.title}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {currentActivity.type === 1
-                        ? 'Quiz'
-                        : currentActivity.type === 2
-                          ? 'Poll'
-                          : 'Discussion'}
-                      {currentActivity.description && ` • ${currentActivity.description}`}
-                    </Typography>
-                  </>
-                ) : (
-                  <Typography variant="body1" color="text.secondary">
-                    No active activity
+            <Box>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                Current Activity
+              </Typography>
+              {currentActivity ? (
+                <>
+                  <Typography variant="body1" fontWeight="medium">
+                    {currentActivity.title}
                   </Typography>
-                )}
-              </Box>
-
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Engagement Score
-                </Typography>
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <LinearProgress
-                    variant="determinate"
-                    value={engagementScore}
-                    sx={{ flexGrow: 1, height: 8, borderRadius: 4 }}
-                  />
-                  <Typography variant="body2" color="success.main">
-                    {engagementScore}%
+                  <Typography variant="caption" color="text.secondary">
+                    {currentActivity.type === 1
+                      ? 'Quiz'
+                      : currentActivity.type === 2
+                        ? 'Poll'
+                        : 'Discussion'}
+                    {currentActivity.description && ` • ${currentActivity.description}`}
                   </Typography>
-                </Stack>
-              </Box>
-            </Stack>
+                </>
+              ) : (
+                <Typography variant="body1" color="text.secondary">
+                  No active activity
+                </Typography>
+              )}
+            </Box>
           </Grid>
 
           <Grid size={{ xs: 12, md: 6 }}>
-            <Stack spacing={2}>
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Students Online
+            <Box>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                Students Online
+              </Typography>
+              <Stack direction="row" spacing={1} alignItems="baseline">
+                <Typography variant="h4" color="primary.main">
+                  {joinedStudentsCount}
                 </Typography>
-                <Stack direction="row" spacing={1} alignItems="baseline">
-                  <Typography variant="h4" color="primary.main">
-                    {joinedStudentsCount}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    / {totalStudents} enrolled
-                  </Typography>
-                </Stack>
-                <LinearProgress
-                  variant="determinate"
-                  value={totalStudents ? (joinedStudentsCount / totalStudents) * 100 : 0}
-                  sx={{ mt: 1, height: 6, borderRadius: 3 }}
-                  color="primary"
-                />
-              </Box>
-
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Session Mode
+                <Typography variant="body2" color="text.secondary">
+                  / {totalStudents} enrolled
                 </Typography>
-                <Chip
-                  label={sessionMode.toUpperCase()}
-                  color="primary"
-                  variant="outlined"
-                  sx={{ textTransform: 'capitalize' }}
-                />
-              </Box>
-
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Activities Completed
-                </Typography>
-                <Typography variant="h6">{activitiesCompleted}</Typography>
-              </Box>
-
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Pending Responses
-                </Typography>
-                <Typography variant="h6" color="warning.main">
-                  {pendingResponses}
-                </Typography>
-              </Box>
-            </Stack>
+              </Stack>
+              <LinearProgress
+                variant="determinate"
+                value={totalStudents ? (joinedStudentsCount / totalStudents) * 100 : 0}
+                sx={{ mt: 1, height: 6, borderRadius: 3 }}
+                color="primary"
+              />
+            </Box>
           </Grid>
         </Grid>
       </CardContent>
