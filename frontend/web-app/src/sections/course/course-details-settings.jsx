@@ -27,7 +27,6 @@ import { useSelector } from 'src/redux/hooks';
 
 import { useErrorDialog } from 'src/components/error-dialog';
 import { Iconify } from 'src/components/iconify';
-
 import { Label } from 'src/components/label';
 
 import CourseDetailsSettingsDeleteDialog from './course-details-delete-course-dialog';
@@ -48,6 +47,12 @@ export default function CourseDetailsSettings() {
   const [showDisableDialog, setShowDisableDialog] = useState(false);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Join mode states (moved from renderCourseJoinInfo)
+  const [editingJoinMode, setEditingJoinMode] = useState(false);
+  const [currentCombination, setCurrentCombination] = useState(1);
+  const [savedCombinations, setSavedCombinations] = useState([]);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Edit dialog handlers
   const handleOpenEditDialog = () => {
@@ -223,11 +228,6 @@ export default function CourseDetailsSettings() {
   );
 
   const renderCourseJoinInfo = () => {
-    const [editingJoinMode, setEditingJoinMode] = useState(false);
-    const [currentCombination, setCurrentCombination] = useState(1); // Start with Student ID (1)
-    const [savedCombinations, setSavedCombinations] = useState([]);
-    const [isSaving, setIsSaving] = useState(false);
-
     const handleStartEdit = () => {
       const initial = selectedCourse.joinCheckingModes || [0];
       setSavedCombinations(initial);
@@ -242,6 +242,7 @@ export default function CourseDetailsSettings() {
       { value: 8, label: 'PIN', icon: 'solar:key-bold', color: 'warning' },
     ];
 
+    // eslint-disable-next-line no-bitwise
     const hasFlag = (mode, flag) => (mode & flag) === flag;
 
     const toggleFlag = (flag) => {
@@ -249,6 +250,7 @@ export default function CourseDetailsSettings() {
       if (flag === 1) {
         return; // Student ID is mandatory, cannot be toggled off
       }
+      // eslint-disable-next-line no-bitwise
       setCurrentCombination((prev) => prev ^ flag);
     };
 
@@ -394,7 +396,7 @@ export default function CourseDetailsSettings() {
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                   Class Id
                 </Typography>
-                <Typography variant="h3" sx={{ mb: 2 }} color={'error'}>
+                <Typography variant="h3" sx={{ mb: 2 }} color="error">
                   {selectedCourse.joinCode || 'N/A'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -809,7 +811,7 @@ export default function CourseDetailsSettings() {
           </Typography>
           {selectedCourse?.isEnabled ? (
             <Alert severity="error">
-              Disabling course will make it inactive. Students won't be able to access the course, but you can re-enable it later if needed.
+              Disabling course will make it inactive. Students won&apos;t be able to access the course, but you can re-enable it later if needed.
             </Alert>
           ) : (
             <Alert severity="success">

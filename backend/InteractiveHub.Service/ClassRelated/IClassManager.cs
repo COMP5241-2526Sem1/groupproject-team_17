@@ -40,6 +40,7 @@ public interface IClassManager
     Task<(ResCode, List<QuizSubmission>)> GetQuizSubmissionsAsync(string quizId);
     Task<(ResCode, Submission?)> SubmitQuizAsync(string quizId, string studentId, JsonObject submissionData);
     Task<(ResCode, Submission?)> SubmitPollAsync(string pollId, string studentId, JsonObject submissionData);
+    Task<(ResCode, Submission?)> SubmitDiscussionAsync(string discussionId, string studentId, JsonObject submissionData);
 
     // Real-time Class Methods
     Task HandleNewWebsocketConnection(string token, WebSocket ws);

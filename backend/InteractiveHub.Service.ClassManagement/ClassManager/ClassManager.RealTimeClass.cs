@@ -390,10 +390,12 @@ public partial class ClassManager
           .OrderByDescending(a => a.CreatedAt)
           .FirstOrDefaultAsync();
 
+        var activityData = SerializeActivityWithOptions(activeActivity);
+
         return (ResCode.OK, new
         {
           joinedStudentsCount = 0,
-          currentActivity = activeActivity,
+          currentActivity = activityData,
           isClassroomActive = false
         });
       }
@@ -404,6 +406,8 @@ public partial class ClassManager
         .OrderByDescending(a => a.CreatedAt)
         .FirstOrDefaultAsync();
 
+      var currentActivityData = SerializeActivityWithOptions(currentActivity);
+
       // Count students with active WebSocket connections (ws != null and state == Open)
       var onlineStudentsCount = realtimeClass.ActiveStudents.Values
         .Count(student => student.webSocket != null && student.webSocket.State == WebSocketState.Open);
@@ -411,7 +415,7 @@ public partial class ClassManager
       var response = new
       {
         joinedStudentsCount = onlineStudentsCount,
-        currentActivity = currentActivity,
+        currentActivity = currentActivityData,
         isClassroomActive = true
       };
 
@@ -422,5 +426,70 @@ public partial class ClassManager
       Console.WriteLine($"Error getting classroom status: {ex.Message}");
       return (ResCode.InternalError, null);
     }
+  }
+
+  private object? SerializeActivityWithOptions(Activity? activity)
+  {
+    if (activity == null) return null;
+
+    return activity switch
+    {
+      Poll poll => new
+      {
+        poll.Id,
+        poll.CourseId,
+        poll.Title,
+        poll.Description,
+        poll.Type,
+        poll.ExpiresAt,
+        poll.IsActive,
+        poll.HasBeenActivated,
+        poll.CreatedAt,
+        options = poll.Options, // This will use the [NotMapped] property getter
+        poll.Poll_AllowMultipleSelections,
+        poll.Poll_IsAnonymous
+      },
+      Quiz quiz => new
+      {
+        quiz.Id,
+        quiz.CourseId,
+        quiz.Title,
+        quiz.Description,
+        quiz.Type,
+        quiz.ExpiresAt,
+        quiz.IsActive,
+        quiz.HasBeenActivated,
+        quiz.CreatedAt,
+        questions = quiz.Questions, // This will use the [NotMapped] property getter
+        quiz.Quiz_TimeLimit,
+        quiz.Quiz_ShowCorrectAnswers
+      },
+      Discussion discussion => new
+      {
+        discussion.Id,
+        discussion.CourseId,
+        discussion.Title,
+        discussion.Description,
+        discussion.Type,
+        discussion.ExpiresAt,
+        discussion.IsActive,
+        discussion.HasBeenActivated,
+        discussion.CreatedAt,
+        discussion.Discussion_MaxLength,
+        discussion.Discussion_AllowAnonymous
+      },
+      _ => new
+      {
+        activity.Id,
+        activity.CourseId,
+        activity.Title,
+        activity.Description,
+        activity.Type,
+        activity.ExpiresAt,
+        activity.IsActive,
+        activity.HasBeenActivated,
+        activity.CreatedAt
+      }
+    };
   }
 }

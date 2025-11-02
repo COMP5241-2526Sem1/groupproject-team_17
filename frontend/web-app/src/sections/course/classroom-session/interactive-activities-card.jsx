@@ -6,12 +6,27 @@ import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
-export default function InteractiveActivitiesCard({ onCreatePoll, onCreateQuiz }) {
+export default function InteractiveActivitiesCard({
+  onCreatePoll,
+  onCreateQuiz,
+  onCreateDiscussion,
+  onCreateMCQuestion,
+}) {
   return (
     <Card>
       <CardHeader title="Interactive Activities" />
       <CardContent>
         <Grid container spacing={2}>
+          <Grid size={{ md: 6 }}>
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<Iconify icon="solar:document-text-bold" />}
+              onClick={onCreateMCQuestion}
+            >
+              MC Question
+            </Button>
+          </Grid>
           <Grid size={{ md: 6 }}>
             <Button
               fullWidth
@@ -33,41 +48,13 @@ export default function InteractiveActivitiesCard({ onCreatePoll, onCreateQuiz }
             </Button>
           </Grid>
           <Grid size={{ md: 6 }}>
-            <Button fullWidth variant="outlined" startIcon={<Iconify icon="solar:cloud-bold" />}>
-              Word Cloud
-            </Button>
-          </Grid>
-          <Grid size={{ md: 6 }}>
             <Button
               fullWidth
               variant="outlined"
-              startIcon={<Iconify icon="solar:lightbulb-bold" />}
+              startIcon={<Iconify icon="solar:chat-round-line-bold" />}
+              onClick={onCreateDiscussion}
             >
-              Brainstorm
-            </Button>
-          </Grid>
-          <Grid size={{ md: 6 }}>
-            <Button fullWidth variant="outlined" startIcon={<Iconify icon="solar:graph-bold" />}>
-              Show Results
-            </Button>
-          </Grid>
-          <Grid size={{ md: 6 }}>
-            <Button
-              fullWidth
-              variant="outlined"
-              startIcon={<Iconify icon="solar:download-square-bold" />}
-            >
-              Export Data
-            </Button>
-          </Grid>
-          <Grid size={{ xs: 12 }}>
-            <Button
-              fullWidth
-              variant="contained"
-              color="error"
-              startIcon={<Iconify icon="solar:power-bold" />}
-            >
-              End Session
+              Discussion
             </Button>
           </Grid>
         </Grid>

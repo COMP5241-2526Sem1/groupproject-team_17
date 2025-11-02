@@ -1,24 +1,24 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+import { useForm } from 'react-hook-form';
+import { useState, useEffect } from 'react';
+import { useClassroomContext } from 'auth-classroom';
+import { zodResolver } from '@hookform/resolvers/zod';
 
-import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
+import Alert from '@mui/material/Alert';
+import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
+import CardContent from '@mui/material/CardContent';
 
 import { useRouter, useSearchParams } from 'src/routes/hooks';
 
+import { CONFIG } from 'src/global-config';
 import { realtimeClassAPI } from 'src/api/api-function-call';
 
-import { useClassroomContext } from 'auth-classroom';
-import { Field, Form } from 'src/components/hook-form';
-import { CONFIG } from 'src/global-config';
+import { Form, Field } from 'src/components/hook-form';
 
 // ----------------------------------------------------------------------
 
@@ -32,6 +32,7 @@ const JoinCheckingModeEnum = {
 };
 
 // Helper function to check if a mode is required
+// eslint-disable-next-line no-bitwise
 const hasModeFlag = (combinedMode, flag) => (combinedMode & flag) === flag;
 
 export const EnterClassCodeSchema = z.object({
@@ -76,7 +77,6 @@ export function EnterClassCodeView() {
   const {
     handleSubmit,
     setValue,
-    formState: { isSubmitting },
   } = methods;
 
   const onSubmit = handleSubmit(async (data) => {
@@ -165,17 +165,12 @@ export function EnterClassCodeView() {
     } finally {
       setIsLoading(false);
     }
-  });  // Get required fields for selected combination
-  const getRequiredFields = (combination) => {
-    const fields = [];
-    if (hasModeFlag(combination, JoinCheckingModeEnum.StudentId)) fields.push('studentId');
-    if (hasModeFlag(combination, JoinCheckingModeEnum.StudentName)) fields.push('studentName');
-    if (hasModeFlag(combination, JoinCheckingModeEnum.Email)) fields.push('email');
-    if (hasModeFlag(combination, JoinCheckingModeEnum.PIN)) fields.push('pin');
-    return fields;
-  };
+  });
 
-  // Get display name for combination
+  // Note: getRequiredFields function removed as it was unused
+  // If needed in future, use hasModeFlag to check individual flags
+
+  // Dynamically render form fields based on classroom settings
   const getCombinationDisplay = (combination) => {
     const modes = [];
     if (hasModeFlag(combination, JoinCheckingModeEnum.StudentId)) modes.push('Student ID');

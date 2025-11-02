@@ -527,10 +527,49 @@ public partial class ClassManager
   {
     try
     {
-      var submissions = await db.Submissions
-        .Where(s => s.ActivityId == activityId)
-        .OrderBy(s => s.SubmittedAt)
-        .ToListAsync();
+      // First get the activity to determine its type
+      var activity = await db.Activities.FindAsync(activityId);
+      if (activity == null)
+      {
+        return (ResCode.ActivityNotFound, new List<Submission>());
+      }
+
+      List<Submission> submissions;
+
+      // Query based on activity type to get the correct subclass with all properties
+      switch (activity.Type)
+      {
+        case ActivityType.Polling:
+          submissions = await db.Submissions
+            .OfType<PollSubmission>()
+            .Where(s => s.ActivityId == activityId)
+            .OrderBy(s => s.SubmittedAt)
+            .ToListAsync<Submission>();
+          break;
+
+        case ActivityType.Quiz:
+          submissions = await db.Submissions
+            .OfType<QuizSubmission>()
+            .Where(s => s.ActivityId == activityId)
+            .OrderBy(s => s.SubmittedAt)
+            .ToListAsync<Submission>();
+          break;
+
+        case ActivityType.Discussion:
+          submissions = await db.Submissions
+            .OfType<DiscussionSubmission>()
+            .Where(s => s.ActivityId == activityId)
+            .OrderBy(s => s.SubmittedAt)
+            .ToListAsync<Submission>();
+          break;
+
+        default:
+          submissions = await db.Submissions
+            .Where(s => s.ActivityId == activityId)
+            .OrderBy(s => s.SubmittedAt)
+            .ToListAsync();
+          break;
+      }
 
       return (ResCode.OK, submissions);
     }
@@ -545,8 +584,41 @@ public partial class ClassManager
   {
     try
     {
-      var submission = await db.Submissions
-        .FirstOrDefaultAsync(s => s.ActivityId == activityId && s.StudentId == studentId);
+      // First get the activity to determine its type
+      var activity = await db.Activities.FindAsync(activityId);
+      if (activity == null)
+      {
+        return (ResCode.ActivityNotFound, null);
+      }
+
+      Submission? submission;
+
+      // Query based on activity type to get the correct subclass with all properties
+      switch (activity.Type)
+      {
+        case ActivityType.Polling:
+          submission = await db.Submissions
+            .OfType<PollSubmission>()
+            .FirstOrDefaultAsync(s => s.ActivityId == activityId && s.StudentId == studentId);
+          break;
+
+        case ActivityType.Quiz:
+          submission = await db.Submissions
+            .OfType<QuizSubmission>()
+            .FirstOrDefaultAsync(s => s.ActivityId == activityId && s.StudentId == studentId);
+          break;
+
+        case ActivityType.Discussion:
+          submission = await db.Submissions
+            .OfType<DiscussionSubmission>()
+            .FirstOrDefaultAsync(s => s.ActivityId == activityId && s.StudentId == studentId);
+          break;
+
+        default:
+          submission = await db.Submissions
+            .FirstOrDefaultAsync(s => s.ActivityId == activityId && s.StudentId == studentId);
+          break;
+      }
 
       if (submission == null)
       {
@@ -595,10 +667,12 @@ public partial class ClassManager
         return (ResCode.ActivityNotFound, null);
       }
 
-      if (!quiz.IsActive)
-      {
-        return (ResCode.ActivityExpired, null);
-      }
+      // Allow submission for both active and historical activities
+      // Students can submit answers to past activities they haven't completed
+      // if (!quiz.IsActive)
+      // {
+      //   return (ResCode.ActivityExpired, null);
+      // }
 
       // Check if already submitted
       var existing = await db.Submissions
@@ -659,10 +733,12 @@ public partial class ClassManager
         return (ResCode.ActivityNotFound, null);
       }
 
-      if (!poll.IsActive)
-      {
-        return (ResCode.ActivityExpired, null);
-      }
+      // Allow submission for both active and historical activities
+      // Students can submit answers to past activities they haven't completed
+      // if (!poll.IsActive)
+      // {
+      //   return (ResCode.ActivityExpired, null);
+      // }
 
       // Check if already submitted
       var existing = await db.Submissions
@@ -704,6 +780,68 @@ public partial class ClassManager
     catch (Exception ex)
     {
       _log?.LogError($"Error submitting poll: {ex.Message}");
+      return (ResCode.DatabaseError, null);
+    }
+  }
+
+  public async Task<(ResCode, Submission?)> SubmitDiscussionAsync(string discussionId, string studentId, JsonObject submissionData)
+  {
+    try
+    {
+      var discussion = await db.Activities.OfType<Discussion>().FirstOrDefaultAsync(d => d.Id == discussionId);
+      if (discussion == null)
+      {
+        return (ResCode.ActivityNotFound, null);
+      }
+
+      // Allow submission for both active and historical activities
+      // if (!discussion.IsActive)
+      // {
+      //   return (ResCode.ActivityExpired, null);
+      // }
+
+      // Check if already submitted
+      var existing = await db.Submissions
+        .FirstOrDefaultAsync(s => s.ActivityId == discussionId && s.StudentId == studentId);
+
+      if (existing != null)
+      {
+        return (ResCode.AlreadySubmitted, null);
+      }
+
+      // Parse submission data
+      var text = submissionData["text"]?.GetValue<string>() ?? string.Empty;
+      var isAnonymous = submissionData["isAnonymous"]?.GetValue<bool>() ?? false;
+
+      // Validate text length
+      if (text.Length > discussion.Discussion_MaxLength)
+      {
+        return (ResCode.InvalidSubmissionData, null);
+      }
+
+      var submission = new DiscussionSubmission
+      {
+        CourseId = discussion.CourseId,
+        ActivityId = discussionId,
+        StudentId = studentId,
+        Discussion_Text = text,
+        Discussion_IsAnonymous = isAnonymous,
+        Discussion_IsApproved = !discussion.Discussion_RequireApproval // Auto-approve if approval not required
+      };
+
+      await db.Submissions.AddAsync(submission);
+      await db.SaveChangesAsync();
+
+      // Broadcast new submission to RealtimeClass
+      await BroadcastActivityEventAsync(discussion.CourseId, realtimeClass =>
+        realtimeClass.BroadcastNewSubmissionAsync(discussionId, studentId, ActivityType.Discussion)
+      );
+
+      return (ResCode.OK, submission);
+    }
+    catch (Exception ex)
+    {
+      _log?.LogError($"Error submitting discussion: {ex.Message}");
       return (ResCode.DatabaseError, null);
     }
   }

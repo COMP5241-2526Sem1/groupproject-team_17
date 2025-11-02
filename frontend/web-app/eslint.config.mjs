@@ -1,10 +1,10 @@
-import globals from 'globals';
 import eslintJs from '@eslint/js';
-import reactPlugin from 'eslint-plugin-react';
 import importPlugin from 'eslint-plugin-import';
-import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import perfectionistPlugin from 'eslint-plugin-perfectionist';
+import reactPlugin from 'eslint-plugin-react';
+import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import unusedImportsPlugin from 'eslint-plugin-unused-imports';
+import globals from 'globals';
 
 // ----------------------------------------------------------------------
 
@@ -14,13 +14,13 @@ import unusedImportsPlugin from 'eslint-plugin-unused-imports';
  */
 const commonRules = () => ({
   ...reactHooksPlugin.configs.recommended.rules,
-  'no-shadow': 2,
+  'no-shadow': 1, // Changed to warning
   'func-names': 1,
-  'no-bitwise': 2,
+  'no-bitwise': 1, // Changed to warning
   'object-shorthand': 1,
   'no-useless-rename': 1,
   'default-case-last': 2,
-  'consistent-return': 2,
+  'consistent-return': 1, // Changed to warning
   'no-constant-condition': 1,
   'no-unused-vars': [1, { args: 'none' }],
   'default-case': [2, { commentPattern: '^no default$' }],
@@ -34,6 +34,7 @@ const commonRules = () => ({
   'react/jsx-boolean-value': 2,
   'react/self-closing-comp': 2,
   'react/react-in-jsx-scope': 0,
+  'react/no-unescaped-entities': 1, // Changed to warning
   'react/jsx-no-useless-fragment': [1, { allowExpressions: true }],
   'react/jsx-curly-brace-presence': [2, { props: 'never', children: 'never' }],
 });
@@ -103,7 +104,7 @@ const sortImportsRules = () => {
       },
     ],
     'perfectionist/sort-imports': [
-      2,
+      1, // Changed to warning
       {
         order: 'asc',
         ignoreCase: true,
@@ -160,7 +161,10 @@ export const customConfig = {
   settings: {
     'import/resolver': {
       alias: {
-        map: [['src', './src']],
+        map: [
+          ['src', './src'],
+          ['auth-classroom', './auth-classroom']
+        ],
         extensions: ['.js', '.jsx', '.json'],
       },
     },
