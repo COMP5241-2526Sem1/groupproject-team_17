@@ -24,6 +24,7 @@ This project aims to develop a comprehensive solution for Interaction between te
     - Authentication: Auth0 with JWT
     - API Documentation: Swagger
     - ORM: Entity Framework Core, MySQL
+    - Dependency Injection: Built-in .NET Core DI
     
 
 

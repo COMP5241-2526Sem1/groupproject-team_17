@@ -33,11 +33,6 @@
 *.sql
 *.sqlite
 
-# OS generated files #
-Icon?
-._*
-.Spotlight-V100
-.Trashes]]]ertdserdt . . q  sasdasdas
 
 
 
@@ -70,6 +65,7 @@ TestResults/
 *.VC.db
 *.VC.VC.opendb
 *.vscode/
+*.vs/
 
 # Next.js
 .next/
@@ -81,3 +77,6 @@ pnpm-lock.yaml
 npm-debug.log*
 next-env.d.ts
 coverage/
+
+# C# Web-api
+backend/InteractiveHub.WebAPI/appsettings.Development.json
