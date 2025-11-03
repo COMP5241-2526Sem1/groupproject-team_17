@@ -35,29 +35,39 @@ export function useClassroomActivities() {
 
       if (response.code === 0 && response.data) {
         const activity = response.data;
+
+        // Normalize type - handle both numeric (1,2,3) and string ("quiz", "poll", "discussion", "Quiz", "Polling", "Discussion")
+        let normalizedType;
+        if (typeof activity.type === 'number') {
+          normalizedType = activity.type === 1 ? 'quiz' : activity.type === 2 ? 'poll' : 'discussion';
+        } else {
+          const lowerType = activity.type?.toLowerCase();
+          normalizedType = lowerType === 'polling' ? 'poll' : lowerType;
+        }
+
         const transformedActivity = {
           id: activity.id,
-          type: activity.type === 1 ? 'quiz' : activity.type === 2 ? 'poll' : 'discussion',
+          type: normalizedType,
           title: activity.title,
           description: activity.description,
           isActive: activity.isActive,
           expiresAt: activity.expiresAt,
           createdAt: activity.createdAt, // Add createdAt for timer calculation
           // Type-specific data
-          ...(activity.type === 1 && {
+          ...(normalizedType === 'quiz' && {
             // Quiz
             questions: activity.questions || [],
             timeLimit: activity.quiz_TimeLimit,
             showCorrectAnswers: activity.quiz_ShowCorrectAnswers,
             shuffleQuestions: activity.quiz_ShuffleQuestions,
           }),
-          ...(activity.type === 2 && {
+          ...(normalizedType === 'poll' && {
             // Poll
             options: activity.options || [],
             allowMultipleSelections: activity.poll_AllowMultipleSelections,
             isAnonymous: activity.poll_IsAnonymous,
           }),
-          ...(activity.type === 3 && {
+          ...(normalizedType === 'discussion' && {
             // Discussion
             maxLength: activity.discussion_MaxLength,
             allowAnonymous: activity.discussion_AllowAnonymous,
@@ -116,9 +126,18 @@ export function useClassroomActivities() {
               }
             }
 
+            // Normalize type - handle both numeric (1,2,3) and string
+            let normalizedType;
+            if (typeof activity.type === 'number') {
+              normalizedType = activity.type === 1 ? 'quiz' : activity.type === 2 ? 'poll' : 'discussion';
+            } else {
+              const lowerType = activity.type?.toLowerCase();
+              normalizedType = lowerType === 'polling' ? 'poll' : lowerType;
+            }
+
             return {
               id: activity.id,
-              type: activity.type === 1 ? 'quiz' : activity.type === 2 ? 'poll' : 'discussion',
+              type: normalizedType,
               title: activity.title,
               description: activity.description,
               status,

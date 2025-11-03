@@ -12,7 +12,6 @@ import {
   Box,
   Card,
   CardContent,
-  Chip,
   CircularProgress,
   Container,
   Drawer,
@@ -21,7 +20,7 @@ import {
   Stack,
   Typography,
   useMediaQuery,
-  useTheme,
+  useTheme
 } from '@mui/material';
 
 import { activityAPI } from 'src/api/api-function-call';
@@ -77,9 +76,19 @@ export default function ClassRoomView() {
         const response = await activityAPI.getActivity(activity.id);
         if (response.code === 0 && response.data) {
           const fullActivity = response.data;
+
+          // Normalize type - handle both numeric (1,2,3) and string ("quiz", "poll", "discussion", "Quiz", "Polling", "Discussion")
+          let normalizedType;
+          if (typeof fullActivity.type === 'number') {
+            normalizedType = fullActivity.type === 1 ? 'quiz' : fullActivity.type === 2 ? 'poll' : 'discussion';
+          } else {
+            const lowerType = fullActivity.type?.toLowerCase();
+            normalizedType = lowerType === 'polling' ? 'poll' : lowerType;
+          }
+
           const transformedActivity = {
             id: fullActivity.id,
-            type: fullActivity.type === 1 ? 'quiz' : fullActivity.type === 2 ? 'poll' : 'discussion',
+            type: normalizedType,
             title: fullActivity.title,
             description: fullActivity.description,
             isActive: fullActivity.isActive,
@@ -87,20 +96,20 @@ export default function ClassRoomView() {
             expiresAt: fullActivity.expiresAt,
             createdAt: fullActivity.createdAt, // Add createdAt for timer calculation
             // Type-specific data
-            ...(fullActivity.type === 1 && {
+            ...(normalizedType === 'quiz' && {
               // Quiz
               questions: fullActivity.questions || [],
               timeLimit: fullActivity.quiz_TimeLimit,
               showCorrectAnswers: fullActivity.quiz_ShowCorrectAnswers,
               shuffleQuestions: fullActivity.quiz_ShuffleQuestions,
             }),
-            ...(fullActivity.type === 2 && {
+            ...(normalizedType === 'poll' && {
               // Poll
               options: fullActivity.options || [],
               allowMultipleSelections: fullActivity.poll_AllowMultipleSelections,
               isAnonymous: fullActivity.poll_IsAnonymous,
             }),
-            ...(fullActivity.type === 3 && {
+            ...(normalizedType === 'discussion' && {
               // Discussion
               maxLength: fullActivity.discussion_MaxLength,
               allowAnonymous: fullActivity.discussion_AllowAnonymous,
@@ -174,14 +183,6 @@ export default function ClassRoomView() {
               {classroomState.courseCode}
             </Typography>
           </Box>
-          <Stack direction="row" spacing={2} alignItems="center">
-            <Chip
-              label={`${onlineCount} students online`}
-              size="small"
-              variant="outlined"
-              icon={<Iconify icon="solar:users-group-rounded-bold" />}
-            />
-          </Stack>
         </Stack>
 
         {/* Error Alert */}

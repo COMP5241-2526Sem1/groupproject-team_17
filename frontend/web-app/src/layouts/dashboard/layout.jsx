@@ -3,28 +3,27 @@
 import { merge } from 'es-toolkit';
 import { useBoolean } from 'minimal-shared/hooks';
 
-import Box from '@mui/material/Box';
 import Alert from '@mui/material/Alert';
-import { useTheme } from '@mui/material/styles';
+import Box from '@mui/material/Box';
 import { iconButtonClasses } from '@mui/material/IconButton';
+import { useTheme } from '@mui/material/styles';
 
 import { Logo } from 'src/components/logo';
 import { useSettingsContext } from 'src/components/settings';
 
 import { useMockedUser } from 'src/auth/hooks';
 
-import { NavMobile } from './nav-mobile';
-import { VerticalDivider } from './content';
-import { NavVertical } from './nav-vertical';
-import { NavHorizontal } from './nav-horizontal';
-import { _account } from '../nav-config-account';
-import { MenuButton } from '../components/menu-button';
 import { AccountDrawer } from '../components/account-drawer';
-import { CoursePopover } from '../components/course-popover';
+import { MenuButton } from '../components/menu-button';
 import { SettingsButton } from '../components/settings-button';
+import { HeaderSection, LayoutSection, MainSection, layoutClasses } from '../core';
+import { _account } from '../nav-config-account';
 import { navData as dashboardNavData } from '../nav-config-dashboard';
+import { VerticalDivider } from './content';
 import { dashboardLayoutVars, dashboardNavColorVars } from './css-vars';
-import { MainSection, layoutClasses, HeaderSection, LayoutSection } from '../core';
+import { NavHorizontal } from './nav-horizontal';
+import { NavMobile } from './nav-mobile';
+import { NavVertical } from './nav-vertical';
 // ----------------------------------------------------------------------
 
 export function DashboardLayout({ sx, cssVars, children, slotProps, layoutQuery = 'lg' }) {
@@ -106,9 +105,9 @@ export function DashboardLayout({ sx, cssVars, children, slotProps, layoutQuery 
           )}
 
           {/** @slot Course popover */}
-          <CoursePopover
+          {/*           <CoursePopover
             sx={{ ...(isNavHorizontal && { color: 'var(--layout-nav-text-primary-color)' }) }}
-          />
+          /> */}
         </>
       ),
       rightArea: (

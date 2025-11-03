@@ -53,5 +53,18 @@ public interface IClassManager
 
     // Get real-time class status (current activity and joined students count)
     Task<(ResCode, object?)> GetClassroomStatusAsync(string courseId);
+
+    // AI Assistant Methods
+    Task<(ResCode, AIConversation?)> CreateConversationAsync(string courseId, string instructorId, string activityType, string title = "New AI Conversation");
+    Task<(ResCode, AIConversationMessage?)> AddMessageAsync(string conversationId, string role, string content, string? pdfContent = null);
+    Task<(ResCode, AIConversation?)> GetConversationAsync(string conversationId);
+    Task<(ResCode, List<AIConversation>)> GetInstructorConversationsAsync(string instructorId, string? courseId = null, bool includeCompleted = true);
+    Task<(ResCode, string, JsonObject?)> GenerateActivityWithAIAsync(string conversationId, string userPrompt, string? pdfContent = null, string? apiKey = null, HttpClient? httpClient = null, string? provider = null, string? model = null);
+    Task<(ResCode, AIConversation?)> CompleteConversationAsync(string conversationId, string? generatedActivityId = null);
+    Task<ResCode> DeleteConversationAsync(string conversationId);
+    Task<(ResCode, AIActivityPreview?)> SaveActivityPreviewAsync(string conversationId, string activityType, string activityDataJson, string? messageId = null);
+    Task<ResCode> MarkPreviewAsCreatedAsync(string previewId, string createdActivityId);
+    Task<(ResCode, List<AIActivityPreview>)> GetConversationPreviewsAsync(string conversationId);
+    Task<(ResCode, AIPdfFile?)> UploadPdfFileAsync(string conversationId, string fileName, long fileSize, string extractedText);
 }
 

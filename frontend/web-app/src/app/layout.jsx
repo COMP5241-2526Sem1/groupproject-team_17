@@ -2,17 +2,17 @@ import 'src/global.css';
 
 import { Auth0Provider } from '@auth0/nextjs-auth0';
 
-import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
+import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
 
 import { CONFIG } from 'src/global-config';
 import ReduxProvider from 'src/redux/ReduxProvider';
-import { themeConfig, ThemeProvider, primary as primaryColor } from 'src/theme';
+import { primary as primaryColor, themeConfig, ThemeProvider } from 'src/theme';
 
-import { ProgressBar } from 'src/components/progress-bar';
 import { MotionLazy } from 'src/components/animate/motion-lazy';
+import { ProgressBar } from 'src/components/progress-bar';
+import { defaultSettings, SettingsDrawer, SettingsProvider } from 'src/components/settings';
 import { detectSettings } from 'src/components/settings/server';
-import { SettingsDrawer, defaultSettings, SettingsProvider } from 'src/components/settings';
 
 // ----------------------------------------------------------------------
 

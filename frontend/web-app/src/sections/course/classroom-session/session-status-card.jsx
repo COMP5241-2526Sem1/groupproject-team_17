@@ -7,9 +7,8 @@ import {
   CardHeader,
   Chip,
   Grid,
-  LinearProgress,
   Stack,
-  Typography,
+  Typography
 } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
@@ -72,11 +71,19 @@ export default function SessionStatusCard({
                     {currentActivity.title}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {currentActivity.type === 1
-                      ? 'Quiz'
-                      : currentActivity.type === 2
-                        ? 'Poll'
-                        : 'Discussion'}
+                    {(() => {
+                      // Normalize type to handle both numeric and string types
+                      let normalizedType;
+                      if (typeof currentActivity.type === 'number') {
+                        normalizedType = currentActivity.type === 1 ? 'quiz' : currentActivity.type === 2 ? 'poll' : 'discussion';
+                      } else {
+                        const lowerType = currentActivity.type?.toLowerCase();
+                        normalizedType = lowerType === 'polling' ? 'poll' : lowerType;
+                      }
+
+                      const displayType = normalizedType === 'quiz' ? 'Quiz' : normalizedType === 'poll' ? 'Poll' : 'Discussion';
+                      return displayType;
+                    })()}
                     {currentActivity.description && ` • ${currentActivity.description}`}
                   </Typography>
                 </>
@@ -88,27 +95,7 @@ export default function SessionStatusCard({
             </Box>
           </Grid>
 
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Box>
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                Students Online
-              </Typography>
-              <Stack direction="row" spacing={1} alignItems="baseline">
-                <Typography variant="h4" color="primary.main">
-                  {joinedStudentsCount}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  / {totalStudents} enrolled
-                </Typography>
-              </Stack>
-              <LinearProgress
-                variant="determinate"
-                value={totalStudents ? (joinedStudentsCount / totalStudents) * 100 : 0}
-                sx={{ mt: 1, height: 6, borderRadius: 3 }}
-                color="primary"
-              />
-            </Box>
-          </Grid>
+
         </Grid>
       </CardContent>
     </Card>

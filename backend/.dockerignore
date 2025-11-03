@@ -1,0 +1,36 @@
+# .NET build artifacts
+**/bin/
+**/obj/
+**/out/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Rider
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+.env.local
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+
+# Logs
+logs/
+*.log
+
+# Test results
+TestResults/
+
+# NuGet packages
+*.nupkg
+*.snupkg

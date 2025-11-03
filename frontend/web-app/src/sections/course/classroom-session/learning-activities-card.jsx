@@ -137,16 +137,6 @@ export default function LearningActivitiesCard({
     <Card>
       <CardHeader
         title="Learning Activities"
-        action={
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<Iconify icon="solar:add-circle-bold" />}
-            onClick={onCreateNew}
-          >
-            Create New
-          </Button>
-        }
       />
       <CardContent sx={{ pt: 0 }}>
         {loading ? (
@@ -203,11 +193,17 @@ export default function LearningActivitiesCard({
                   <Avatar >
                     <Iconify
                       icon={
-                        activity.type === 'quiz'
-                          ? 'solar:question-circle-bold'
-                          : activity.type === 'poll'
-                            ? 'solar:chart-2-bold'
-                            : 'solar:chat-round-dots-bold'
+                        (() => {
+                          // Normalize type to lowercase and handle "polling"
+                          const normalizedType = activity.type?.toLowerCase();
+                          const activityType = normalizedType === 'polling' ? 'poll' : normalizedType;
+
+                          return activityType === 'quiz'
+                            ? 'solar:question-circle-bold'
+                            : activityType === 'poll'
+                              ? 'solar:chart-2-bold'
+                              : 'solar:chat-round-dots-bold';
+                        })()
                       }
                     />
                   </Avatar>
@@ -220,46 +216,59 @@ export default function LearningActivitiesCard({
 
                       {/* Activity Details */}
                       <Stack direction="row" spacing={2}>
-                        {activity.type === 'quiz' && (
-                          <>
-                            <Typography variant="caption" color="text.secondary">
-                              {activity.questions?.length || 0} question{activity.questions?.length !== 1 ? 's' : ''}
-                            </Typography>
-                            {(() => {
-                              // Backend returns TimeLimit (PascalCase) or timeLimit (camelCase)
-                              const timeLimit = activity.timeLimit ?? activity.TimeLimit ?? 0;
-                              return timeLimit ? (
+                        {(() => {
+                          // Normalize type for comparisons
+                          const normalizedType = activity.type?.toLowerCase();
+                          const activityType = normalizedType === 'polling' ? 'poll' : normalizedType;
+
+                          if (activityType === 'quiz') {
+                            return (
+                              <>
                                 <Typography variant="caption" color="text.secondary">
-                                  {timeLimit}s limit
+                                  {activity.questions?.length || 0} question{activity.questions?.length !== 1 ? 's' : ''}
                                 </Typography>
-                              ) : null;
-                            })()}
-                          </>
-                        )}
-                        {activity.type === 'poll' && (
-                          <>
-                            <Typography variant="caption" color="text.secondary">
-                              {activity.options?.length || 0} option{activity.options?.length !== 1 ? 's' : ''}
-                            </Typography>
-                            {(() => {
-                              // Backend returns AllowMultipleSelections (PascalCase) or allowMultipleSelections (camelCase)
-                              const allowMultiple = activity.allowMultipleSelections ?? activity.AllowMultipleSelections ?? false;
-                              return allowMultiple ? (
-                                <Typography variant="caption" color="info.main">
-                                  Multiple
+                                {(() => {
+                                  // Backend returns TimeLimit (PascalCase) or timeLimit (camelCase)
+                                  const timeLimit = activity.timeLimit ?? activity.TimeLimit ?? 0;
+                                  return timeLimit ? (
+                                    <Typography variant="caption" color="text.secondary">
+                                      {timeLimit}s limit
+                                    </Typography>
+                                  ) : null;
+                                })()}
+                              </>
+                            );
+                          }
+
+                          if (activityType === 'poll') {
+                            return (
+                              <>
+                                <Typography variant="caption" color="text.secondary">
+                                  {activity.options?.length || 0} option{activity.options?.length !== 1 ? 's' : ''}
                                 </Typography>
-                              ) : null;
-                            })()}
-                          </>
-                        )}
-                        {activity.type === 'discussion' && (() => {
-                          // Backend returns MaxLength (PascalCase) or maxLength (camelCase)
-                          const maxLength = activity.maxLength ?? activity.MaxLength;
-                          return maxLength ? (
-                            <Typography variant="caption" color="text.secondary">
-                              Max {maxLength} chars
-                            </Typography>
-                          ) : null;
+                                {(() => {
+                                  // Backend returns AllowMultipleSelections (PascalCase) or allowMultipleSelections (camelCase)
+                                  const allowMultiple = activity.allowMultipleSelections ?? activity.AllowMultipleSelections ?? false;
+                                  return allowMultiple ? (
+                                    <Typography variant="caption" color="info.main">
+                                      Multiple
+                                    </Typography>
+                                  ) : null;
+                                })()}
+                              </>
+                            );
+                          }
+
+                          if (activityType === 'discussion') {
+                            const maxLength = activity.maxLength ?? activity.MaxLength;
+                            return maxLength ? (
+                              <Typography variant="caption" color="text.secondary">
+                                Max {maxLength} chars
+                              </Typography>
+                            ) : null;
+                          }
+
+                          return null;
                         })()}
                       </Stack>
 

@@ -15,7 +15,19 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<BadRequestActionFilter>();
+})
+.AddJsonOptions(options =>
+{
+    // Configure DateTime serialization to include timezone (Z suffix for UTC)
+    // Configure enum serialization to use camelCase (e.g., "quiz" instead of "Quiz")
+    options.JsonSerializerOptions.Converters.Add(
+        new System.Text.Json.Serialization.JsonStringEnumConverter(
+            System.Text.Json.JsonNamingPolicy.CamelCase
+        )
+    );
+    // This ensures DateTime values are serialized in ISO 8601 format with UTC indicator
 });
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -100,6 +112,9 @@ builder.Services.AddSwaggerGen(c =>
 
 builder.Services.AddInteractiveHubServices(); // Add the HubLogger service
 
+// Add HttpClient for AI Assistant
+builder.Services.AddHttpClient();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: "Allow_All", builderx =>
@@ -111,16 +126,14 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+// Enable Swagger in all environments for easier API testing
+app.MapOpenApi();
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.MapOpenApi();
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "InteractiveHub API v1");
-        c.DisplayRequestDuration();
-    });
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "InteractiveHub API v1");
+    c.DisplayRequestDuration();
+});
 
 app.UseCors("Allow_All");
 

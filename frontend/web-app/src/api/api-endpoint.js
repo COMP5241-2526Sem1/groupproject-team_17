@@ -12,6 +12,7 @@ export const API_ENDPOINTS = {
     ADD_OR_UPDATE_STUDENTS: (courseId) => `/api/Course/AddOrUpdateStudents/${courseId}`,
     REMOVE_STUDENT: (courseId, studentId) => `/api/Course/${courseId}/RemoveStudent/${studentId}`,
     REMOVE_STUDENTS: (courseId) => `/api/Course/${courseId}/RemoveStudents`,
+    GET_LEADERBOARD: (courseId) => `/api/Course/GetLeaderboard/${courseId}`,
   },
 
   // RealTime Class Management (RealTimeClassController)
@@ -52,6 +53,18 @@ export const API_ENDPOINTS = {
     SUBMIT_QUIZ: (quizId) => `/api/RealTimeClass/Quiz/${quizId}/Submit`,
     SUBMIT_POLL: (pollId) => `/api/RealTimeClass/Poll/${pollId}/Submit`,
     SUBMIT_DISCUSSION: (discussionId) => `/api/RealTimeClass/Discussion/${discussionId}/Submit`,
+  },
+
+  // AI Assistant (AIAssistantController)
+  AI_ASSISTANT: {
+    CREATE_CONVERSATION: '/api/AIAssistant/CreateConversation',
+    SEND_MESSAGE: '/api/AIAssistant/SendMessage',
+    SEND_MESSAGE_STREAM: '/api/AIAssistant/SendMessageStream',
+    GET_CONVERSATION: (conversationId) => `/api/AIAssistant/GetConversation/${conversationId}`,
+    GET_MY_CONVERSATIONS: '/api/AIAssistant/GetMyConversations',
+    COMPLETE_CONVERSATION: '/api/AIAssistant/CompleteConversation',
+    UPLOAD_PDF: '/api/AIAssistant/UploadPdf',
+    DELETE_CONVERSATION: (conversationId) => `/api/AIAssistant/DeleteConversation/${conversationId}`,
   },
 };
 

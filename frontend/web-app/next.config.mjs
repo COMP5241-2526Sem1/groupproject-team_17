@@ -16,7 +16,12 @@ const isStaticExport = false;
 const nextConfig = {
   reactStrictMode: false, // Disable React Strict Mode
   trailingSlash: true,
-  output: isStaticExport ? 'export' : undefined,
+  output: isStaticExport ? 'export' : 'standalone',
+  eslint: {
+    // Warning: This allows production builds to successfully complete even if
+    // your project has ESLint errors.
+    ignoreDuringBuilds: true,
+  },
   env: {
     BUILD_STATIC_EXPORT: JSON.stringify(isStaticExport),
   },

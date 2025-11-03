@@ -34,6 +34,45 @@ import CourseDetailsSettingsEditDialog from './course-details-edit-course-dialog
 
 // ----------------------------------------------------------------------
 
+// Helper function to parse string mode to enum value
+const parseJoinCheckingMode = (modeString) => {
+  if (typeof modeString === 'number') {
+    return modeString; // Already a number, return as-is
+  }
+
+  if (!modeString || typeof modeString !== 'string') {
+    return 0; // Invalid input, return Disabled
+  }
+
+  let result = 0;
+  const modeParts = modeString.split(',').map(s => s.trim().toLowerCase());
+
+  modeParts.forEach(part => {
+    switch (part) {
+      case 'studentid':
+        // eslint-disable-next-line no-bitwise
+        result |= 1;
+        break;
+      case 'studentname':
+        // eslint-disable-next-line no-bitwise
+        result |= 2;
+        break;
+      case 'email':
+        // eslint-disable-next-line no-bitwise
+        result |= 4;
+        break;
+      case 'pin':
+        // eslint-disable-next-line no-bitwise
+        result |= 8;
+        break;
+      default:
+        break;
+    }
+  });
+
+  return result;
+};
+
 export default function CourseDetailsSettings() {
   const router = useRouter();
 
@@ -229,8 +268,14 @@ export default function CourseDetailsSettings() {
 
   const renderCourseJoinInfo = () => {
     const handleStartEdit = () => {
-      const initial = selectedCourse.joinCheckingModes || [0];
-      setSavedCombinations(initial);
+      const rawModes = selectedCourse.joinCheckingModes || ['0'];
+      // Convert string modes to numeric enum values
+      const parsedModes = rawModes.map(mode => parseJoinCheckingMode(mode));
+      console.log('[Course Settings] Starting edit:', {
+        rawModes,
+        parsedModes
+      });
+      setSavedCombinations(parsedModes);
       setCurrentCombination(1); // Always start with Student ID
       setEditingJoinMode(true);
     };
@@ -294,17 +339,27 @@ export default function CourseDetailsSettings() {
     };
 
     const handleCancelEdit = () => {
+      const rawModes = selectedCourse.joinCheckingModes || ['0'];
+      const parsedModes = rawModes.map(mode => parseJoinCheckingMode(mode));
       setCurrentCombination(1); // Reset to Student ID only
-      setSavedCombinations(selectedCourse.joinCheckingModes || [0]);
+      setSavedCombinations(parsedModes);
       setEditingJoinMode(false);
     };
 
 
     const getJoinModeDisplay = (modesArray) => {
+      // Convert string modes to numeric values if needed
+      const parsedModes = modesArray ? modesArray.map(mode => parseJoinCheckingMode(mode)) : [0];
+
+      console.log('[Course Settings] Displaying modes:', {
+        original: modesArray,
+        parsed: parsedModes
+      });
+
       if (
-        !modesArray ||
-        modesArray.length === 0 ||
-        (modesArray.length === 1 && modesArray[0] === 0)
+        !parsedModes ||
+        parsedModes.length === 0 ||
+        (parsedModes.length === 1 && parsedModes[0] === 0)
       ) {
         return (
           <Box
@@ -330,7 +385,7 @@ export default function CourseDetailsSettings() {
 
       return (
         <Stack spacing={1.5}>
-          {modesArray.map((combination, comboIndex) => {
+          {parsedModes.map((combination, comboIndex) => {
             if (combination === 0) return null;
             const modes = joinCheckingModes.filter((m) => hasFlag(combination, m.value));
             return (

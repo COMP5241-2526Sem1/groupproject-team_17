@@ -1,16 +1,16 @@
 import { useState } from 'react';
 
 import {
+  Alert,
   Box,
   Card,
-  Chip,
-  Alert,
-  Stack,
-  Typography,
-  CardContent,
-  ToggleButton,
   CardActionArea,
+  CardContent,
+  Chip,
+  Stack,
+  ToggleButton,
   ToggleButtonGroup,
+  Typography,
 } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
@@ -122,11 +122,17 @@ export function ActivitiesList({ activities, onActivitySelect, selectedActivityI
                         <Stack direction="row" spacing={2} alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
                           <Iconify
                             icon={
-                              activity.type === 'quiz'
-                                ? 'solar:question-circle-bold'
-                                : activity.type === 'poll'
-                                  ? 'solar:chart-2-bold'
-                                  : 'solar:chat-round-dots-bold'
+                              (() => {
+                                // Normalize type to lowercase and handle "polling"
+                                const normalizedType = activity.type?.toLowerCase();
+                                const activityType = normalizedType === 'polling' ? 'poll' : normalizedType;
+
+                                return activityType === 'quiz'
+                                  ? 'solar:question-circle-bold'
+                                  : activityType === 'poll'
+                                    ? 'solar:chart-2-bold'
+                                    : 'solar:chat-round-dots-bold';
+                              })()
                             }
                             width={24}
                             color={isSelected ? 'primary.main' : 'text.secondary'}
@@ -149,7 +155,11 @@ export function ActivitiesList({ activities, onActivitySelect, selectedActivityI
                               color="text.secondary"
                               sx={{ textTransform: 'capitalize' }}
                             >
-                              {activity.type}
+                              {(() => {
+                                // Display normalized type
+                                const normalizedType = activity.type?.toLowerCase();
+                                return normalizedType === 'polling' ? 'poll' : normalizedType;
+                              })()}
                             </Typography>
                           </Box>
                         </Stack>

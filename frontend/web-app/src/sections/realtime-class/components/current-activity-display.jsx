@@ -22,13 +22,23 @@ export function CurrentActivityDisplay({ activity, onSubmitSuccess, isHistoryVie
   if (!activity) {
     return (
       <Alert severity="info" icon={<Iconify icon="solar:hourglass-bold" />}>
-        {isHistoryView ? '請從列表中選擇一個活動' : '目前沒有活動'}
+        {isHistoryView ? 'Please select an activity from the list' : 'No activity available'}
       </Alert>
     );
   }
 
+  // Normalize activity type to lowercase and handle both "poll" and "polling"
+  const normalizedType = activity.type?.toLowerCase();
+  const activityType = normalizedType === 'polling' ? 'poll' : normalizedType;
+
+  console.log('[CurrentActivityDisplay] Normalized type:', {
+    original: activity.type,
+    normalized: normalizedType,
+    final: activityType
+  });
+
   // Render specific activity type component
-  if (activity.type === 'poll') {
+  if (activityType === 'poll') {
     return (
       <PollActivity
         activity={activity}
@@ -38,7 +48,7 @@ export function CurrentActivityDisplay({ activity, onSubmitSuccess, isHistoryVie
     );
   }
 
-  if (activity.type === 'quiz') {
+  if (activityType === 'quiz') {
     return (
       <QuizActivity
         activity={activity}
@@ -48,7 +58,7 @@ export function CurrentActivityDisplay({ activity, onSubmitSuccess, isHistoryVie
     );
   }
 
-  if (activity.type === 'discussion') {
+  if (activityType === 'discussion') {
     return (
       <DiscussionActivity
         activity={activity}
@@ -95,7 +105,7 @@ export function CurrentActivityDisplay({ activity, onSubmitSuccess, isHistoryVie
           )}
 
           {/* Type-specific content for quiz and discussion */}
-          {activity.type === 'quiz' && (
+          {activityType === 'quiz' && (
             <Box>
               <Typography variant="subtitle2">
                 {activity.questions?.length || 0} questions
@@ -106,7 +116,7 @@ export function CurrentActivityDisplay({ activity, onSubmitSuccess, isHistoryVie
             </Box>
           )}
 
-          {activity.type === 'discussion' && (
+          {activityType === 'discussion' && (
             <Box>
               <Typography variant="subtitle2">Discussion Activity</Typography>
               {activity.maxLength && (

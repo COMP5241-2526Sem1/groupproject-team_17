@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 
 import { activityAPI, realtimeClassAPI } from 'src/api/api-function-call';
+import { Iconify } from 'src/components/iconify';
 import { useInstructorWebSocket } from 'src/contexts';
 import { useSelector } from 'src/redux/hooks';
 
@@ -29,6 +30,7 @@ import EditPollDialog from './classroom-create-activity/edit-poll-dialog';
 import EditQuizDialog from './classroom-create-activity/edit-quiz-dialog';
 import {
   ActiveActivityStats,
+  AIAssistantDialog,
   InteractiveActivitiesCard,
   LearningActivitiesCard,
   SessionStatusCard,
@@ -58,6 +60,8 @@ export default function CourseDetailsClassroom() {
   const [editingActivity, setEditingActivity] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingActivityId, setDeletingActivityId] = useState(null);
+  const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
+  const [aiActivityType, setAiActivityType] = useState('quiz');
 
   // WebSocket connection from context
   const { isConnected, subscribeMessage, unsubscribeMessage } = useInstructorWebSocket();
@@ -237,9 +241,19 @@ export default function CourseDetailsClassroom() {
         // Transform currentActivity data to match component structure
         if (response.data.currentActivity) {
           const activity = response.data.currentActivity;
+
+          // Normalize type - handle both numeric (1,2,3) and string ("quiz", "poll", "discussion", "Quiz", "Polling", "Discussion")
+          let normalizedType;
+          if (typeof activity.type === 'number') {
+            normalizedType = activity.type === 1 ? 'quiz' : activity.type === 2 ? 'poll' : 'discussion';
+          } else {
+            const lowerType = activity.type?.toLowerCase();
+            normalizedType = lowerType === 'polling' ? 'poll' : lowerType;
+          }
+
           const transformedActivity = {
             id: activity.id,
-            type: activity.type === 1 ? 'quiz' : activity.type === 2 ? 'poll' : 'discussion',
+            type: normalizedType,
             title: activity.title,
             description: activity.description,
             isActive: activity.isActive,
@@ -247,19 +261,19 @@ export default function CourseDetailsClassroom() {
             createdAt: activity.createdAt,
             expiresAt: activity.expiresAt,
             // Backend returns lowercase field names from SerializeActivityWithOptions
-            ...(activity.type === 1 && {
+            ...(normalizedType === 'quiz' && {
               // Quiz
               questions: activity.questions || activity.Questions || [],
               timeLimit: activity.quiz_TimeLimit ?? activity.Quiz_TimeLimit ?? activity.timeLimit ?? 0,
               showCorrectAnswers: activity.quiz_ShowCorrectAnswers ?? activity.Quiz_ShowCorrectAnswers ?? activity.showCorrectAnswers ?? false,
             }),
-            ...(activity.type === 2 && {
+            ...(normalizedType === 'poll' && {
               // Poll
               options: activity.options || activity.Options || [],
               allowMultipleSelections: activity.poll_AllowMultipleSelections ?? activity.Poll_AllowMultipleSelections ?? activity.allowMultipleSelections ?? false,
               isAnonymous: activity.poll_IsAnonymous ?? activity.Poll_IsAnonymous ?? activity.isAnonymous ?? true,
             }),
-            ...(activity.type === 3 && {
+            ...(normalizedType === 'discussion' && {
               // Discussion
               maxLength: activity.discussion_MaxLength ?? activity.Discussion_MaxLength ?? activity.maxLength ?? 500,
               allowAnonymous: activity.discussion_AllowAnonymous ?? activity.Discussion_AllowAnonymous ?? activity.allowAnonymous ?? false,
@@ -334,6 +348,15 @@ export default function CourseDetailsClassroom() {
           rawActivity: activity,
         });
 
+        // Normalize type - handle both numeric (1,2,3) and string
+        let normalizedType;
+        if (typeof activity.type === 'number') {
+          normalizedType = activity.type === 1 ? 'quiz' : activity.type === 2 ? 'poll' : 'discussion';
+        } else {
+          const lowerType = activity.type?.toLowerCase();
+          normalizedType = lowerType === 'polling' ? 'poll' : lowerType;
+        }
+
         // Calculate status based on isActive and hasBeenActivated
         let status;
         if (activity.isActive) {
@@ -346,7 +369,7 @@ export default function CourseDetailsClassroom() {
 
         const transformed = {
           id: activity.id,
-          type: activity.type === 1 ? 'quiz' : activity.type === 2 ? 'poll' : 'discussion',
+          type: normalizedType,
           title: activity.title,
           description: activity.description,
           status,
@@ -355,21 +378,21 @@ export default function CourseDetailsClassroom() {
           createdAt: activity.createdAt,
           expiresAt: activity.expiresAt,
           // Backend now returns PascalCase field names from transformed objects
-          ...(activity.type === 1 && {
+          ...(normalizedType === 'quiz' && {
             // Quiz - backend returns Questions (PascalCase)
             questions: activity.questions || activity.Questions || [],
             // Backend returns TimeLimit (PascalCase)
             timeLimit: activity.timeLimit ?? activity.TimeLimit ?? 0,
             showCorrectAnswers: activity.showCorrectAnswers ?? activity.ShowCorrectAnswers ?? false,
           }),
-          ...(activity.type === 2 && {
+          ...(normalizedType === 'poll' && {
             // Poll - backend returns Options (PascalCase)
             options: activity.options || activity.Options || [],
             // Backend returns AllowMultipleSelections (PascalCase)
             allowMultipleSelections: activity.allowMultipleSelections ?? activity.AllowMultipleSelections ?? false,
             isAnonymous: activity.isAnonymous ?? activity.IsAnonymous ?? true,
           }),
-          ...(activity.type === 3 && {
+          ...(normalizedType === 'discussion' && {
             // Discussion - backend returns MaxLength (PascalCase)
             maxLength: activity.maxLength ?? activity.MaxLength ?? 500,
             allowAnonymous: activity.allowAnonymous ?? activity.AllowAnonymous ?? false,
@@ -674,9 +697,38 @@ export default function CourseDetailsClassroom() {
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ mb: 3 }}>
-        Live Classroom - {selectedCourse.courseCode}
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h4">
+          Live Classroom - {selectedCourse.courseCode}
+        </Typography>
+        <Button
+          variant="contained"
+          color="primary"
+          size="large"
+          startIcon={<Iconify icon="solar:qr-code-bold" width={24} />}
+          onClick={() => {
+            if (!selectedCourse?.id && !selectedCourse?.joinCode) {
+              console.error('No courseId or joinCode provided');
+              return;
+            }
+            const code = selectedCourse.joinCode || selectedCourse.id;
+            const baseUrl = window.location.origin;
+            const qrUrl = `${baseUrl}/qr?class=${code}`;
+            const width = 600;
+            const height = 800;
+            const left = (window.screen.width - width) / 2;
+            const top = (window.screen.height - height) / 2;
+            window.open(
+              qrUrl,
+              'JoinClassroomQR',
+              `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=no,toolbar=no,menubar=no,location=no,status=no`
+            );
+          }}
+          sx={{ minWidth: 150 }}
+        >
+          Join QR Code
+        </Button>
+      </Box>
 
       <Grid container spacing={3}>
         {/* Session Status */}
@@ -697,6 +749,10 @@ export default function CourseDetailsClassroom() {
             onCreatePoll={() => setCreatePollOpen(true)}
             onCreateQuiz={() => setCreateQuizOpen(true)}
             onCreateDiscussion={() => setCreateDiscussionOpen(true)}
+            onOpenAIAssistant={() => {
+              setAiActivityType('quiz');
+              setAiAssistantOpen(true);
+            }}
           />
         </Grid>
 
@@ -812,6 +868,20 @@ export default function CourseDetailsClassroom() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* AI Assistant Dialog */}
+      <AIAssistantDialog
+        open={aiAssistantOpen}
+        onClose={() => setAiAssistantOpen(false)}
+        courseId={selectedCourse?.id}
+        activityType={aiActivityType}
+        onActivityGenerated={(activity) => {
+          console.log('[Classroom] Activity generated by AI:', activity);
+          // Refresh activities list
+          fetchActivities();
+          fetchClassroomStatus();
+        }}
+      />
     </Box>
   );
 }
