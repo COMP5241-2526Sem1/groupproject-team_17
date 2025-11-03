@@ -1,0 +1,60 @@
+services:
+  # Web API
+  webapi:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: interactivehub-webapi
+    restart: unless-stopped
+    ports:
+      - "9681:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=server=61.244.130.65;port=10336;database=DevInteractiveHub;user=mydev;password=1qaz3edc!!
+      - Auth0__Domain=dev-vp3btmy4o16szzz1.us.auth0.com
+      - Auth0__ClientId=HX9Bxdar3aKRmeTsWrPWApdgKkJKdgbZ
+      - Auth0__Audience=http://61.244.130.65:9681
+      - GitHub__Token=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
+      - DeepSeek__ApiKey=sk-31c04c32401b4ec1957924672d09e81f
+      - DeepSeek__Model=deepseek-chat
+      - LLM__Provider=DeepSeek
+      - CORS__AllowedOrigins=http://61.244.130.65:9681,http://61.244.130.65:9680,http://localhost:3000,http://localhost:9681,http://localhost:9680
+    networks:
+      - interactivehub-network
+    volumes:
+      - webapi-logs:/app/logs
+
+  # Frontend Web App
+  webapp:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: interactivehub-webapp
+    restart: unless-stopped
+    ports:
+      - "9680:3033"
+    environment:
+      - NODE_ENV=production
+      - API_URL=http://61.244.130.65:9681
+      - NEXT_PUBLIC_SERVER_URL=http://61.244.130.65:9681
+      - AUTH0_SECRET=70cd2a6ef7c370240abf72c07b0b869a476455b3fd7854a99a08e4fba1664df2
+      - AUTH0_BASE_URL=http://61.244.130.65:9680
+      - AUTH0_ISSUER_BASE_URL=https://dev-vp3btmy4o16szzz1.us.auth0.com
+      - AUTH0_DOMAIN=dev-vp3btmy4o16szzz1.us.auth0.com
+      - AUTH0_CLIENT_ID=HX9Bxdar3aKRmeTsWrPWApdgKkJKdgbZ
+      - AUTH0_CLIENT_SECRET=2g70JFtQ6oHsA7-4LcDaSYsN46hbGPzr_-3zPyF_zAZQ--7PnoPfkKxci2Aa1ED6
+      - AUTH0_AUDIENCE=http://61.244.130.65:9681
+      - AUTH0_SCOPE=openid profile email
+      - APP_BASE_URL=http://61.244.130.65:9680
+    networks:
+      - interactivehub-network
+    depends_on:
+      - webapi
+
+networks:
+  interactivehub-network:
+    driver: bridge
+
+volumes:
+  webapi-logs:

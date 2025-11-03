@@ -10,7 +10,13 @@ public class ClassDbContext : DbContext
     public DbSet<Activity> Activities { get; set; } = null!;
     public DbSet<Submission> Submissions { get; set; } = null!;
 
-    //public DbSet<TeachingClass> Classes { get; set; } = null!;
+    // AI Assistant conversation tables
+    public DbSet<AIConversation> AIConversations { get; set; } = null!;
+    public DbSet<AIConversationMessage> AIConversationMessages { get; set; } = null!;
+    public DbSet<AIActivityPreview> AIActivityPreviews { get; set; } = null!;
+    public DbSet<AIPdfFile> AIPdfFiles { get; set; } = null!;
+
+    //public DbSet<TeachingClass> Classes { get; set; } = null!
     public ClassDbContext(DbContextOptions<ClassDbContext> options) : base(options)
     {
 
@@ -84,5 +90,54 @@ public class ClassDbContext : DbContext
 
         modelBuilder.Entity<Submission>()
             .HasIndex(s => new { s.CourseId, s.ActivityId });
+
+        // Configure AI Conversation relationships and indexes
+        modelBuilder.Entity<AIConversation>()
+            .HasIndex(c => c.CourseId);
+
+        modelBuilder.Entity<AIConversation>()
+            .HasIndex(c => c.InstructorId);
+
+        modelBuilder.Entity<AIConversation>()
+            .HasIndex(c => new { c.InstructorId, c.CourseId, c.IsCompleted });
+
+        // Configure relationship: AIConversation -> AIConversationMessages (One-to-Many with Cascade Delete)
+        modelBuilder.Entity<AIConversation>()
+            .HasMany<AIConversationMessage>()
+            .WithOne(m => m.Conversation)
+            .HasForeignKey(m => m.ConversationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<AIConversationMessage>()
+            .HasIndex(m => m.ConversationId);
+
+        modelBuilder.Entity<AIConversationMessage>()
+            .HasIndex(m => new { m.ConversationId, m.Order });
+
+        // Configure relationship: AIConversation -> AIActivityPreviews (One-to-Many with Cascade Delete)
+        modelBuilder.Entity<AIConversation>()
+            .HasMany<AIActivityPreview>()
+            .WithOne(p => p.Conversation)
+            .HasForeignKey(p => p.ConversationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<AIActivityPreview>()
+            .HasIndex(p => p.ConversationId);
+
+        modelBuilder.Entity<AIActivityPreview>()
+            .HasIndex(p => new { p.ConversationId, p.Order });
+
+        modelBuilder.Entity<AIActivityPreview>()
+            .HasIndex(p => p.IsCreated);
+
+        // Configure relationship: AIConversation -> AIPdfFiles (One-to-Many with Cascade Delete)
+        modelBuilder.Entity<AIConversation>()
+            .HasMany<AIPdfFile>()
+            .WithOne(p => p.Conversation)
+            .HasForeignKey(p => p.ConversationId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<AIPdfFile>()
+            .HasIndex(p => p.ConversationId);
     }
 }

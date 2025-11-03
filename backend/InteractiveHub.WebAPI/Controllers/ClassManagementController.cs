@@ -1,5 +1,6 @@
 using InteractiveHub.Service;
 using InteractiveHub.Service.ClassManagement;
+using InteractiveHub.WebAPI.DTO;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -160,6 +161,119 @@ namespace InteractiveHub.WebAPI.Controllers
             });
         }
 
+        [HttpGet("GetLeaderboard/{courseId}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(HttpResult<LeaderboardResponseDto>))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(HttpResult))]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError, Type = typeof(HttpResult))]
+        public async Task<IActionResult> GetLeaderboard(string courseId)
+        {
+            return await HandleWithResultAsync(async () =>
+            {
+                // 1. Get course with students
+                var (courseRes, course) = await _classManager.GetCourseByIdAsync(courseId);
+                if (courseRes.Code != ResCode.OK || course == null)
+                {
+                    return ReturnResponse(courseRes);
+                }
+
+                // 2. Get all activities for the course
+                var (activitiesCode, activities) = await _classManager.GetCourseActivitiesAsync(courseId, activeOnly: false);
+                if (activitiesCode != ResCode.OK)
+                {
+                    return ReturnResponse(new ServiceRes(activitiesCode, "Failed to fetch activities"));
+                }
+
+                var totalActivities = activities.Count;
+                var students = course.Students ?? new List<Student>();
+
+                // 3. Calculate leaderboard data for each student
+                var leaderboardData = new List<LeaderboardStudentDto>();
+
+                foreach (var student in students)
+                {
+                    int completedActivities = 0;
+                    int totalQuizScore = 0;
+                    int maxQuizScore = 0;
+
+                    // Check each activity for student submissions
+                    foreach (var activity in activities)
+                    {
+                        var (subCode, submissions) = await _classManager.GetActivitySubmissionsAsync(activity.Id);
+                        if (subCode == ResCode.OK && submissions != null)
+                        {
+                            var studentSubmission = submissions.FirstOrDefault(s => s.StudentId == student.StudentId);
+
+                            if (studentSubmission != null)
+                            {
+                                completedActivities++;
+
+                                // Calculate quiz scores
+                                if (activity.Type == ActivityType.Quiz && activity is Quiz quiz)
+                                {
+                                    var quizSubmission = studentSubmission as QuizSubmission;
+                                    if (quizSubmission != null)
+                                    {
+                                        var questions = quiz.Questions;
+                                        var answers = quizSubmission.Answers;
+
+                                        for (int i = 0; i < questions.Count; i++)
+                                        {
+                                            var question = questions[i];
+                                            if (i < answers.Count && answers[i] == question.CorrectAnswer)
+                                            {
+                                                totalQuizScore += question.Points;
+                                            }
+                                            maxQuizScore += question.Points;
+                                        }
+                                    }
+                                }
+                            }
+                            else if (activity.Type == ActivityType.Quiz && activity is Quiz quizActivity)
+                            {
+                                // Count max score even if student didn't submit
+                                maxQuizScore += quizActivity.Questions.Sum(q => q.Points);
+                            }
+                        }
+                    }
+
+                    var completionRate = totalActivities > 0 ? (double)completedActivities / totalActivities * 100 : 0;
+                    var quizScorePercentage = maxQuizScore > 0 ? (double)totalQuizScore / maxQuizScore * 100 : 0;
+
+                    leaderboardData.Add(new LeaderboardStudentDto
+                    {
+                        StudentId = student.StudentId,
+                        StudentName = student.FullName,
+                        Email = student.Email,
+                        CompletedActivities = completedActivities,
+                        TotalActivities = totalActivities,
+                        CompletionRate = Math.Round(completionRate, 2),
+                        TotalQuizScore = totalQuizScore,
+                        MaxQuizScore = maxQuizScore,
+                        QuizScorePercentage = Math.Round(quizScorePercentage, 2)
+                    });
+                }
+
+                // 4. Sort by completion rate (desc), then by quiz score (desc)
+                leaderboardData = leaderboardData
+                    .OrderByDescending(s => s.CompletionRate)
+                    .ThenByDescending(s => s.TotalQuizScore)
+                    .ToList();
+
+                // 5. Assign ranks
+                for (int i = 0; i < leaderboardData.Count; i++)
+                {
+                    leaderboardData[i].Rank = i + 1;
+                }
+
+                var response = new LeaderboardResponseDto
+                {
+                    TotalActivities = totalActivities,
+                    Students = leaderboardData
+                };
+
+                return ReturnOK(response);
+            });
+        }
 
 
 

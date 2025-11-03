@@ -3,6 +3,7 @@ using System;
 using InteractiveHub.Service.ClassManagement.Repository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InteractiveHub.Service.ClassRelated.Migrations
 {
     [DbContext(typeof(ClassDbContext))]
-    partial class ClassDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251102140259_AddAIConversations")]
+    partial class AddAIConversations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -72,49 +75,6 @@ namespace InteractiveHub.Service.ClassRelated.Migrations
                     b.HasDiscriminator<int>("Type");
 
                     b.UseTphMappingStrategy();
-                });
-
-            modelBuilder.Entity("InteractiveHub.Service.ClassManagement.AIActivityPreview", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<string>("ActivityDataJson")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ActivityType")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("ConversationId")
-                        .IsRequired()
-                        .HasColumnType("varchar(255)");
-
-                    b.Property<string>("CreatedActivityId")
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<bool>("IsCreated")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<string>("MessageId")
-                        .HasColumnType("longtext");
-
-                    b.Property<int>("Order")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ConversationId");
-
-                    b.HasIndex("IsCreated");
-
-                    b.HasIndex("ConversationId", "Order");
-
-                    b.ToTable("AIActivityPreviews");
                 });
 
             modelBuilder.Entity("InteractiveHub.Service.ClassManagement.AIConversation", b =>
@@ -533,17 +493,6 @@ namespace InteractiveHub.Service.ClassRelated.Migrations
                         .HasAnnotation("Relational:JsonPropertyName", "timeSpent");
 
                     b.HasDiscriminator().HasValue(1);
-                });
-
-            modelBuilder.Entity("InteractiveHub.Service.ClassManagement.AIActivityPreview", b =>
-                {
-                    b.HasOne("InteractiveHub.Service.ClassManagement.AIConversation", "Conversation")
-                        .WithMany()
-                        .HasForeignKey("ConversationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Conversation");
                 });
 
             modelBuilder.Entity("InteractiveHub.Service.ClassManagement.AIConversationMessage", b =>

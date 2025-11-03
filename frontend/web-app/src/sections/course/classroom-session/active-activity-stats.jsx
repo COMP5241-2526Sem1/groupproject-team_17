@@ -482,9 +482,16 @@ export default function ActiveActivityStats({ activity, joinedStudentsCount, tot
           </Box>
         ) : (
           <>
-            {activity.type === 'quiz' && renderQuizStats()}
-            {activity.type === 'poll' && renderPollStats()}
-            {activity.type === 'discussion' && renderDiscussionStats()}
+            {(() => {
+              // Normalize type to lowercase and handle "polling"
+              const normalizedType = activity.type?.toLowerCase();
+              const activityType = normalizedType === 'polling' ? 'poll' : normalizedType;
+
+              if (activityType === 'quiz') return renderQuizStats();
+              if (activityType === 'poll') return renderPollStats();
+              if (activityType === 'discussion') return renderDiscussionStats();
+              return null;
+            })()}
           </>
         )}
       </CardContent>

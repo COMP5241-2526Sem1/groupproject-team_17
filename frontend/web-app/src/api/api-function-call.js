@@ -1,7 +1,7 @@
 // API Function Calls for InteractiveHub WebAPI
 // Auto-generated from backend controllers (excluding TestAuth and WeatherForecast)
 
-import { httpDelete, httpGet, httpPost, httpPut } from '../lib/axios';
+import axiosInstance, { httpDelete, httpGet, httpPost, httpPut } from '../lib/axios';
 import { API_ENDPOINTS } from './api-endpoint';
 
 // RealTime Class API Functions
@@ -59,6 +59,10 @@ export const courseAPI = {
   // DELETE /api/Course/{courseId}/RemoveStudents
   removeStudents: async (courseId, studentIds) =>
     httpDelete(API_ENDPOINTS.COURSE.REMOVE_STUDENTS(courseId), studentIds, { method: 'DELETE' }),
+
+  // GET /api/Course/GetLeaderboard/{courseId}
+  getLeaderboard: async (courseId) =>
+    httpGet(API_ENDPOINTS.COURSE.GET_LEADERBOARD(courseId)),
 };
 
 // Activity Management API Functions
@@ -116,6 +120,118 @@ export const activityAPI = {
   // Submit discussion response
   submitDiscussion: async (discussionId, submissionData) =>
     httpPost(API_ENDPOINTS.ACTIVITY.SUBMIT_DISCUSSION(discussionId), submissionData),
+};
+
+// AI Assistant API Functions
+export const aiAssistantAPI = {
+  // Create a new AI conversation
+  createConversation: async (conversationData) =>
+    httpPost(API_ENDPOINTS.AI_ASSISTANT.CREATE_CONVERSATION, conversationData),
+
+  // Send a message and get AI response (non-streaming)
+  sendMessage: async (messageData) =>
+    httpPost(API_ENDPOINTS.AI_ASSISTANT.SEND_MESSAGE, messageData),
+
+  // Send a message with streaming response (typewriter effect)
+  sendMessageStream: (messageData, onChunk, onComplete, onError) => {
+    const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5280';
+    const url = `${baseURL}${API_ENDPOINTS.AI_ASSISTANT.SEND_MESSAGE_STREAM}`;
+
+    // Get auth token from axios instance
+    const authHeader = axiosInstance.defaults.headers.common.Authorization;
+
+    return new Promise((resolve, reject) => {
+      fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authHeader ? { Authorization: authHeader } : {}),
+        },
+        body: JSON.stringify(messageData),
+      })
+        .then(async (response) => {
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+          }
+
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n\n');
+            buffer = lines.pop() || '';
+
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const data = line.slice(6);
+                try {
+                  const parsed = JSON.parse(data);
+
+                  if (parsed.type === 'content') {
+                    onChunk?.(parsed.content);
+                  } else if (parsed.type === 'status') {
+                    // Handle status messages (e.g., "Searching for activities...")
+                    onChunk?.({ type: 'status', message: parsed.message });
+                  } else if (parsed.type === 'activity_selection') {
+                    // Handle activity selection list
+                    onChunk?.({ type: 'activity_selection', message: parsed.message, activities: parsed.activities });
+                  } else if (parsed.type === 'function_call') {
+                    onChunk?.({ type: 'function_call', data: parsed });
+                  } else if (parsed.type === 'complete' || parsed.type === 'done') {
+                    // Handle both 'complete' and 'done' types
+                    onComplete?.(parsed);
+                    resolve(parsed);
+                    return;
+                  } else if (parsed.type === 'error') {
+                    // Handle error - backend sends message in either 'error' or 'message' field
+                    const errorMsg = parsed.error || parsed.message || 'Unknown error';
+                    onError?.(errorMsg);
+                    reject(new Error(errorMsg));
+                    return;
+                  }
+                } catch (e) {
+                  console.error('Failed to parse SSE data:', e);
+                }
+              }
+            }
+          }
+        })
+        .catch((error) => {
+          onError?.(error.message);
+          reject(error);
+        });
+    });
+  },
+
+  // Get conversation details with all messages
+  getConversation: async (conversationId) =>
+    httpGet(API_ENDPOINTS.AI_ASSISTANT.GET_CONVERSATION(conversationId)),
+
+  // Get all conversations for current instructor
+  getMyConversations: async (courseId = null, includeCompleted = true) => {
+    const params = new URLSearchParams();
+    if (courseId) params.append('courseId', courseId);
+    params.append('includeCompleted', includeCompleted);
+    return httpGet(`${API_ENDPOINTS.AI_ASSISTANT.GET_MY_CONVERSATIONS}?${params.toString()}`);
+  },
+
+  // Complete conversation and create activity
+  completeConversation: async (completeData) =>
+    httpPost(API_ENDPOINTS.AI_ASSISTANT.COMPLETE_CONVERSATION, completeData),
+
+  // Upload PDF for text extraction
+  uploadPdf: async (pdfData) =>
+    httpPost(API_ENDPOINTS.AI_ASSISTANT.UPLOAD_PDF, pdfData),
+
+  // Delete a conversation
+  deleteConversation: async (conversationId) =>
+    httpDelete(API_ENDPOINTS.AI_ASSISTANT.DELETE_CONVERSATION(conversationId)),
 };
 
 // Usage Examples:

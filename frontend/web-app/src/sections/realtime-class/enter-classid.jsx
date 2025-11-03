@@ -1,24 +1,24 @@
 'use client';
 
-import * as z from 'zod';
-import { useForm } from 'react-hook-form';
-import { useState, useEffect } from 'react';
-import { useClassroomContext } from 'auth-classroom';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useClassroomContext } from 'auth-classroom';
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
 
-import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
 import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Typography from '@mui/material/Typography';
+import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
+import Typography from '@mui/material/Typography';
 
 import { useRouter, useSearchParams } from 'src/routes/hooks';
 
-import { CONFIG } from 'src/global-config';
 import { realtimeClassAPI } from 'src/api/api-function-call';
+import { CONFIG } from 'src/global-config';
 
-import { Form, Field } from 'src/components/hook-form';
+import { Field, Form } from 'src/components/hook-form';
 
 // ----------------------------------------------------------------------
 
@@ -34,6 +34,45 @@ const JoinCheckingModeEnum = {
 // Helper function to check if a mode is required
 // eslint-disable-next-line no-bitwise
 const hasModeFlag = (combinedMode, flag) => (combinedMode & flag) === flag;
+
+// Helper function to parse string mode to enum value
+const parseJoinCheckingMode = (modeString) => {
+  if (typeof modeString === 'number') {
+    return modeString; // Already a number, return as-is
+  }
+
+  if (!modeString || typeof modeString !== 'string') {
+    return 0; // Invalid input, return Disabled
+  }
+
+  let result = 0;
+  const modeParts = modeString.split(',').map(s => s.trim().toLowerCase());
+
+  modeParts.forEach(part => {
+    switch (part) {
+      case 'studentid':
+        // eslint-disable-next-line no-bitwise
+        result |= JoinCheckingModeEnum.StudentId;
+        break;
+      case 'studentname':
+        // eslint-disable-next-line no-bitwise
+        result |= JoinCheckingModeEnum.StudentName;
+        break;
+      case 'email':
+        // eslint-disable-next-line no-bitwise
+        result |= JoinCheckingModeEnum.Email;
+        break;
+      case 'pin':
+        // eslint-disable-next-line no-bitwise
+        result |= JoinCheckingModeEnum.PIN;
+        break;
+      default:
+        break;
+    }
+  });
+
+  return result;
+};
 
 export const EnterClassCodeSchema = z.object({
   classCode: z
@@ -142,16 +181,30 @@ export function EnterClassCodeView() {
         const res = await realtimeClassAPI.getCourseJoinInfo(data.classCode);
 
         if (res?.code === 0 && res?.data) {
-          setClassInfo(res.data);
-          // Check if no verification is required or only one combination exists
-          const modes = res.data.joinCheckingModes || [0];
+          console.log('[Enter Class] Course join info received (manual):', res.data);
+          console.log('[Enter Class] Join checking modes (manual):', res.data.joinCheckingModes);
+
+          // Convert string modes to numeric enum values
+          const rawModes = res.data.joinCheckingModes || ['0'];
+          const modes = rawModes.map(mode => parseJoinCheckingMode(mode));
+
+          console.log('[Enter Class] Processing modes (manual):', modes);
+          console.log('[Enter Class] Converted from:', rawModes);
+
+          // Set class info with parsed modes in one go
+          setClassInfo({ ...res.data, joinCheckingModes: modes });
+
           if (modes.length === 1) {
             // If no verification required (0), set to Student ID (1) as minimum
             if (modes[0] === 0) {
+              console.log('[Enter Class] No verification required (manual), forcing Student ID');
               setSelectedCombination(1); // Force Student ID requirement
             } else {
+              console.log('[Enter Class] Single mode selected (manual):', modes[0]);
               setSelectedCombination(modes[0]);
             }
+          } else {
+            console.log('[Enter Class] Multiple modes available (manual), user must choose');
           }
         } else {
           setErrorMessage(res?.message || 'Invalid class code. Please check and try again.');
@@ -192,19 +245,33 @@ export function EnterClassCodeView() {
           // Set the class code in the form
           setValue('classCode', classId);
 
-          const res = await realtimeClassAPI.getClassJoinInfo(classId);
+          const res = await realtimeClassAPI.getCourseJoinInfo(classId);
 
           if (res?.code === 0 && res?.data) {
-            setClassInfo(res.data);
-            // Check if no verification is required or only one combination exists
-            const modes = res.data.joinCheckingModes || [0];
+            console.log('[Enter Class] Course join info received:', res.data);
+            console.log('[Enter Class] Join checking modes:', res.data.joinCheckingModes);
+
+            // Convert string modes to numeric enum values
+            const rawModes = res.data.joinCheckingModes || ['0'];
+            const modes = rawModes.map(mode => parseJoinCheckingMode(mode));
+
+            console.log('[Enter Class] Processing modes:', modes);
+            console.log('[Enter Class] Converted from:', rawModes);
+
+            // Set class info with parsed modes in one go
+            setClassInfo({ ...res.data, joinCheckingModes: modes });
+
             if (modes.length === 1) {
               // If no verification required (0), set to Student ID (1) as minimum
               if (modes[0] === 0) {
+                console.log('[Enter Class] No verification required, forcing Student ID');
                 setSelectedCombination(1); // Force Student ID requirement
               } else {
+                console.log('[Enter Class] Single mode selected:', modes[0]);
                 setSelectedCombination(modes[0]);
               }
+            } else {
+              console.log('[Enter Class] Multiple modes available, user must choose');
             }
           } else {
             setErrorMessage('Invalid class code. Please check and try again.');
@@ -296,6 +363,19 @@ export function EnterClassCodeView() {
                       </Box>
                     </Box>
                   )}
+
+                  {(() => {
+                    console.log('[Enter Class] Rendering fields check:', {
+                      selectedCombination,
+                      isNull: selectedCombination === null,
+                      JoinCheckingModeEnum,
+                      hasStudentId: hasModeFlag(selectedCombination, JoinCheckingModeEnum.StudentId),
+                      hasStudentName: hasModeFlag(selectedCombination, JoinCheckingModeEnum.StudentName),
+                      hasEmail: hasModeFlag(selectedCombination, JoinCheckingModeEnum.Email),
+                      hasPIN: hasModeFlag(selectedCombination, JoinCheckingModeEnum.PIN),
+                    });
+                    return null;
+                  })()}
 
                   {selectedCombination !== null && (
                     <>
