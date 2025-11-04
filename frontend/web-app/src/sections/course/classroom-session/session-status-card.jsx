@@ -7,6 +7,7 @@ import {
   CardHeader,
   Chip,
   Grid,
+  LinearProgress,
   Stack,
   Typography
 } from '@mui/material';
@@ -94,7 +95,27 @@ export default function SessionStatusCard({
               )}
             </Box>
           </Grid>
-
+          <Grid size={{ xs: 12, md: 6 }}>
+            <Box>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                Students Online
+              </Typography>
+              <Stack direction="row" spacing={1} alignItems="baseline">
+                <Typography variant="h4" color="primary.main">
+                  {joinedStudentsCount}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  / {totalStudents} enrolled
+                </Typography>
+              </Stack>
+              <LinearProgress
+                variant="determinate"
+                value={totalStudents ? (joinedStudentsCount / totalStudents) * 100 : 0}
+                sx={{ mt: 1, height: 6, borderRadius: 3 }}
+                color="primary"
+              />
+            </Box>
+          </Grid>
 
         </Grid>
       </CardContent>
