@@ -87,16 +87,6 @@ export const navData = [
         path: paths.dashboard.root,
         icon: ICONS.course,
       },
-      {
-        title: 'Report',
-        path: paths.dashboard.two,
-        icon: ICONS.analytics,
-      },
-      {
-        title: 'Students',
-        path: paths.dashboard.three,
-        icon: ICONS.user,
-      },
     ],
   },
 ];
