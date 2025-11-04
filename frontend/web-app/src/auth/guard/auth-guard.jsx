@@ -8,7 +8,6 @@ import { useRouter } from 'src/routes/hooks';
 import { CONFIG } from 'src/global-config';
 import { setAxiosAuthToken } from 'src/lib/axios';
 
-import { removeCookie } from 'minimal-shared/utils';
 import { SplashScreen } from 'src/components/loading-screen';
 
 // ----------------------------------------------------------------------
@@ -42,9 +41,9 @@ export function AuthGuard({ children }) {
       setAxiosAuthToken(token);
     }
     catch (_) {
-      removeCookie('__session');
-      router.replace(CONFIG.auth.loginPath);
-
+      // Cannot delete __session cookie directly (it's HttpOnly)
+      // Must use Auth0 logout endpoint to clear session
+      router.replace('/auth/logout');
       return;
     }
 
