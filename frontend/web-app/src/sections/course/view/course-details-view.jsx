@@ -72,7 +72,16 @@ export default function CourseDetailsView({ sx, ...other }) {
     };
     fetchData();
   }, [id]);
+  function convertSemester(sem) {
+    switch (sem) {
+      case 'one': return '1';
+      case 'two': return '2';
+      case 'three': return '3';
+      case 'none': return '';
 
+
+    }
+  }
   return (
     <DashboardContent>
       {renderToolBar()}
@@ -85,7 +94,7 @@ export default function CourseDetailsView({ sx, ...other }) {
               selectedCourse?.isArchived ? 'warning' : selectedCourse?.isEnabled ? 'info' : 'error'
             }
           >
-            {`${selectedCourse?.academicYear}/${selectedCourse?.academicYear + 1} - SEM${selectedCourse?.semester}`}
+            {`${selectedCourse?.academicYear}/${selectedCourse?.academicYear + 1} - SEM${convertSemester(selectedCourse?.semester)} `}
           </Label>
         </Box>
       </Stack>
