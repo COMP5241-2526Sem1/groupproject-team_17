@@ -109,7 +109,8 @@ public partial class ClassManager
 
         try
         {
-            var existingCourse = await db.Courses.FirstOrDefaultAsync(c => c.Id == courseId && c.OwnerId == OwnerId);
+
+            var existingCourse = await GetCachedCourse(courseId, OwnerId);
             if (existingCourse == null)
             {
                 _log?.LogError($"UpdateCourseAsync: Course with ID [{courseId}] not found.", Operator: OwnerId);
