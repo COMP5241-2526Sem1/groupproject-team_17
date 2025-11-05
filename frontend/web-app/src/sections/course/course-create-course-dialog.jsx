@@ -1,29 +1,29 @@
-import * as z from 'zod';
-import { useForm } from 'react-hook-form';
-import { useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
 
 import {
   Alert,
-  Stack,
   Button,
   Dialog,
-  MenuItem,
-  IconButton,
-  DialogTitle,
   DialogActions,
   DialogContent,
+  DialogTitle,
+  IconButton,
+  MenuItem,
+  Stack,
 } from '@mui/material';
 
 import { ClassManagementActions } from 'src/redux/actions/reducerActions';
 
-import { Iconify } from 'src/components/iconify';
 import { Form, RHFTextField } from 'src/components/hook-form';
+import { Iconify } from 'src/components/iconify';
 
 // if semester is not a number, show error
 const newCourseSchema = z.object({
   academicYear: z.number().min(1970).max(2100),
-  semester: z.number().min(0).max(3), // 1 =Spring, 2=Winter, 3=Summer , 0 = None
+  semester: z.string().transform((val) => Number(val)), // Convert string to number
   courseCode: z
     .string()
     .min(1, { error: 'Course code is required' })
