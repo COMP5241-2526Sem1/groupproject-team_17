@@ -17,6 +17,7 @@ import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 import { Iconify } from 'src/components/iconify';
 import { Label } from 'src/components/label';
 
+import CourseDetailsActivityResult from '../course-details-activity-result';
 import CourseDetailsClassroom from '../course-details-classroom';
 import CourseDetailsLeaderboard from '../course-details-leaderboard';
 import CourseDetailsSettings from '../course-details-settings';
@@ -26,6 +27,7 @@ const TABS = [
   { value: 'classroom', label: 'Classroom', icon: 'eva:home-fill' },
   { value: 'students', label: 'Students', icon: 'eva:people-fill' },
   { value: 'leaderboard', label: 'LeaderBoard', icon: 'eva:book-fill' },
+  { value: 'activity-result', label: 'Activity Result', icon: 'eva:clipboard-fill' },
   { value: 'settings', label: 'Settings', icon: 'eva:settings-2-fill' },
 ];
 
@@ -105,6 +107,7 @@ export default function CourseDetailsView({ sx, ...other }) {
         <CourseDetailsStudents studentsData={selectedCourse?.students} />
       )}
       {tabs.value === 'leaderboard' && <CourseDetailsLeaderboard />}
+      {tabs.value === 'activity-result' && <CourseDetailsActivityResult />}
       {tabs.value === 'settings' && <CourseDetailsSettings />}
     </DashboardContent>
   );

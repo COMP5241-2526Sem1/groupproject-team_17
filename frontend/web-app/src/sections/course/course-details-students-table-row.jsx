@@ -1,10 +1,17 @@
-import { Tooltip, Checkbox, TableRow, TableCell, IconButton, Typography } from '@mui/material';
+import { Checkbox, IconButton, Stack, TableCell, TableRow, Tooltip, Typography } from '@mui/material';
+import { useState } from 'react';
 
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
 export default function StudentTableRow({ row, selected, onSelectRow, onDeleteRow, onEditRow }) {
+  const [showPin, setShowPin] = useState(false);
+
+  const togglePinVisibility = () => {
+    setShowPin(!showPin);
+  };
+
   return (
     <TableRow hover selected={selected}>
       <TableCell padding="checkbox">
@@ -67,10 +74,32 @@ export default function StudentTableRow({ row, selected, onSelectRow, onDeleteRo
       <TableCell
         sx={{
           whiteSpace: 'nowrap',
-          width: '100px',
+          width: '120px',
         }}
       >
-        ****
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <Typography variant="body2" sx={{ minWidth: 60 }}>
+            {showPin ? (row.pin || 'N/A') : '****'}
+          </Typography>
+          <Tooltip title={showPin ? 'Hide PIN' : 'Show PIN'}>
+            <IconButton
+              size="small"
+              onClick={togglePinVisibility}
+              sx={{
+                width: 28,
+                height: 28,
+                '&:hover': {
+                  color: 'primary.main',
+                }
+              }}
+            >
+              <Iconify
+                icon={showPin ? 'solar:eye-bold' : 'solar:eye-closed-bold'}
+                width={18}
+              />
+            </IconButton>
+          </Tooltip>
+        </Stack>
       </TableCell>
 
       <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>

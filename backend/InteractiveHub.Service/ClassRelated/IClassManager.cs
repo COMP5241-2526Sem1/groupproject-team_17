@@ -38,6 +38,7 @@ public interface IClassManager
     Task<(ResCode, List<Submission>)> GetActivitySubmissionsAsync(string activityId);
     Task<(ResCode, Submission?)> GetStudentSubmissionAsync(string activityId, string studentId);
     Task<(ResCode, List<QuizSubmission>)> GetQuizSubmissionsAsync(string quizId);
+    Task<(ResCode, List<object>)> GetActivitySubmissionsWithStudentsAsync(string activityId);
     Task<(ResCode, Submission?)> SubmitQuizAsync(string quizId, string studentId, JsonObject submissionData);
     Task<(ResCode, Submission?)> SubmitPollAsync(string pollId, string studentId, JsonObject submissionData);
     Task<(ResCode, Submission?)> SubmitDiscussionAsync(string discussionId, string studentId, JsonObject submissionData);

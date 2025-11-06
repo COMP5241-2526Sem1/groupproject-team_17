@@ -653,6 +653,141 @@ public partial class ClassManager
     }
   }
 
+  /// <summary>
+  /// Get activity submissions enriched with student information
+  /// </summary>
+  public async Task<(ResCode, List<object>)> GetActivitySubmissionsWithStudentsAsync(string activityId)
+  {
+    try
+    {
+      // First get the activity to determine its type
+      var activity = await db.Activities.FindAsync(activityId);
+      if (activity == null)
+      {
+        return (ResCode.ActivityNotFound, new List<object>());
+      }
+
+      List<object> enrichedSubmissions = new List<object>();
+
+      // Query based on activity type to get the correct subclass with all properties
+      switch (activity.Type)
+      {
+        case ActivityType.Polling:
+          var pollSubmissions = await db.Submissions
+            .OfType<PollSubmission>()
+            .Where(s => s.ActivityId == activityId)
+            .OrderBy(s => s.SubmittedAt)
+            .ToListAsync();
+
+          foreach (var sub in pollSubmissions)
+          {
+            var student = await db.Students.FirstOrDefaultAsync(s => s.StudentId == sub.StudentId);
+            enrichedSubmissions.Add(new
+            {
+              id = sub.Id,
+              courseId = sub.CourseId,
+              studentId = sub.StudentId,
+              activityId = sub.ActivityId,
+              submittedAt = sub.SubmittedAt,
+              type = (int)sub.Type,
+              selectedOptions = sub.SelectedOptions,
+              student = student != null ? new
+              {
+                id = student.Id,
+                studentId = student.StudentId,
+                fullName = student.FullName,
+                firstName = student.FirstName,
+                lastName = student.LastName,
+                nickName = student.NickName,
+                email = student.Email
+              } : null
+            });
+          }
+          break;
+
+        case ActivityType.Quiz:
+          var quizSubmissions = await db.Submissions
+            .OfType<QuizSubmission>()
+            .Where(s => s.ActivityId == activityId)
+            .OrderByDescending(s => s.Quiz_Score)
+            .ToListAsync();
+
+          foreach (var sub in quizSubmissions)
+          {
+            var student = await db.Students.FirstOrDefaultAsync(s => s.StudentId == sub.StudentId);
+            enrichedSubmissions.Add(new
+            {
+              id = sub.Id,
+              courseId = sub.CourseId,
+              studentId = sub.StudentId,
+              activityId = sub.ActivityId,
+              submittedAt = sub.SubmittedAt,
+              type = (int)sub.Type,
+              answers = sub.Answers,
+              score = sub.Quiz_Score,
+              timeSpent = sub.Quiz_TimeSpent,
+              student = student != null ? new
+              {
+                id = student.Id,
+                studentId = student.StudentId,
+                fullName = student.FullName,
+                firstName = student.FirstName,
+                lastName = student.LastName,
+                nickName = student.NickName,
+                email = student.Email
+              } : null
+            });
+          }
+          break;
+
+        case ActivityType.Discussion:
+          var discussionSubmissions = await db.Submissions
+            .OfType<DiscussionSubmission>()
+            .Where(s => s.ActivityId == activityId)
+            .OrderBy(s => s.SubmittedAt)
+            .ToListAsync();
+
+          foreach (var sub in discussionSubmissions)
+          {
+            var student = await db.Students.FirstOrDefaultAsync(s => s.StudentId == sub.StudentId);
+            enrichedSubmissions.Add(new
+            {
+              id = sub.Id,
+              courseId = sub.CourseId,
+              studentId = sub.StudentId,
+              activityId = sub.ActivityId,
+              submittedAt = sub.SubmittedAt,
+              type = (int)sub.Type,
+              text = sub.Discussion_Text,
+              isApproved = sub.Discussion_IsApproved,
+              isAnonymous = sub.Discussion_IsAnonymous,
+              student = student != null && !sub.Discussion_IsAnonymous ? new
+              {
+                id = student.Id,
+                studentId = student.StudentId,
+                fullName = student.FullName,
+                firstName = student.FirstName,
+                lastName = student.LastName,
+                nickName = student.NickName,
+                email = student.Email
+              } : null
+            });
+          }
+          break;
+
+        default:
+          return (ResCode.InvalidActivityType, new List<object>());
+      }
+
+      return (ResCode.OK, enrichedSubmissions);
+    }
+    catch (Exception ex)
+    {
+      _log?.LogError($"Error getting submissions with students: {ex.Message}");
+      return (ResCode.DatabaseError, new List<object>());
+    }
+  }
+
   // ============================================
   // Submit Responses
   // ============================================
