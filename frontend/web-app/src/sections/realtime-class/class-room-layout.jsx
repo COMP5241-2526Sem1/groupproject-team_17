@@ -1,17 +1,16 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { removeCookie } from 'minimal-shared/utils';
 import { useClassroomContext } from 'auth-classroom';
+import { useRouter } from 'next/navigation';
 
-import Box from '@mui/material/Box';
-import Stack from '@mui/material/Stack';
 import AppBar from '@mui/material/AppBar';
 import Avatar from '@mui/material/Avatar';
-import Toolbar from '@mui/material/Toolbar';
-import Tooltip from '@mui/material/Tooltip';
+import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import IconButton from '@mui/material/IconButton';
+import Stack from '@mui/material/Stack';
+import Toolbar from '@mui/material/Toolbar';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 
 import { SettingsButton } from 'src/layouts/components/settings-button';
@@ -36,7 +35,8 @@ export default function ClassroomLayout({ children }) {
 
   // Handle leave classroom
   const handleLeaveClassroom = () => {
-    removeCookie('classroom_join_token');
+    // Remove cookie manually without Secure flag for HTTP environment
+    document.cookie = 'classroom_join_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax';
     leaveClassroom();
     router.push('/classroom');
   };
