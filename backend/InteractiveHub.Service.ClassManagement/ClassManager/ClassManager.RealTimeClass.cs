@@ -164,7 +164,10 @@ public partial class ClassManager
     string? pin)
   {
     // Check if student already in course
-    var existingStudent = course.Students.FirstOrDefault(s => s.StudentId == studentId);
+
+    var existingStudent = await db.Students
+      .Where(s => s.StudentId == studentId && s.OwnerId == course.OwnerId)
+      .FirstOrDefaultAsync();
     if (existingStudent == null)
     {
       // check if course dont need the verification
