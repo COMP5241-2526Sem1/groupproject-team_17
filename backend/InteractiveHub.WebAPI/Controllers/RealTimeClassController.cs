@@ -724,4 +724,29 @@ public partial class RealTimeClassController
       return ReturnOK(submission);
     });
   }
+
+  /// <summary>
+  /// Get activity submissions with student information for instructor view
+  /// </summary>
+  /// <param name="activityId">Activity ID</param>
+  /// <returns>List of submissions with student details</returns>
+  [HttpGet("Activity/{activityId}/SubmissionsWithStudents")]
+  public async Task<IActionResult> GetActivitySubmissionsWithStudents(string activityId)
+  {
+    return await HandleWithResultAsync(async () =>
+    {
+      var (code, enrichedSubmissions) = await _classManager.GetActivitySubmissionsWithStudentsAsync(activityId);
+
+      if (code != ResCode.OK)
+      {
+        return ReturnResponse(new ServiceRes
+        {
+          Code = code,
+          Message = code.ToDescriptionString() ?? "Failed to get submissions with student information"
+        });
+      }
+
+      return ReturnOK(enrichedSubmissions);
+    });
+  }
 }

@@ -46,6 +46,7 @@ export const API_ENDPOINTS = {
 
     // Submissions
     GET_ACTIVITY_SUBMISSIONS: (activityId) => `/api/RealTimeClass/Activity/${activityId}/Submissions`,
+    GET_ACTIVITY_SUBMISSIONS_WITH_STUDENTS: (activityId) => `/api/RealTimeClass/Activity/${activityId}/SubmissionsWithStudents`,
     GET_STUDENT_SUBMISSION: (activityId, studentId) => `/api/RealTimeClass/Activity/${activityId}/Student/${studentId}/Submission`,
     GET_QUIZ_SUBMISSIONS: (quizId) => `/api/RealTimeClass/Quiz/${quizId}/Submissions`,
 
