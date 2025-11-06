@@ -136,17 +136,21 @@ public partial class ClassManager
     }
     return res;
   }
-  private async Task<TeachingCourse?> GetCachedCourse(string courseId)
+  private async Task<TeachingCourse?> GetCachedCourse(string courseId, string OwnerId)
   {
     if (ActiveClasses.TryGetValue(courseId, out var existingRealtimeClass))
     {
-      return existingRealtimeClass.Course;
+      if (existingRealtimeClass.Course != null && existingRealtimeClass.Course.OwnerId == OwnerId)
+      {
+        return existingRealtimeClass.Course;
+      }
+      return null;
     }
     else
     {
       // Get from DB as fallback
       var courseFromDb = await db.Courses.Include(c => c.Students).Where(c
-          => c.Id == courseId).FirstOrDefaultAsync();
+          => c.Id == courseId && c.OwnerId == OwnerId).FirstOrDefaultAsync();
       return courseFromDb;
     }
   }
@@ -160,7 +164,10 @@ public partial class ClassManager
     string? pin)
   {
     // Check if student already in course
-    var existingStudent = course.Students.FirstOrDefault(s => s.StudentId == studentId);
+
+    var existingStudent = await db.Students
+      .Where(s => s.StudentId == studentId && s.OwnerId == course.OwnerId)
+      .FirstOrDefaultAsync();
     if (existingStudent == null)
     {
       // check if course dont need the verification
