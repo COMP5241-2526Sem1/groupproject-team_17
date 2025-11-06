@@ -54,8 +54,17 @@ export function ClassroomGuard({ children }) {
         if (!token) {
           //console.log('ClassroomGuard: No token found, redirecting to /classroom');
           // No token, redirect to classroom entry page
+          // Preserve the query parameters (like ?class=595248)
           if (isMounted.current) {
-            router.push('/classroom');
+            const currentUrl = window.location.href;
+            const url = new URL(currentUrl);
+            const classParam = url.searchParams.get('class');
+
+            if (classParam) {
+              router.push(`/classroom?class=${classParam}`);
+            } else {
+              router.push('/classroom');
+            }
             setIsChecking(false);
           }
           return;
@@ -83,7 +92,16 @@ export function ClassroomGuard({ children }) {
         } else {
           //console.log('ClassroomGuard: Token invalid, redirecting');
           // Token invalid, clear and redirect
-          router.push('/classroom');
+          // Preserve the query parameters if available
+          const currentUrl = window.location.href;
+          const url = new URL(currentUrl);
+          const classParam = url.searchParams.get('class');
+
+          if (classParam) {
+            router.push(`/classroom?class=${classParam}`);
+          } else {
+            router.push('/classroom');
+          }
           setIsChecking(false);
         }
       } catch (error) {
@@ -91,7 +109,16 @@ export function ClassroomGuard({ children }) {
 
         // Only update state if component is still mounted
         if (isMounted.current) {
-          router.push('/classroom');
+          // Preserve the query parameters if available
+          const currentUrl = window.location.href;
+          const url = new URL(currentUrl);
+          const classParam = url.searchParams.get('class');
+
+          if (classParam) {
+            router.push(`/classroom?class=${classParam}`);
+          } else {
+            router.push('/classroom');
+          }
           setIsChecking(false);
         }
       }

@@ -23,7 +23,7 @@ import { Iconify } from 'src/components/iconify';
 // if semester is not a number, show error
 const newCourseSchema = z.object({
   academicYear: z.number().min(1970).max(2100),
-  semester: z.string().transform((val) => Number(val)), // Convert string to number
+  semester: z.string(), // 1 =Spring, 2=Winter, 3=Summer , 0 = None
   courseCode: z
     .string()
     .min(1, { error: 'Course code is required' })
@@ -51,7 +51,7 @@ export default function CourseCreateDialog({ open, onClose }) {
 
   const defaultValues = {
     academicYear: 2025,
-    semester: 1, // 1 =Spring, 2=Winter, 3=Summer , 0 = None
+    semester: '1', // 1 =Spring, 2=Winter, 3=Summer , 0 = None
     courseCode: '',
     courseName: '',
     description: '',
