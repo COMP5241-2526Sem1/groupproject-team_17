@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { removeCookie, setCookie } from 'minimal-shared/utils';
+import { setCookie } from 'minimal-shared/utils';
 import { CONFIG } from 'src/global-config';
 import { ClassroomContext } from './classroom-context';
 
@@ -45,7 +45,11 @@ export function ClassroomProvider({ children }) {
       ...studentInfo,
     });
     setIsAuthencated(true);
-    setCookie('classroom_join_token', studentInfo.token, { expires: 1 }); // Expires in 1 day
+    setCookie('classroom_join_token', studentInfo.token, {
+      daysUntilExpiration: 1,
+      path: '/',
+      sameSite: 'Lax'
+    }); // Expires in 1 day
   }, []);
 
   const leaveClassroom = useCallback(() => {
@@ -80,8 +84,8 @@ export function ClassroomProvider({ children }) {
     });
     setIsAuthencated(false);
 
-    // Remove cookie
-    removeCookie('classroom_join_token');
+    // Remove cookie manually without Secure flag for HTTP environment
+    document.cookie = 'classroom_join_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax';
   }, []);
 
   const setAuthencated = useCallback((value) => {
