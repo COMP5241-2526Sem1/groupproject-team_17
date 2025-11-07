@@ -101,6 +101,10 @@ export const activityAPI = {
   getActivitySubmissions: async (activityId) =>
     httpGet(API_ENDPOINTS.ACTIVITY.GET_ACTIVITY_SUBMISSIONS(activityId)),
 
+  // Get activity submissions with student information
+  getActivitySubmissionsWithStudents: async (activityId) =>
+    httpGet(API_ENDPOINTS.ACTIVITY.GET_ACTIVITY_SUBMISSIONS_WITH_STUDENTS(activityId)),
+
   // Get student's submission for an activity
   getStudentSubmission: async (activityId, studentId) =>
     httpGet(API_ENDPOINTS.ACTIVITY.GET_STUDENT_SUBMISSION(activityId, studentId)),

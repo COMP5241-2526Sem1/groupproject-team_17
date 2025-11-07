@@ -19,6 +19,7 @@ import {
   TableCell,
   TableContainer,
   TableHead,
+  TablePagination,
   TableRow,
   Typography
 } from '@mui/material';
@@ -35,6 +36,8 @@ export default function CourseDetailsLeaderboard() {
   const [error, setError] = useState(null);
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [totalActivities, setTotalActivities] = useState(0);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const fetchLeaderboardData = async () => {
     if (!selectedCourse?.id) return;
@@ -66,6 +69,15 @@ export default function CourseDetailsLeaderboard() {
 
   const handleRefresh = () => {
     fetchLeaderboardData();
+  };
+
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
   };
 
   const handleExportCSV = () => {
@@ -156,77 +168,54 @@ export default function CourseDetailsLeaderboard() {
         {leaderboardData.length === 0 ? (
           <Alert severity="info">No student data available</Alert>
         ) : (
-          <TableContainer component={Paper} variant="outlined">
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Rank</TableCell>
-                  <TableCell>Student</TableCell>
-                  <TableCell align="center">Completion</TableCell>
-                  <TableCell align="center">Quiz Score</TableCell>
-                  <TableCell align="center">Overall Progress</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {leaderboardData.map((student, index) => (
-                  <TableRow key={student.studentId} hover>
-                    {/* Rank */}
-                    <TableCell>
-                      <Stack direction="row" alignItems="center" spacing={1}>
-                        {student.rank === 1 && (
-                          <Iconify icon="eva:trophy-fill" sx={{ color: 'warning.main' }} />
-                        )}
-                        {student.rank === 2 && (
-                          <Iconify icon="eva:trophy-fill" sx={{ color: 'grey.500' }} />
-                        )}
-                        {student.rank === 3 && (
-                          <Iconify icon="eva:trophy-fill" sx={{ color: '#CD7F32' }} />
-                        )}
-                        <Typography variant="h6">#{student.rank}</Typography>
-                      </Stack>
-                    </TableCell>
+          <>
+            <TableContainer component={Paper} variant="outlined">
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Rank</TableCell>
+                    <TableCell>Student</TableCell>
+                    <TableCell align="center">Completion</TableCell>
+                    <TableCell align="center">Quiz Score</TableCell>
+                    <TableCell align="center">Overall Progress</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {leaderboardData
+                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                    .map((student, index) => (
+                      <TableRow key={student.studentId} hover>
+                        {/* Rank */}
+                        <TableCell>
+                          <Stack direction="row" alignItems="center" spacing={1}>
+                            {student.rank === 1 && (
+                              <Iconify icon="eva:trophy-fill" sx={{ color: 'warning.main' }} />
+                            )}
+                            {student.rank === 2 && (
+                              <Iconify icon="eva:trophy-fill" sx={{ color: 'grey.500' }} />
+                            )}
+                            {student.rank === 3 && (
+                              <Iconify icon="eva:trophy-fill" sx={{ color: '#CD7F32' }} />
+                            )}
+                            <Typography variant="h6">#{student.rank}</Typography>
+                          </Stack>
+                        </TableCell>
 
-                    {/* Student Info */}
-                    <TableCell>
-                      <Typography variant="subtitle2">{student.studentId}</Typography>
-                    </TableCell>
+                        {/* Student Info */}
+                        <TableCell>
+                          <Typography variant="subtitle2">{student.studentId}</Typography>
+                        </TableCell>
 
-                    {/* Completion */}
-                    <TableCell align="center">
-                      <Stack spacing={0.5} alignItems="center">
-                        <Typography variant="body2" fontWeight="medium">
-                          {student.completedActivities}/{student.totalActivities}
-                        </Typography>
-                        <Box sx={{ width: 100 }}>
-                          <LinearProgress
-                            variant="determinate"
-                            value={student.completionRate}
-                            sx={{
-                              height: 6,
-                              borderRadius: 1,
-                              bgcolor: 'action.hover',
-                            }}
-                          />
-                        </Box>
-                        <Typography variant="caption" color="text.secondary">
-                          {Math.round(student.completionRate)}%
-                        </Typography>
-                      </Stack>
-                    </TableCell>
-
-                    {/* Quiz Score */}
-                    <TableCell align="center">
-                      <Stack spacing={0.5} alignItems="center">
-                        <Typography variant="body2" fontWeight="medium">
-                          {student.totalQuizScore}/{student.maxQuizScore}
-                        </Typography>
-                        {student.maxQuizScore > 0 && (
-                          <>
+                        {/* Completion */}
+                        <TableCell align="center">
+                          <Stack spacing={0.5} alignItems="center">
+                            <Typography variant="body2" fontWeight="medium">
+                              {student.completedActivities}/{student.totalActivities}
+                            </Typography>
                             <Box sx={{ width: 100 }}>
                               <LinearProgress
                                 variant="determinate"
-                                value={student.quizScorePercentage}
-                                color="success"
+                                value={student.completionRate}
                                 sx={{
                                   height: 6,
                                   borderRadius: 1,
@@ -235,51 +224,88 @@ export default function CourseDetailsLeaderboard() {
                               />
                             </Box>
                             <Typography variant="caption" color="text.secondary">
-                              {Math.round(student.quizScorePercentage)}%
+                              {Math.round(student.completionRate)}%
                             </Typography>
-                          </>
-                        )}
-                        {student.maxQuizScore === 0 && (
-                          <Typography variant="caption" color="text.secondary">
-                            No quizzes
-                          </Typography>
-                        )}
-                      </Stack>
-                    </TableCell>
+                          </Stack>
+                        </TableCell>
 
-                    {/* Overall Progress */}
-                    <TableCell align="center">
-                      <Chip
-                        label={
-                          student.completionRate === 100
-                            ? 'Complete'
-                            : student.completionRate >= 75
-                              ? 'Excellent'
-                              : student.completionRate >= 50
-                                ? 'Good'
-                                : student.completionRate >= 25
-                                  ? 'Fair'
-                                  : 'Needs Improvement'
-                        }
-                        size="small"
-                        color={
-                          student.completionRate === 100
-                            ? 'success'
-                            : student.completionRate >= 75
-                              ? 'info'
-                              : student.completionRate >= 50
-                                ? 'primary'
-                                : student.completionRate >= 25
-                                  ? 'warning'
-                                  : 'error'
-                        }
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                        {/* Quiz Score */}
+                        <TableCell align="center">
+                          <Stack spacing={0.5} alignItems="center">
+                            <Typography variant="body2" fontWeight="medium">
+                              {student.totalQuizScore}/{student.maxQuizScore}
+                            </Typography>
+                            {student.maxQuizScore > 0 && (
+                              <>
+                                <Box sx={{ width: 100 }}>
+                                  <LinearProgress
+                                    variant="determinate"
+                                    value={student.quizScorePercentage}
+                                    color="success"
+                                    sx={{
+                                      height: 6,
+                                      borderRadius: 1,
+                                      bgcolor: 'action.hover',
+                                    }}
+                                  />
+                                </Box>
+                                <Typography variant="caption" color="text.secondary">
+                                  {Math.round(student.quizScorePercentage)}%
+                                </Typography>
+                              </>
+                            )}
+                            {student.maxQuizScore === 0 && (
+                              <Typography variant="caption" color="text.secondary">
+                                No quizzes
+                              </Typography>
+                            )}
+                          </Stack>
+                        </TableCell>
+
+                        {/* Overall Progress */}
+                        <TableCell align="center">
+                          <Chip
+                            label={
+                              student.completionRate === 100
+                                ? 'Complete'
+                                : student.completionRate >= 75
+                                  ? 'Excellent'
+                                  : student.completionRate >= 50
+                                    ? 'Good'
+                                    : student.completionRate >= 25
+                                      ? 'Fair'
+                                      : 'Needs Improvement'
+                            }
+                            size="small"
+                            color={
+                              student.completionRate === 100
+                                ? 'success'
+                                : student.completionRate >= 75
+                                  ? 'info'
+                                  : student.completionRate >= 50
+                                    ? 'primary'
+                                    : student.completionRate >= 25
+                                      ? 'warning'
+                                      : 'error'
+                            }
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+
+            <TablePagination
+              component="div"
+              count={leaderboardData.length}
+              page={page}
+              onPageChange={handleChangePage}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              rowsPerPageOptions={[5, 10, 25, 50, 100]}
+            />
+          </>
         )}
       </CardContent>
     </Card>

@@ -19,12 +19,12 @@ export default function InteractiveActivitiesCard({
       <Grid size={{ xs: 12 }}>
         <Card
           sx={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            background: 'linear-gradient(135deg, #66eaa4ff 0%, #0c705cff 100%)',
             color: 'white',
             cursor: 'pointer',
             transition: 'all 0.3s ease',
             '&:hover': {
-              background: 'linear-gradient(135deg, #5568d3 0%, #63408b 100%)',
+              background: 'linear-gradient(135deg, #0cf478ff 0%, #0c705cff 100%)',
               transform: 'translateY(-4px)',
               boxShadow: (theme) => theme.shadows[8],
             },

@@ -608,27 +608,7 @@ export default function AIAssistantDialog({ open, onClose, courseId, activityTyp
                         })()}
                       </Typography>
                     </Stack>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <Iconify icon="solar:chat-round-line-bold" width={16} />
-                      <Typography variant="caption" color="text.secondary">
-                        {conv.messageCount || 0} messages
-                      </Typography>
-                      {conv.isCompleted && (
-                        <>
-                          <Typography variant="caption" color="text.secondary">•</Typography>
-                          <Chip
-                            label="Completed"
-                            size="small"
-                            sx={{
-                              height: 20,
-                              fontSize: '0.7rem',
-                              bgcolor: (theme) => alpha(theme.palette.success.main, 0.12),
-                              color: 'success.dark'
-                            }}
-                          />
-                        </>
-                      )}
-                    </Stack>
+
                   </Stack>
                   <Tooltip title="Delete Conversation">
                     <IconButton
