@@ -176,13 +176,42 @@ public partial class ClassManager
           course.JoinCheckingModes[0] == TeachingCourse.JoinCheckingModeEnum.Disabled)
       {
         // Add new student to course
-        studentName = studentName ?? $"Guest_{Guid.NewGuid().ToString().Substring(0, 8)}";
-        var joinedStudent = new JoinedStudent
+        if (string.IsNullOrWhiteSpace(studentId))
+        {
+          return (ResCode.UnauthorizedStudent, null);
+        }
+
+        // Create new student record
+        var newStudent = new Student
         {
           StudentId = studentId,
-          StudentName = studentName,
-          Token = GenerateSessionToken(course.Id, studentId, studentName)
+          FullName = studentName ?? $"Guest_{Guid.NewGuid().ToString().Substring(0, 8)}",
+          Email = email ?? string.Empty,
+          PIN = pin ?? string.Empty,
+          OwnerId = course.OwnerId,
         };
+
+        // Get the course from DB context to ensure it's tracked properly
+        var trackedCourse = await db.Courses
+          .Where(c => c.Id == course.Id)
+          .FirstOrDefaultAsync();
+
+        if (trackedCourse != null)
+        {
+          // Add student to course through tracked entity
+          newStudent.Courses.Add(trackedCourse);
+        }
+
+        db.Students.Add(newStudent);
+        await db.SaveChangesAsync();
+
+        var joinedStudent = new JoinedStudent
+        {
+          StudentId = newStudent.StudentId,
+          StudentName = newStudent.FullName,
+          Token = GenerateSessionToken(course.Id, newStudent.Id, newStudent.StudentId)
+        };
+
         return (ResCode.OK, joinedStudent);
       }
       else
