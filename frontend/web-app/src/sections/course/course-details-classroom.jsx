@@ -18,7 +18,6 @@ import {
 } from '@mui/material';
 
 import { activityAPI, realtimeClassAPI } from 'src/api/api-function-call';
-import { Iconify } from 'src/components/iconify';
 import { useInstructorWebSocket } from 'src/contexts';
 import { useSelector } from 'src/redux/hooks';
 
@@ -701,7 +700,7 @@ export default function CourseDetailsClassroom() {
         <Typography variant="h4">
           Live Classroom - {selectedCourse.courseCode}
         </Typography>
-        <Button
+        {/*         <Button
           variant="contained"
           color="primary"
           size="large"
@@ -727,7 +726,7 @@ export default function CourseDetailsClassroom() {
           sx={{ minWidth: 150 }}
         >
           Join QR Code
-        </Button>
+        </Button> */}
       </Box>
 
       <Grid container spacing={3}>

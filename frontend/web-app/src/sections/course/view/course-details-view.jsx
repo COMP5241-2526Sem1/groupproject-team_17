@@ -36,6 +36,7 @@ export default function CourseDetailsView({ sx, ...other }) {
   const { selectedCourse } = useSelector((state) => state.classManagement);
   const tabs = useTabs(TABS[0].value);
   const { id } = useParams();
+
   const renderToolBar = () => (
     <Box sx={[{ mb: 2, gap: 1.5, display: 'flex' }, ...(Array.isArray(sx) ? sx : [sx])]} {...other}>
       <Button
@@ -87,7 +88,36 @@ export default function CourseDetailsView({ sx, ...other }) {
   return (
     <DashboardContent>
       {renderToolBar()}
-      <CustomBreadcrumbs heading={selectedCourse?.courseCode || 'Course Details'} />
+      <CustomBreadcrumbs
+        heading={selectedCourse?.courseCode || 'Course Details'}
+        action={
+          <Button
+            variant="contained"
+            startIcon={<Iconify icon="solar:qr-code-bold" width={20} />}
+            onClick={() => {
+              if (!selectedCourse?.id && !selectedCourse?.joinCode) {
+                console.error('No courseId or joinCode provided');
+                return;
+              }
+              const code = selectedCourse.joinCode || selectedCourse.id;
+              const baseUrl = window.location.origin;
+              const qrUrl = `${baseUrl}/qr?class=${code}`;
+              const width = 600;
+              const height = 800;
+              const left = (window.screen.width - width) / 2;
+              const top = (window.screen.height - height) / 2;
+              window.open(
+                qrUrl,
+                'JoinClassroomQR',
+                `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=no,toolbar=no,menubar=no,location=no,status=no`
+              );
+            }}
+            disabled={!selectedCourse?.joinCode}
+          >
+            Join QR Code
+          </Button>
+        }
+      />
       <Stack sx={{ mb: 3 }}>
         <Typography variant="h6">{selectedCourse?.courseName}</Typography>
         <Box sx={{ height: 8, width: 120 }}>
