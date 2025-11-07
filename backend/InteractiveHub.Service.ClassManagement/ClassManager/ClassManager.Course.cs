@@ -130,7 +130,12 @@ public partial class ClassManager
             }
 
             existingCourse.CopyFrom(request);
-            db.Courses.Update(existingCourse);
+            existingCourse = db.Courses.Where(c => c.Id == courseId && c.OwnerId == OwnerId).FirstOrDefault()!;
+            existingCourse.CopyFrom(request);
+            if (existingCourse != null)
+            {
+                db.Courses.Update(existingCourse);
+            }
             await db.SaveChangesAsync();
         }
         catch (DbUpdateException dbEx)
