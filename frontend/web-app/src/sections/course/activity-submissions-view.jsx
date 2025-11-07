@@ -28,6 +28,20 @@ export default function ActivitySubmissionsView({ activity, onBack }) {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [selectedSubmission, setSelectedSubmission] = useState(null);
+  const [fullActivityData, setFullActivityData] = useState(null);
+
+  const fetchActivityData = useCallback(async () => {
+    if (!activity?.id) return;
+
+    try {
+      const response = await activityAPI.getActivity(activity.id);
+      if (response.code === 0 && response.data) {
+        setFullActivityData(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching activity data:', error);
+    }
+  }, [activity?.id]);
 
   const fetchSubmissions = useCallback(async () => {
     if (!activity?.id) return;
@@ -46,8 +60,9 @@ export default function ActivitySubmissionsView({ activity, onBack }) {
   }, [activity?.id]);
 
   useEffect(() => {
+    fetchActivityData();
     fetchSubmissions();
-  }, [fetchSubmissions]);
+  }, [fetchActivityData, fetchSubmissions]);
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -108,7 +123,7 @@ export default function ActivitySubmissionsView({ activity, onBack }) {
         <Box>
           <StudentSubmissionDetail
             submission={selectedSubmission}
-            activity={activity}
+            activity={fullActivityData || activity}
             onBack={handleBackToList}
           />
         </Box>
@@ -138,7 +153,10 @@ export default function ActivitySubmissionsView({ activity, onBack }) {
           <Button
             variant="outlined"
             startIcon={<Iconify icon="eva:refresh-fill" />}
-            onClick={fetchSubmissions}
+            onClick={() => {
+              fetchActivityData();
+              fetchSubmissions();
+            }}
           >
             Refresh
           </Button>

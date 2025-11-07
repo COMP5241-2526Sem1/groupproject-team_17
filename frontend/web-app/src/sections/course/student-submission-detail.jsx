@@ -41,7 +41,15 @@ export default function StudentSubmissionDetail({ submission, activity, onBack }
   const activityType = getActivityType();
 
   const renderQuizAnswers = () => {
-    if (!submission.answers || !activity.questions) return null;
+    if (!submission.answers || !activity.questions) {
+      return (
+        <Box>
+          <Typography variant="body2" color="error">
+            Unable to load quiz questions. Please try refreshing.
+          </Typography>
+        </Box>
+      );
+    }
 
     return (
       <Box>
@@ -63,7 +71,7 @@ export default function StudentSubmissionDetail({ submission, activity, onBack }
                   />
                   <Box sx={{ flex: 1 }}>
                     <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                      {question.question}
+                      {question.text || question.question}
                     </Typography>
                     <List dense>
                       {question.options.map((option, optIndex) => {
@@ -71,6 +79,8 @@ export default function StudentSubmissionDetail({ submission, activity, onBack }
                         const isCorrectAnswer = question.correctAnswer === optIndex;
                         // Handle both string and object options
                         const optionText = typeof option === 'string' ? option : option?.text || 'Option ' + (optIndex + 1);
+                        // Get option letter (A, B, C, D, ...)
+                        const optionLetter = String.fromCharCode(65 + optIndex); // 65 is ASCII for 'A'
 
                         return (
                           <ListItem
@@ -90,6 +100,9 @@ export default function StudentSubmissionDetail({ submission, activity, onBack }
                             <ListItemText
                               primary={
                                 <Stack direction="row" alignItems="center" spacing={1}>
+                                  <Typography variant="body2" sx={{ fontWeight: 'bold', minWidth: '24px' }}>
+                                    {optionLetter}.
+                                  </Typography>
                                   <Typography variant="body2">{optionText}</Typography>
                                   {isStudentAnswer && (
                                     <Chip
