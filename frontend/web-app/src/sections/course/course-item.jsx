@@ -1,11 +1,11 @@
 import { usePopover } from 'minimal-shared/hooks';
 
-import { Card, Stack, Tooltip, Typography, ListItemText, useMediaQuery } from '@mui/material';
+import { Card, ListItemText, Stack, Tooltip, Typography, useMediaQuery } from '@mui/material';
 
 import { RouterLink } from 'src/routes/components';
 
-import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
+import { Label } from 'src/components/label';
 
 export default function CourseItem({ course }) {
   // Check if screen is desktop
@@ -21,7 +21,18 @@ export default function CourseItem({ course }) {
     }
     return 'error';
   };
-
+  const semesterText = (semester) => {
+    switch (semester) {
+      case 'one':
+        return 'SEM 1';
+      case 'two':
+        return 'SEM 2';
+      case 'summer':
+        return 'SEM 3';
+      default:
+        return '';
+    }
+  }
   const renderInfoBlock = () => (
     <ListItemText
       sx={{ mb: 1, minHeight: 80 }}
@@ -47,7 +58,7 @@ export default function CourseItem({ course }) {
             </Typography>
           </Tooltip>
           <Label variant="soft" color={getColor(course)} sx={{ textTransform: 'uppercase' }}>
-            {`${course.academicYear}/${course.academicYear + 1} ${course.semester > 0 ? 'Sem ' + course.semester : ''}`}
+            {`${course.academicYear}/${course.academicYear + 1} ${semesterText(course.semester)}`}
           </Label>
         </Stack>
       }
