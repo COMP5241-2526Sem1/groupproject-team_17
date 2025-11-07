@@ -2,18 +2,18 @@ import { useState } from 'react';
 
 import {
     Box,
+    Button,
     Card,
     Chip,
-    Button,
     Dialog,
-    Tooltip,
-    TextField,
-    IconButton,
-    Typography,
-    DialogTitle,
     DialogActions,
     DialogContent,
+    DialogTitle,
+    IconButton,
     InputAdornment,
+    TextField,
+    Tooltip,
+    Typography,
 } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
@@ -25,6 +25,7 @@ export default function CourseDetailsStudentsTableToolbar({
     totalCount = 0,
     onImportCSV,
     onAddStudent,
+    onRefresh,
 }) {
     const { state: currentFilters, setState: updateFilters } = filters;
     const [showFormatDialog, setShowFormatDialog] = useState(false);
@@ -318,6 +319,21 @@ STU003,Alice Johnson,alice.johnson@example.com,9012`;
                     flexShrink: 0,
                 }}
             >
+                {/* Refresh Button */}
+                <Tooltip title="Refresh student list">
+                    <IconButton
+                        onClick={onRefresh}
+                        size="medium"
+                        sx={{
+                            color: 'text.secondary',
+                            '&:hover': { color: 'primary.main' },
+                            flexShrink: 0,
+                        }}
+                    >
+                        <Iconify icon="solar:refresh-bold" />
+                    </IconButton>
+                </Tooltip>
+
                 {/* Add Student Button */}
                 <Tooltip title="Add a new student">
                     <Button
