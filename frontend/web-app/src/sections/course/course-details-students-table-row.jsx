@@ -79,26 +79,28 @@ export default function StudentTableRow({ row, selected, onSelectRow, onDeleteRo
       >
         <Stack direction="row" alignItems="center" spacing={1}>
           <Typography variant="body2" sx={{ minWidth: 60 }}>
-            {showPin ? (row.pin || 'N/A') : '****'}
+            {row.pin ? (showPin ? row.pin : '****') : ''}
           </Typography>
-          <Tooltip title={showPin ? 'Hide PIN' : 'Show PIN'}>
-            <IconButton
-              size="small"
-              onClick={togglePinVisibility}
-              sx={{
-                width: 28,
-                height: 28,
-                '&:hover': {
-                  color: 'primary.main',
-                }
-              }}
-            >
-              <Iconify
-                icon={showPin ? 'solar:eye-bold' : 'solar:eye-closed-bold'}
-                width={18}
-              />
-            </IconButton>
-          </Tooltip>
+          {row.pin && (
+            <Tooltip title={showPin ? 'Hide PIN' : 'Show PIN'}>
+              <IconButton
+                size="small"
+                onClick={togglePinVisibility}
+                sx={{
+                  width: 28,
+                  height: 28,
+                  '&:hover': {
+                    color: 'primary.main',
+                  }
+                }}
+              >
+                <Iconify
+                  icon={showPin ? 'solar:eye-bold' : 'solar:eye-closed-bold'}
+                  width={18}
+                />
+              </IconButton>
+            </Tooltip>
+          )}
         </Stack>
       </TableCell>
 
