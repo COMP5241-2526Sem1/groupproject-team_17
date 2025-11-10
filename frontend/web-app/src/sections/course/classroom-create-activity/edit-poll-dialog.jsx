@@ -2,9 +2,6 @@
 
 import { useState, useEffect } from 'react';
 
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import {
   Box,
   Alert,
@@ -34,7 +31,6 @@ export default function EditPollDialog({ open, onClose, onSubmit, activity }) {
   ]);
   const [allowMultipleSelections, setAllowMultipleSelections] = useState(false);
   const [isAnonymous, setIsAnonymous] = useState(true);
-  const [expiresAt, setExpiresAt] = useState(null);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -53,7 +49,6 @@ export default function EditPollDialog({ open, onClose, onSubmit, activity }) {
       );
       setAllowMultipleSelections(activity.allowMultipleSelections || false);
       setIsAnonymous(activity.isAnonymous !== undefined ? activity.isAnonymous : true);
-      setExpiresAt(activity.expiresAt ? new Date(activity.expiresAt) : null);
     }
   }, [open, activity]);
 
@@ -121,7 +116,6 @@ export default function EditPollDialog({ open, onClose, onSubmit, activity }) {
         options: validOptions,
         allowMultipleSelections,
         isAnonymous,
-        expiresAt: expiresAt?.toISOString() || null,
       };
 
       await onSubmit(pollData);
@@ -238,22 +232,6 @@ export default function EditPollDialog({ open, onClose, onSubmit, activity }) {
               />
             </Stack>
           </Box>
-
-          {/* Expiration Time */}
-          <LocalizationProvider dateAdapter={AdapterDateFns}>
-            <DateTimePicker
-              label="Expiration Time (Optional)"
-              value={expiresAt}
-              onChange={setExpiresAt}
-              slotProps={{
-                textField: {
-                  fullWidth: true,
-                  helperText: 'Leave empty for no expiration',
-                },
-              }}
-              minDateTime={new Date()}
-            />
-          </LocalizationProvider>
         </Stack>
       </DialogContent>
 

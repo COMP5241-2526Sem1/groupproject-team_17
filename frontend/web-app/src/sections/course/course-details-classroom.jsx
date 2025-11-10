@@ -428,7 +428,6 @@ export default function CourseDetailsClassroom() {
         activityData: {
           title: pollData.title,
           description: pollData.description,
-          expiresAt: pollData.expiresAt,
           options: pollData.options,
           allowMultipleSelections: pollData.allowMultipleSelections,
           isAnonymous: pollData.isAnonymous,
@@ -463,7 +462,6 @@ export default function CourseDetailsClassroom() {
         activityData: {
           title: quizData.title,
           description: quizData.description,
-          expiresAt: quizData.expiresAt,
           questions: quizData.questions,
           timeLimit: quizData.timeLimit,
           showCorrectAnswers: quizData.showCorrectAnswers,
@@ -571,7 +569,6 @@ export default function CourseDetailsClassroom() {
       const response = await activityAPI.updateActivity(editingActivity.id, {
         title: pollData.title,
         description: pollData.description,
-        expiresAt: pollData.expiresAt,
         options: pollData.options,
         allowMultipleSelections: pollData.allowMultipleSelections,
         isAnonymous: pollData.isAnonymous,
@@ -601,7 +598,6 @@ export default function CourseDetailsClassroom() {
       const response = await activityAPI.updateActivity(editingActivity.id, {
         title: quizData.title,
         description: quizData.description,
-        expiresAt: quizData.expiresAt,
         questions: quizData.questions,
         timeLimit: quizData.timeLimit,
         showCorrectAnswers: quizData.showCorrectAnswers,
