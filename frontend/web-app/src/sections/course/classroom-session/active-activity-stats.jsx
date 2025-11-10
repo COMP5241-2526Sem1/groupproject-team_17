@@ -104,19 +104,19 @@ export default function ActiveActivityStats({ activity, joinedStudentsCount, tot
     };
   }, [activity?.id, subscribeMessage]);
 
-  // Quiz countdown timer
+  // Quiz countdown timer - uses startedAt (when quiz was first activated by instructor)
   useEffect(() => {
-    if (activity?.type !== 'quiz' || !activity?.createdAt || activity?.timeLimit === 0) return undefined;
+    if (activity?.type !== 'quiz' || !activity?.startedAt || activity?.timeLimit === 0) return undefined;
 
     const updateTimer = () => {
-      if (!activity.createdAt || activity.timeLimit === 0) return;
+      if (!activity.startedAt || activity.timeLimit === 0) return;
 
-      let createdAtString = activity.createdAt;
-      if (!createdAtString.endsWith('Z') && !createdAtString.includes('+')) {
-        createdAtString = `${createdAtString}Z`;
+      let startedAtString = activity.startedAt;
+      if (!startedAtString.endsWith('Z') && !startedAtString.includes('+')) {
+        startedAtString = `${startedAtString}Z`;
       }
 
-      const startTime = new Date(createdAtString).getTime();
+      const startTime = new Date(startedAtString).getTime();
       const expirationTime = startTime + activity.timeLimit * 1000;
       const now = Date.now();
       const remaining = Math.max(0, Math.floor((expirationTime - now) / 1000));
@@ -132,7 +132,7 @@ export default function ActiveActivityStats({ activity, joinedStudentsCount, tot
     const timer = setInterval(updateTimer, 1000);
 
     return () => clearInterval(timer);
-  }, [activity?.type, activity?.createdAt, activity?.timeLimit]);
+  }, [activity?.type, activity?.startedAt, activity?.timeLimit]);
 
   if (!activity) {
     return (
@@ -152,6 +152,10 @@ export default function ActiveActivityStats({ activity, joinedStudentsCount, tot
     totalStudents,
     loading,
     activityOptions: activity.options,
+    startedAt: activity.startedAt,
+    timeLimit: activity.timeLimit,
+    timeRemaining,
+    hasStartedAt: !!activity.startedAt,
   });
 
   const submissionCount = submissions.length;
@@ -161,10 +165,13 @@ export default function ActiveActivityStats({ activity, joinedStudentsCount, tot
   // Render Quiz Stats
   const renderQuizStats = () => {
     const hasTimeLimit = activity.timeLimit > 0;
+    const quizStarted = !!activity.startedAt; // Has quiz ever been started?
+    const quizActive = activity.isActive; // Is quiz currently active?
 
     return (
       <Stack spacing={2}>
-        {hasTimeLimit && timeRemaining !== null && (
+        {/* Timer - show only if quiz has time limit, has been started, and still has time remaining */}
+        {hasTimeLimit && quizStarted && timeRemaining !== null && timeRemaining > 0 && (
           <Box>
             <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
               <Iconify icon="solar:clock-circle-bold" width={20} color="warning.main" />
@@ -186,6 +193,21 @@ export default function ActiveActivityStats({ activity, joinedStudentsCount, tot
           </Box>
         )}
 
+        {/* Time's up - show if quiz has been started and time has run out */}
+        {hasTimeLimit && quizStarted && timeRemaining !== null && timeRemaining === 0 && (
+          <Alert severity="warning" icon={<Iconify icon="solar:clock-circle-bold" />}>
+            Time's up! Quiz has ended.
+          </Alert>
+        )}
+
+        {/* Waiting to start - show if quiz has NOT been started yet */}
+        {hasTimeLimit && !quizStarted && quizActive && (
+          <Alert severity="info" icon={<Iconify icon="solar:play-circle-bold" />}>
+            Quiz Timer: {Math.floor(activity.timeLimit / 60)} minutes (Will start when quiz is activated)
+          </Alert>
+        )}
+
+        {/* Unlimited time */}
         {!hasTimeLimit && (
           <Alert severity="info" icon={<Iconify icon="solar:infinity-bold" />}>
             Unlimited Time
@@ -217,19 +239,24 @@ export default function ActiveActivityStats({ activity, joinedStudentsCount, tot
           </Typography>
         </Box>
 
-        {submissions.length > 0 && (
-          <Box>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>
-              Average Score
-            </Typography>
-            <Typography variant="h4" color="success.main">
-              {(
-                submissions.reduce((sum, s) => sum + (s.score || 0), 0) / submissions.length
-              ).toFixed(1)}
-              %
-            </Typography>
-          </Box>
-        )}
+        {submissions.length > 0 && (() => {
+          const scoredSubmissions = submissions.filter(s => s.score !== undefined && s.score !== null);
+          const hasScores = scoredSubmissions.length > 0;
+          const avgScore = hasScores
+            ? scoredSubmissions.reduce((sum, s) => sum + s.score, 0) / scoredSubmissions.length
+            : 0;
+
+          return (
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                Average Score
+              </Typography>
+              <Typography variant="h4" color={hasScores ? "success.main" : "text.secondary"}>
+                {hasScores ? `${avgScore.toFixed(1)}%` : 'Not graded yet'}
+              </Typography>
+            </Box>
+          );
+        })()}
       </Stack>
     );
   };

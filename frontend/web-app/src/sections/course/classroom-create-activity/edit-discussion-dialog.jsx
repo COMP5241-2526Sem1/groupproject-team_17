@@ -27,15 +27,30 @@ export default function EditDiscussionDialog({ open, onClose, onSubmit, activity
   const [requireApproval, setRequireApproval] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Load activity data when dialog opens
   useEffect(() => {
+    setIsInitialized(false); // Mark as not initialized when dialog state changes
+
     if (open && activity) {
+      console.log('[EditDiscussionDialog] Loading activity:', activity, 'isActive:', activity.isActive);
       setTitle(activity.title || '');
       setDescription(activity.description || '');
       setMaxLength(activity.maxLength || 500);
       setAllowAnonymous(activity.allowAnonymous || false);
       setRequireApproval(activity.requireApproval || false);
+      setError('');
+      setIsInitialized(true); // Mark as initialized
+    } else if (!open) {
+      // Reset form when dialog closes
+      setTitle('');
+      setDescription('');
+      setMaxLength(500);
+      setAllowAnonymous(false);
+      setRequireApproval(false);
+      setError('');
+      setIsInitialized(false);
     }
   }, [open, activity]);
 

@@ -33,10 +33,14 @@ export default function EditPollDialog({ open, onClose, onSubmit, activity }) {
   const [isAnonymous, setIsAnonymous] = useState(true);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Load activity data when dialog opens
   useEffect(() => {
+    setIsInitialized(false); // Mark as not initialized when dialog state changes
+
     if (open && activity) {
+      console.log('[EditPollDialog] Loading activity:', activity, 'isActive:', activity.isActive);
       setTitle(activity.title || '');
       setDescription(activity.description || '');
       setOptions(
@@ -49,6 +53,20 @@ export default function EditPollDialog({ open, onClose, onSubmit, activity }) {
       );
       setAllowMultipleSelections(activity.allowMultipleSelections || false);
       setIsAnonymous(activity.isAnonymous !== undefined ? activity.isAnonymous : true);
+      setError('');
+      setIsInitialized(true); // Mark as initialized
+    } else if (!open) {
+      // Reset form when dialog closes
+      setTitle('');
+      setDescription('');
+      setOptions([
+        { text: '', imageUrl: '' },
+        { text: '', imageUrl: '' },
+      ]);
+      setAllowMultipleSelections(false);
+      setIsAnonymous(true);
+      setError('');
+      setIsInitialized(false);
     }
   }, [open, activity]);
 

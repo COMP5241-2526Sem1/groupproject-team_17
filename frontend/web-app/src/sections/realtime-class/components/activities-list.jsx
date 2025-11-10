@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import {
   Alert,
@@ -19,6 +19,17 @@ import { Iconify } from 'src/components/iconify';
 
 export function ActivitiesList({ activities, onActivitySelect, selectedActivityId }) {
   const [filter, setFilter] = useState('all'); // 'all' | 'unanswered'
+  const [, forceUpdate] = useState(0); // State for forcing re-render
+
+  // Set up interval to check for expired quizzes every second
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Force re-render every second to update quiz expiration status
+      forceUpdate(prev => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Filter out pending activities (never started by teacher)
   const activitiesWithoutPending = activities.filter(activity => activity.status !== 'pending');
@@ -164,22 +175,109 @@ export function ActivitiesList({ activities, onActivitySelect, selectedActivityI
                           </Box>
                         </Stack>
                         <Stack direction="row" spacing={0.5} alignItems="center">
-                          {isActive && (
-                            <Chip
-                              label="Active"
-                              size="small"
-                              color="success"
-                              sx={{ flexShrink: 0 }}
-                            />
-                          )}
-                          <Chip
-                            icon={activity.hasSubmitted ? <Iconify icon="solar:check-circle-bold" width={16} /> : undefined}
-                            label={activity.hasSubmitted ? 'Submitted' : 'Not Submitted'}
-                            size="small"
-                            color={activity.hasSubmitted ? 'success' : 'default'}
-                            variant={activity.hasSubmitted ? 'filled' : 'outlined'}
-                            sx={{ flexShrink: 0 }}
-                          />
+                          {(() => {
+                            // For quiz activities, check if time is up
+                            const normalizedType = activity.type?.toLowerCase();
+                            const isQuiz = normalizedType === 'quiz';
+
+                            if (isQuiz && activity.startedAt && activity.timeLimit > 0) {
+                              // Quiz with timer - check if expired
+                              const startedAtString = activity.startedAt.endsWith('Z') || activity.startedAt.includes('+')
+                                ? activity.startedAt
+                                : activity.startedAt + 'Z';
+                              const startedTime = new Date(startedAtString).getTime();
+                              const expirationTime = startedTime + (activity.timeLimit * 1000);
+                              const isExpired = Date.now() >= expirationTime;
+
+                              // If time expired, always show "Submitted" regardless of isActive
+                              if (isExpired) {
+                                return (
+                                  <Chip
+                                    icon={<Iconify icon="solar:check-circle-bold" width={16} />}
+                                    label="Submitted"
+                                    size="small"
+                                    color="success"
+                                    variant="filled"
+                                    sx={{ flexShrink: 0 }}
+                                  />
+                                );
+                              }
+
+                              // Time not expired yet - show Active chip and In Progress
+                              if (isActive) {
+                                return (
+                                  <>
+                                    <Chip
+                                      label="Active"
+                                      size="small"
+                                      color="success"
+                                      sx={{ flexShrink: 0 }}
+                                    />
+                                    <Chip
+                                      icon={<Iconify icon="solar:clock-circle-bold" width={16} />}
+                                      label="In Progress"
+                                      size="small"
+                                      color="info"
+                                      variant="outlined"
+                                      sx={{ flexShrink: 0 }}
+                                    />
+                                  </>
+                                );
+                              }
+
+                              // Not active and not expired (quiz not started yet) - show "Submitted"
+                              return (
+                                <Chip
+                                  icon={<Iconify icon="solar:check-circle-bold" width={16} />}
+                                  label="Submitted"
+                                  size="small"
+                                  color="success"
+                                  variant="filled"
+                                  sx={{ flexShrink: 0 }}
+                                />
+                              );
+                            }
+
+                            if (isQuiz && isActive) {
+                              // Quiz without timer or not started - show "In Progress" if active
+                              return (
+                                <Chip
+                                  icon={<Iconify icon="solar:clock-circle-bold" width={16} />}
+                                  label="In Progress"
+                                  size="small"
+                                  color="info"
+                                  variant="outlined"
+                                  sx={{ flexShrink: 0 }}
+                                />
+                              );
+                            }
+
+                            if (isQuiz && !isActive) {
+                              // Quiz not active - show "Submitted"
+                              return (
+                                <Chip
+                                  icon={<Iconify icon="solar:check-circle-bold" width={16} />}
+                                  label="Submitted"
+                                  size="small"
+                                  color="success"
+                                  variant="filled"
+                                  sx={{ flexShrink: 0 }}
+                                />
+                              );
+                            }
+
+                            // For non-quiz activities, use the old logic
+                            return (
+                              <Chip
+                                icon={activity.hasSubmitted ? <Iconify icon="solar:check-circle-bold" width={16} /> : undefined}
+                                label={activity.hasSubmitted ? 'Submitted' : 'Not Submitted'}
+                                size="small"
+                                color={activity.hasSubmitted ? 'success' : 'default'}
+                                variant={activity.hasSubmitted ? 'filled' : 'outlined'}
+                                sx={{ flexShrink: 0 }}
+                              />
+                            );
+                          })()}
                         </Stack>
                       </Stack>
                     </CardContent>

@@ -9,6 +9,7 @@ public class Quiz : Activity
   public int Quiz_TimeLimit { get; set; } = 300; // seconds
   public bool Quiz_ShowCorrectAnswers { get; set; } = false;
   public bool Quiz_ShuffleQuestions { get; set; } = false;
+  public DateTime? Quiz_StartedAt { get; set; } // UTC time when quiz was first activated by instructor
 
   private List<QuizQuestion>? _questions;
 

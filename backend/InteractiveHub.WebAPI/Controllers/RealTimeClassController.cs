@@ -280,7 +280,8 @@ public partial class RealTimeClassController
             quiz.CreatedAt,
             Questions = quiz.Questions, // [NotMapped] property
             TimeLimit = quiz.Quiz_TimeLimit,
-            ShowCorrectAnswers = quiz.Quiz_ShowCorrectAnswers
+            ShowCorrectAnswers = quiz.Quiz_ShowCorrectAnswers,
+            StartedAt = quiz.Quiz_StartedAt // When quiz was first activated
           },
           Discussion discussion => (object)new
           {

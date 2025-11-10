@@ -498,7 +498,8 @@ public partial class ClassManager
         quiz.CreatedAt,
         questions = quiz.Questions, // This will use the [NotMapped] property getter
         quiz.Quiz_TimeLimit,
-        quiz.Quiz_ShowCorrectAnswers
+        quiz.Quiz_ShowCorrectAnswers,
+        quiz.Quiz_StartedAt // UTC timestamp when quiz was first activated
       },
       Discussion discussion => new
       {
