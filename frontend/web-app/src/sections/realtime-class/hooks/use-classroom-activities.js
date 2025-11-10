@@ -52,7 +52,8 @@ export function useClassroomActivities() {
           description: activity.description,
           isActive: activity.isActive,
           expiresAt: activity.expiresAt,
-          createdAt: activity.createdAt, // Add createdAt for timer calculation
+          createdAt: activity.createdAt,
+          startedAt: activity.quiz_StartedAt || activity.startedAt, // Add startedAt for quiz timer
           // Type-specific data
           ...(normalizedType === 'quiz' && {
             // Quiz
@@ -135,7 +136,7 @@ export function useClassroomActivities() {
               normalizedType = lowerType === 'polling' ? 'poll' : lowerType;
             }
 
-            return {
+            const activityData = {
               id: activity.id,
               type: normalizedType,
               title: activity.title,
@@ -145,7 +146,37 @@ export function useClassroomActivities() {
               hasBeenActivated: activity.hasBeenActivated || false,
               expiresAt: activity.expiresAt,
               hasSubmitted, // Add submission status
+              // Add quiz-specific fields for timeLimit and startedAt
+              ...(normalizedType === 'quiz' && {
+                timeLimit: activity.timeLimit ?? activity.quiz_TimeLimit ?? 0,
+                startedAt: activity.startedAt ?? activity.quiz_StartedAt,
+              }),
             };
+
+            // Debug logging for quiz activities
+            if (normalizedType === 'quiz') {
+              console.log('[use-classroom-activities] Quiz activity RAW data:', {
+                id: activity.id,
+                title: activity.title,
+                isActive: activity.isActive,
+                quiz_TimeLimit: activity.quiz_TimeLimit,
+                quiz_StartedAt: activity.quiz_StartedAt,
+                startedAt: activity.startedAt,
+                createdAt: activity.createdAt,
+                hasSubmitted,
+                allFields: Object.keys(activity),
+              });
+              console.log('[use-classroom-activities] Transformed activity:', {
+                id: activityData.id,
+                title: activityData.title,
+                isActive: activityData.isActive,
+                timeLimit: activityData.timeLimit,
+                startedAt: activityData.startedAt,
+                hasSubmitted: activityData.hasSubmitted,
+              });
+            }
+
+            return activityData;
           })
         );
 
@@ -209,6 +240,8 @@ export function useClassroomActivities() {
             createdAt: message.Payload.createdAt,
             hasTimeLimit: !!message.Payload.timeLimit,
             timeLimit: message.Payload.timeLimit,
+            quiz_StartedAt: message.Payload.quiz_StartedAt,
+            hasQuizStartedAt: !!message.Payload.quiz_StartedAt,
             isCurrentActivity: currentActivity?.id === message.Payload.activityId,
           });
 
@@ -236,15 +269,19 @@ export function useClassroomActivities() {
                   status,
                   title: message.Payload.title || activity.title,
                   description: message.Payload.description || activity.description,
-                  // Include createdAt and timeLimit from WebSocket message if available
+                  // Include createdAt, startedAt and timeLimit from WebSocket message if available
                   ...(message.Payload.createdAt && { createdAt: message.Payload.createdAt }),
-                  ...(message.Payload.timeLimit && { timeLimit: message.Payload.timeLimit }),
+                  ...(message.Payload.quiz_StartedAt && { startedAt: message.Payload.quiz_StartedAt }),
+                  // timeLimit can be 0 (unlimited), so check for undefined/null instead
+                  ...(message.Payload.timeLimit !== undefined && message.Payload.timeLimit !== null && { timeLimit: message.Payload.timeLimit }),
                 };
 
                 console.log('[useClassroomActivities] 🔄 Updated activity in list:', {
                   id: updated.id,
                   hasCreatedAt: !!updated.createdAt,
                   createdAt: updated.createdAt,
+                  hasStartedAt: !!updated.startedAt,
+                  startedAt: updated.startedAt,
                   hasTimeLimit: !!updated.timeLimit,
                   timeLimit: updated.timeLimit,
                 });
@@ -265,8 +302,9 @@ export function useClassroomActivities() {
                 hasBeenActivated: message.Payload.hasBeenActivated,
                 title: message.Payload.title || prev.title,
                 description: message.Payload.description || prev.description,
-                // Include createdAt and timeLimit from WebSocket message if available
+                // Include createdAt, startedAt and timeLimit from WebSocket message if available
                 ...(message.Payload.createdAt && { createdAt: message.Payload.createdAt }),
+                ...(message.Payload.quiz_StartedAt && { startedAt: message.Payload.quiz_StartedAt }),
                 ...(message.Payload.timeLimit && { timeLimit: message.Payload.timeLimit }),
               };
 
@@ -276,6 +314,8 @@ export function useClassroomActivities() {
                 isActive: updated.isActive,
                 hasCreatedAt: !!updated.createdAt,
                 createdAt: updated.createdAt,
+                hasStartedAt: !!updated.startedAt,
+                startedAt: updated.startedAt,
                 hasTimeLimit: !!updated.timeLimit,
                 timeLimit: updated.timeLimit,
               });

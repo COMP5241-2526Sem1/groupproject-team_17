@@ -212,6 +212,13 @@ public partial class ClassManager
 
           // Mark this activity as having been activated at least once
           activity.HasBeenActivated = true;
+
+          // For Quiz activities, record the first activation timestamp
+          if (activity is Quiz quiz && quiz.Quiz_StartedAt == null)
+          {
+            quiz.Quiz_StartedAt = DateTime.UtcNow;
+            _log?.LogInfo($"Recording quiz {quiz.Id} start time: {quiz.Quiz_StartedAt}");
+          }
         }
 
         // If deactivating this activity, mark it for deactivation broadcast
@@ -809,15 +816,6 @@ public partial class ClassManager
       //   return (ResCode.ActivityExpired, null);
       // }
 
-      // Check if already submitted
-      var existing = await db.Submissions
-        .FirstOrDefaultAsync(s => s.ActivityId == quizId && s.StudentId == studentId);
-
-      if (existing != null)
-      {
-        return (ResCode.AlreadySubmitted, null);
-      }
-
       // Parse answers
       var answers = new List<int>();
       if (submissionData["answers"] is JsonArray answersArray)
@@ -830,18 +828,38 @@ public partial class ClassManager
 
       // Calculate score
       double score = CalculateQuizScore(quiz, answers);
+      int timeSpent = submissionData["timeSpent"]?.GetValue<int>() ?? 0;
 
-      var submission = new QuizSubmission
+      // Check if already submitted - if yes, UPDATE instead of creating new
+      var existing = await db.Submissions.OfType<QuizSubmission>()
+        .FirstOrDefaultAsync(s => s.ActivityId == quizId && s.StudentId == studentId);
+
+      QuizSubmission submission;
+      if (existing != null)
       {
-        CourseId = quiz.CourseId,
-        ActivityId = quizId,
-        StudentId = studentId,
-        Answers = answers,
-        Quiz_Score = score,
-        Quiz_TimeSpent = submissionData["timeSpent"]?.GetValue<int>() ?? 0
-      };
+        // Update existing submission
+        existing.Answers = answers;
+        existing.Quiz_Score = score;
+        existing.Quiz_TimeSpent = timeSpent;
+        existing.SubmittedAt = DateTime.UtcNow; // Update submission time
+        submission = existing;
+      }
+      else
+      {
+        // Create new submission
+        submission = new QuizSubmission
+        {
+          CourseId = quiz.CourseId,
+          ActivityId = quizId,
+          StudentId = studentId,
+          Answers = answers,
+          Quiz_Score = score,
+          Quiz_TimeSpent = timeSpent
+        };
 
-      await db.Submissions.AddAsync(submission);
+        await db.Submissions.AddAsync(submission);
+      }
+
       await db.SaveChangesAsync();
 
       // Broadcast new submission to RealtimeClass

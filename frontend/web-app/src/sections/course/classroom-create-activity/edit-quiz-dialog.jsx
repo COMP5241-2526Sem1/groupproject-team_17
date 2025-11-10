@@ -36,11 +36,21 @@ export default function EditQuizDialog({ open, onClose, onSubmit, activity }) {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Load activity data when dialog opens
   useEffect(() => {
+    setIsInitialized(false); // Mark as not initialized when dialog state changes
+    console.log('[EditQuizDialog] useEffect triggered - open:', open, 'activity:', activity);
+
     if (open && activity) {
       console.log('[EditQuizDialog] Loading activity:', activity);
+      console.log('[EditQuizDialog] Activity isActive:', activity.isActive);
+      console.log('[EditQuizDialog] Activity questions:', activity.questions);
+      console.log('[EditQuizDialog] Activity timeLimit:', activity.timeLimit);
+      console.log('[EditQuizDialog] Activity ALL keys:', Object.keys(activity));
+
+      // IMPORTANT: Always load the data regardless of isActive state
       setTitle(activity.title || '');
       setDescription(activity.description || '');
       setQuestions(
@@ -64,6 +74,31 @@ export default function EditQuizDialog({ open, onClose, onSubmit, activity }) {
       );
       setTimeLimit(activity.timeLimit || 300);
       setCurrentQuestionIndex(0);
+      setError(''); // Clear any previous errors
+      setIsInitialized(true); // Mark as initialized
+
+      console.log('[EditQuizDialog] State set - title:', activity.title, 'questions count:', activity.questions?.length);
+    } else if (!open) {
+      // Reset form when dialog closes
+      console.log('[EditQuizDialog] Dialog closed - resetting form');
+      setTitle('');
+      setDescription('');
+      setQuestions([
+        {
+          text: '',
+          options: ['', '', '', ''],
+          correctAnswer: 0,
+          points: 1,
+          explanation: '',
+        },
+      ]);
+      setTimeLimit(300);
+      setCurrentQuestionIndex(0);
+      setError('');
+      setIsInitialized(false);
+    } else {
+      console.log('[EditQuizDialog] Skipping load - open:', open, 'activity exists:', !!activity);
+      setIsInitialized(false);
     }
   }, [open, activity]);
 
@@ -233,6 +268,12 @@ export default function EditQuizDialog({ open, onClose, onSubmit, activity }) {
     onClose();
   };
 
+  // Check if dialog is still initializing data
+  // Show loading only when dialog is open with activity but not yet initialized
+  const isLoading = open && activity && !isInitialized;
+
+  console.log('[EditQuizDialog] Render - open:', open, 'activity:', !!activity, 'title:', title, 'questions:', questions.length, 'isInitialized:', isInitialized, 'isLoading:', isLoading, 'activityTitle:', activity?.title, 'activityActive:', activity?.isActive);
+
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
       <DialogTitle>
@@ -246,225 +287,237 @@ export default function EditQuizDialog({ open, onClose, onSubmit, activity }) {
         <Stack spacing={3} sx={{ mt: 1 }}>
           {error && <Alert severity="error">{error}</Alert>}
 
-          {/* Quiz Title */}
-          <TextField
-            label="Quiz Title"
-            fullWidth
-            required
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g., Chapter 1 Knowledge Check"
-          />
+          {/* Show loading state if waiting for data to load */}
+          {isLoading && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 4 }}>
+              <Typography color="text.secondary">Loading quiz data...</Typography>
+            </Box>
+          )}
 
-          {/* Quiz Description */}
-          <TextField
-            label="Description (Optional)"
-            fullWidth
-            multiline
-            rows={2}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Add any additional context or instructions..."
-          />
+          {/* Only show form when not loading */}
+          {!isLoading && (
+            <>
+              {/* Quiz Title */}
+              <TextField
+                label="Quiz Title"
+                fullWidth
+                required
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g., Chapter 1 Knowledge Check"
+              />
 
-          {/* Quiz Questions */}
-          <Box>
-            {/* Navigation Header */}
-            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-              <Typography variant="subtitle2">
-                Question {currentQuestionIndex + 1} of {questions.length}
-              </Typography>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Button
-                  size="small"
-                  startIcon={<Iconify icon="solar:arrow-left-bold" />}
-                  onClick={handlePreviousQuestion}
-                  disabled={currentQuestionIndex === 0}
-                >
-                  Previous
-                </Button>
-                <Button
-                  size="small"
-                  endIcon={<Iconify icon="solar:arrow-right-bold" />}
-                  onClick={handleNextQuestion}
-                  disabled={currentQuestionIndex === questions.length - 1}
-                >
-                  Next
-                </Button>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  startIcon={<Iconify icon="solar:add-circle-bold" />}
-                  onClick={handleAddQuestion}
-                >
-                  Add Question
-                </Button>
-                <IconButton
-                  color="error"
-                  size="small"
-                  onClick={() => handleRemoveQuestion(currentQuestionIndex)}
-                  disabled={questions.length <= 1}
-                  title="Delete this question"
-                >
-                  <Iconify icon="solar:trash-bin-trash-bold" />
-                </IconButton>
-              </Stack>
-            </Stack>
+              {/* Quiz Description */}
+              <TextField
+                label="Description (Optional)"
+                fullWidth
+                multiline
+                rows={2}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Add any additional context or instructions..."
+              />
 
-            {/* Current Question */}
-            {questions.length > 0 && currentQuestionIndex < questions.length && (
-              <Box
-                sx={{
-                  p: 2,
-                  border: 1,
-                  borderColor: 'divider',
-                  borderRadius: 1,
-                  bgcolor: 'background.neutral',
-                }}
-              >
-                <Stack spacing={2}>
-                  {/* Question Text */}
-                  <TextField
-                    label="Question Text"
-                    fullWidth
-                    required
-                    multiline
-                    rows={2}
-                    value={questions[currentQuestionIndex].text}
-                    onChange={(e) => handleQuestionTextChange(currentQuestionIndex, e.target.value)}
-                    placeholder="Enter your question here..."
-                  />
-
-                  {/* Question Options */}
-                  <Box>
-                    <Typography variant="caption" color="text.secondary" sx={{ mb: 1 }}>
-                      Answer Options (minimum 2 required)
-                    </Typography>
-                    <Stack spacing={1} sx={{ mt: 1 }}>
-                      {questions[currentQuestionIndex].options.map((option, oIndex) => (
-                        <Stack key={oIndex} direction="row" spacing={1} alignItems="center">
-                          <TextField
-                            label={`Option ${oIndex + 1}`}
-                            fullWidth
-                            required
-                            size="small"
-                            value={option}
-                            onChange={(e) =>
-                              handleOptionChange(currentQuestionIndex, oIndex, e.target.value)
-                            }
-                            placeholder={`Enter option ${oIndex + 1}`}
-                          />
-                          <IconButton
-                            color="error"
-                            size="small"
-                            onClick={() => handleRemoveOption(currentQuestionIndex, oIndex)}
-                            disabled={questions[currentQuestionIndex].options.length <= 2}
-                          >
-                            <Iconify icon="solar:trash-bin-trash-bold" width={20} />
-                          </IconButton>
-                        </Stack>
-                      ))}
-                    </Stack>
+              {/* Quiz Questions */}
+              <Box>
+                {/* Navigation Header */}
+                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+                  <Typography variant="subtitle2">
+                    Question {currentQuestionIndex + 1} of {questions.length}
+                  </Typography>
+                  <Stack direction="row" spacing={1} alignItems="center">
                     <Button
                       size="small"
-                      startIcon={<Iconify icon="solar:add-circle-bold" />}
-                      onClick={() => handleAddOption(currentQuestionIndex)}
-                      sx={{ mt: 1 }}
+                      startIcon={<Iconify icon="solar:arrow-left-bold" />}
+                      onClick={handlePreviousQuestion}
+                      disabled={currentQuestionIndex === 0}
                     >
-                      Add Option
+                      Previous
                     </Button>
-                  </Box>
-
-                  {/* Correct Answer & Points */}
-                  <Stack direction="row" spacing={2}>
-                    <TextField
-                      label="Correct Answer"
-                      select
-                      fullWidth
+                    <Button
                       size="small"
-                      value={questions[currentQuestionIndex].correctAnswer}
-                      onChange={(e) => handleCorrectAnswerChange(currentQuestionIndex, e.target.value)}
+                      endIcon={<Iconify icon="solar:arrow-right-bold" />}
+                      onClick={handleNextQuestion}
+                      disabled={currentQuestionIndex === questions.length - 1}
                     >
-                      {questions[currentQuestionIndex].options.map((_, index) => (
-                        <MenuItem key={index} value={index}>
-                          Option {index + 1}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                    <TextField
-                      label="Points"
-                      type="number"
+                      Next
+                    </Button>
+                    <Button
                       size="small"
-                      sx={{ width: 120 }}
-                      value={questions[currentQuestionIndex].points}
-                      onChange={(e) => handlePointsChange(currentQuestionIndex, e.target.value)}
-                      inputProps={{ min: 1 }}
-                    />
+                      variant="outlined"
+                      startIcon={<Iconify icon="solar:add-circle-bold" />}
+                      onClick={handleAddQuestion}
+                    >
+                      Add Question
+                    </Button>
+                    <IconButton
+                      color="error"
+                      size="small"
+                      onClick={() => handleRemoveQuestion(currentQuestionIndex)}
+                      disabled={questions.length <= 1}
+                      title="Delete this question"
+                    >
+                      <Iconify icon="solar:trash-bin-trash-bold" />
+                    </IconButton>
                   </Stack>
+                </Stack>
 
-                  {/* Explanation */}
+                {/* Current Question */}
+                {questions.length > 0 && currentQuestionIndex < questions.length && (
+                  <Box
+                    sx={{
+                      p: 2,
+                      border: 1,
+                      borderColor: 'divider',
+                      borderRadius: 1,
+                      bgcolor: 'background.neutral',
+                    }}
+                  >
+                    <Stack spacing={2}>
+                      {/* Question Text */}
+                      <TextField
+                        label="Question Text"
+                        fullWidth
+                        required
+                        multiline
+                        rows={2}
+                        value={questions[currentQuestionIndex].text}
+                        onChange={(e) => handleQuestionTextChange(currentQuestionIndex, e.target.value)}
+                        placeholder="Enter your question here..."
+                      />
+
+                      {/* Question Options */}
+                      <Box>
+                        <Typography variant="caption" color="text.secondary" sx={{ mb: 1 }}>
+                          Answer Options (minimum 2 required)
+                        </Typography>
+                        <Stack spacing={1} sx={{ mt: 1 }}>
+                          {questions[currentQuestionIndex].options.map((option, oIndex) => (
+                            <Stack key={oIndex} direction="row" spacing={1} alignItems="center">
+                              <TextField
+                                label={`Option ${oIndex + 1}`}
+                                fullWidth
+                                required
+                                size="small"
+                                value={option}
+                                onChange={(e) =>
+                                  handleOptionChange(currentQuestionIndex, oIndex, e.target.value)
+                                }
+                                placeholder={`Enter option ${oIndex + 1}`}
+                              />
+                              <IconButton
+                                color="error"
+                                size="small"
+                                onClick={() => handleRemoveOption(currentQuestionIndex, oIndex)}
+                                disabled={questions[currentQuestionIndex].options.length <= 2}
+                              >
+                                <Iconify icon="solar:trash-bin-trash-bold" width={20} />
+                              </IconButton>
+                            </Stack>
+                          ))}
+                        </Stack>
+                        <Button
+                          size="small"
+                          startIcon={<Iconify icon="solar:add-circle-bold" />}
+                          onClick={() => handleAddOption(currentQuestionIndex)}
+                          sx={{ mt: 1 }}
+                        >
+                          Add Option
+                        </Button>
+                      </Box>
+
+                      {/* Correct Answer & Points */}
+                      <Stack direction="row" spacing={2}>
+                        <TextField
+                          label="Correct Answer"
+                          select
+                          fullWidth
+                          size="small"
+                          value={questions[currentQuestionIndex].correctAnswer}
+                          onChange={(e) => handleCorrectAnswerChange(currentQuestionIndex, e.target.value)}
+                        >
+                          {questions[currentQuestionIndex].options.map((_, index) => (
+                            <MenuItem key={index} value={index}>
+                              Option {index + 1}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                        <TextField
+                          label="Points"
+                          type="number"
+                          size="small"
+                          sx={{ width: 120 }}
+                          value={questions[currentQuestionIndex].points}
+                          onChange={(e) => handlePointsChange(currentQuestionIndex, e.target.value)}
+                          inputProps={{ min: 1 }}
+                        />
+                      </Stack>
+
+                      {/* Explanation */}
+                      <TextField
+                        label="Explanation (Optional)"
+                        fullWidth
+                        multiline
+                        rows={2}
+                        size="small"
+                        value={questions[currentQuestionIndex].explanation}
+                        onChange={(e) => handleExplanationChange(currentQuestionIndex, e.target.value)}
+                        placeholder="Explain the correct answer..."
+                      />
+                    </Stack>
+                  </Box>
+                )}
+
+                {/* Question Dots Indicator */}
+                {questions.length > 1 && (
+                  <Stack direction="row" justifyContent="center" spacing={0.5} sx={{ mt: 2 }}>
+                    {questions.map((_, index) => (
+                      <Box
+                        key={index}
+                        onClick={() => setCurrentQuestionIndex(index)}
+                        sx={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
+                          bgcolor: index === currentQuestionIndex ? 'primary.main' : 'grey.300',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          '&:hover': {
+                            transform: 'scale(1.2)',
+                          },
+                        }}
+                      />
+                    ))}
+                  </Stack>
+                )}
+              </Box>
+
+              {/* Quiz Settings */}
+              <Box>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                  Quiz Settings
+                </Typography>
+                <Stack spacing={2}>
                   <TextField
-                    label="Explanation (Optional)"
+                    label="Time Limit (minutes)"
+                    type="number"
                     fullWidth
-                    multiline
-                    rows={2}
-                    size="small"
-                    value={questions[currentQuestionIndex].explanation}
-                    onChange={(e) => handleExplanationChange(currentQuestionIndex, e.target.value)}
-                    placeholder="Explain the correct answer..."
+                    value={Math.round(timeLimit / 60)}
+                    onChange={(e) => {
+                      const minutes = parseInt(e.target.value, 10);
+                      if (isNaN(minutes) || minutes < 1) {
+                        setTimeLimit(60); // Minimum 1 minute
+                      } else {
+                        setTimeLimit(minutes * 60); // Convert minutes to seconds
+                      }
+                    }}
+                    inputProps={{ min: 1 }}
+                    helperText="Minimum 1 minute required"
                   />
                 </Stack>
               </Box>
-            )}
-
-            {/* Question Dots Indicator */}
-            {questions.length > 1 && (
-              <Stack direction="row" justifyContent="center" spacing={0.5} sx={{ mt: 2 }}>
-                {questions.map((_, index) => (
-                  <Box
-                    key={index}
-                    onClick={() => setCurrentQuestionIndex(index)}
-                    sx={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: '50%',
-                      bgcolor: index === currentQuestionIndex ? 'primary.main' : 'grey.300',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      '&:hover': {
-                        transform: 'scale(1.2)',
-                      },
-                    }}
-                  />
-                ))}
-              </Stack>
-            )}
-          </Box>
-
-          {/* Quiz Settings */}
-          <Box>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>
-              Quiz Settings
-            </Typography>
-            <Stack spacing={2}>
-              <TextField
-                label="Time Limit (seconds)"
-                type="number"
-                fullWidth
-                value={timeLimit}
-                onChange={(e) => {
-                  const value = parseInt(e.target.value, 10);
-                  if (value === 0) {
-                    setTimeLimit(0); // 0 = unlimited time
-                  } else {
-                    setTimeLimit(Math.max(60, value || 300));
-                  }
-                }}
-                inputProps={{ min: 0 }}
-                helperText="Set to 0 for unlimited time, or minimum 60 seconds (1 minute)"
-              />
-            </Stack>
-          </Box>
+            </>
+          )}
         </Stack>
       </DialogContent>
 

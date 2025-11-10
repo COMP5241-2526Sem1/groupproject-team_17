@@ -94,12 +94,19 @@ export default function CourseDetailsClassroom() {
           break;
 
         case 'ACTIVITY_UPDATED':
-          console.log('[Classroom] Activity updated:', message.Payload);
+          console.log('[Classroom] Activity updated - FULL PAYLOAD:', JSON.stringify(message.Payload, null, 2));
+          console.log('[Classroom] Payload activityId:', message.Payload.activityId);
+          console.log('[Classroom] Payload questions:', message.Payload.questions);
+          console.log('[Classroom] Payload Questions:', message.Payload.Questions);
+          console.log('[Classroom] Payload timeLimit:', message.Payload.timeLimit);
 
           // Update activities list
-          setActivities((prev) =>
-            prev.map((activity) => {
+          setActivities((prev) => {
+            console.log('[Classroom] Current activities before update:', prev.map(a => ({ id: a.id, title: a.title, questions: a.questions?.length })));
+
+            const updated = prev.map((activity) => {
               if (activity.id === message.Payload.activityId) {
+                console.log('[Classroom] Found matching activity:', activity.id, 'Current questions:', activity.questions?.length);
                 const isActive = message.Payload.isActive;
                 const hasBeenActivated = message.Payload.hasBeenActivated !== undefined
                   ? message.Payload.hasBeenActivated
@@ -128,22 +135,28 @@ export default function CourseDetailsClassroom() {
                   title: message.Payload.title || activity.title,
                   description: message.Payload.description || activity.description,
                   type: activityType,
+                  // Include startedAt from WebSocket message
+                  ...(message.Payload.quiz_StartedAt && { startedAt: message.Payload.quiz_StartedAt }),
                   // Include type-specific data from WebSocket message
                   ...(activityType === 'poll' && {
-                    options: message.Payload.options || [],
-                    allowMultipleSelections: message.Payload.poll_AllowMultipleSelections,
-                    isAnonymous: message.Payload.poll_IsAnonymous,
+                    options: message.Payload.options || message.Payload.Options || activity.options || [],
+                    allowMultipleSelections: message.Payload.poll_AllowMultipleSelections ?? message.Payload.Poll_AllowMultipleSelections ?? activity.allowMultipleSelections,
+                    isAnonymous: message.Payload.poll_IsAnonymous ?? message.Payload.Poll_IsAnonymous ?? activity.isAnonymous,
                   }),
                   ...(activityType === 'quiz' && {
-                    timeLimit: message.Payload.timeLimit,
-                    questions: message.Payload.questions || [],
-                    showCorrectAnswers: message.Payload.quiz_ShowCorrectAnswers,
+                    timeLimit: message.Payload.timeLimit ?? message.Payload.TimeLimit ?? activity.timeLimit,
+                    questions: message.Payload.questions || message.Payload.Questions || activity.questions || [],
+                    showCorrectAnswers: message.Payload.quiz_ShowCorrectAnswers ?? message.Payload.Quiz_ShowCorrectAnswers ?? activity.showCorrectAnswers,
                   }),
                   ...(activityType === 'discussion' && {
-                    maxLength: message.Payload.discussion_MaxLength,
-                    allowAnonymous: message.Payload.discussion_AllowAnonymous,
+                    maxLength: message.Payload.discussion_MaxLength ?? message.Payload.Discussion_MaxLength ?? activity.maxLength,
+                    allowAnonymous: message.Payload.discussion_AllowAnonymous ?? message.Payload.Discussion_AllowAnonymous ?? activity.allowAnonymous,
                   }),
                 };
+
+                console.log('[Classroom] Updated activity - isActive:', isActive, 'type:', activityType);
+                console.log('[Classroom] Updated activity questions:', updatedActivity.questions);
+                console.log('[Classroom] Updated activity options:', updatedActivity.options);
 
                 console.log('[Classroom] Updated activity in list:', updatedActivity);
 
@@ -156,16 +169,25 @@ export default function CourseDetailsClassroom() {
                 return updatedActivity;
               }
               return activity;
-            })
-          );
-
-          // Also fetch from server to ensure we have complete data
-          console.log('[Classroom] Fetching classroom status after ACTIVITY_UPDATED...');
-          setTimeout(() => {
-            fetchClassroomStatus().then(() => {
-              console.log('[Classroom] Classroom status refreshed');
             });
-          }, 100); // Small delay to ensure state updates
+
+            console.log('[Classroom] Activities after update:', updated.map(a => ({ id: a.id, title: a.title, questions: a.questions?.length })));
+            return updated;
+          });
+
+          // IMPORTANT: Fetch from server to ensure we have complete data
+          // WebSocket message might not contain all fields, so we need to sync with server
+          console.log('[Classroom] Re-fetching activities to ensure complete data...');
+          fetchActivities().then(() => {
+            console.log('[Classroom] Activities re-fetched successfully');
+          }).catch(err => {
+            console.error('[Classroom] Error re-fetching activities:', err);
+          });
+
+          // Also fetch classroom status
+          fetchClassroomStatus().then(() => {
+            console.log('[Classroom] Classroom status refreshed');
+          });
           break;
 
         case 'ACTIVITY_DELETED':
@@ -241,6 +263,15 @@ export default function CourseDetailsClassroom() {
         if (response.data.currentActivity) {
           const activity = response.data.currentActivity;
 
+          // Debug: Log all field names to find startedAt field
+          console.log('[Classroom] Raw currentActivity fields:', Object.keys(activity));
+          console.log('[Classroom] Quiz-related fields:', {
+            quiz_StartedAt: activity.quiz_StartedAt,
+            Quiz_StartedAt: activity.Quiz_StartedAt,
+            startedAt: activity.startedAt,
+            StartedAt: activity.StartedAt,
+          });
+
           // Normalize type - handle both numeric (1,2,3) and string ("quiz", "poll", "discussion", "Quiz", "Polling", "Discussion")
           let normalizedType;
           if (typeof activity.type === 'number') {
@@ -259,6 +290,8 @@ export default function CourseDetailsClassroom() {
             hasBeenActivated: activity.hasBeenActivated || false,
             createdAt: activity.createdAt,
             expiresAt: activity.expiresAt,
+            // Try multiple possible field names for startedAt
+            startedAt: activity.quiz_StartedAt || activity.Quiz_StartedAt || activity.startedAt || activity.StartedAt,
             // Backend returns lowercase field names from SerializeActivityWithOptions
             ...(normalizedType === 'quiz' && {
               // Quiz
@@ -376,6 +409,8 @@ export default function CourseDetailsClassroom() {
           hasBeenActivated: activity.hasBeenActivated || false,
           createdAt: activity.createdAt,
           expiresAt: activity.expiresAt,
+          // Try multiple possible field names for startedAt
+          startedAt: activity.quiz_StartedAt || activity.Quiz_StartedAt || activity.startedAt || activity.StartedAt,
           // Backend now returns PascalCase field names from transformed objects
           ...(normalizedType === 'quiz' && {
             // Quiz - backend returns Questions (PascalCase)
@@ -543,6 +578,11 @@ export default function CourseDetailsClassroom() {
   // Handle editing activity - automatically detect type and open appropriate dialog
   const handleEditActivity = (activity) => {
     console.log('[Classroom] Edit activity:', activity);
+    console.log('[Classroom] Edit activity type:', activity.type);
+    console.log('[Classroom] Edit activity questions:', activity.questions);
+    console.log('[Classroom] Edit activity timeLimit:', activity.timeLimit);
+    console.log('[Classroom] Edit activity all keys:', Object.keys(activity));
+
     setEditingActivity(activity);
 
     // Auto-detect activity type and open corresponding dialog
@@ -551,6 +591,7 @@ export default function CourseDetailsClassroom() {
         setEditPollOpen(true);
         break;
       case 'quiz':
+        console.log('[Classroom] Opening quiz edit dialog for:', activity);
         setEditQuizOpen(true);
         break;
       case 'discussion':

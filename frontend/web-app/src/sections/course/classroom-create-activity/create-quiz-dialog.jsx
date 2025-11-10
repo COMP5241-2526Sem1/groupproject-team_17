@@ -431,20 +431,20 @@ export default function CreateQuizDialog({ open, onClose, onSubmit }) {
             </Typography>
             <Stack spacing={2}>
               <TextField
-                label="Time Limit (seconds)"
+                label="Time Limit (minutes)"
                 type="number"
                 fullWidth
-                value={timeLimit}
+                value={Math.round(timeLimit / 60)}
                 onChange={(e) => {
-                  const value = parseInt(e.target.value, 10);
-                  if (value === 0) {
-                    setTimeLimit(0); // 0 = unlimited time
+                  const minutes = parseInt(e.target.value, 10);
+                  if (isNaN(minutes) || minutes < 1) {
+                    setTimeLimit(60); // Minimum 1 minute
                   } else {
-                    setTimeLimit(Math.max(60, value || 300));
+                    setTimeLimit(minutes * 60); // Convert minutes to seconds
                   }
                 }}
-                inputProps={{ min: 0 }}
-                helperText="Set to 0 for unlimited time, or minimum 60 seconds (1 minute)"
+                inputProps={{ min: 1 }}
+                helperText="Minimum 1 minute required"
               />
             </Stack>
           </Box>
