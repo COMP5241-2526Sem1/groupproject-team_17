@@ -245,7 +245,7 @@ function QuizActivityComponent({ activity, onSubmitSuccess, isHistoryView = fals
 
           // Check if time has expired
           const isTimeExpired = expirationTime && Date.now() >= expirationTime;
-          
+
           console.log('[QuizActivity] ⏰ Time expiration check:', {
             expirationTime: expirationTime ? new Date(expirationTime).toISOString() : null,
             now: new Date().toISOString(),
@@ -359,7 +359,7 @@ function QuizActivityComponent({ activity, onSubmitSuccess, isHistoryView = fals
           hasData: !!response.data,
           data: response.data,
         });
-        
+
         if (response.code === 0 && response.data) {
           console.log('[QuizActivity] ✅ Fetched auto-saved submission, setting submissionResult state');
           setSubmissionResult(response.data);
@@ -472,8 +472,8 @@ function QuizActivityComponent({ activity, onSubmitSuccess, isHistoryView = fals
 
   // Handle answer selection - auto-save after each answer
   const handleAnswerSelect = useCallback((questionIndex, optionIndex) => {
-    console.log('[QuizActivity] 📝 Answer selected:', { 
-      questionIndex, 
+    console.log('[QuizActivity] 📝 Answer selected:', {
+      questionIndex,
       optionIndex,
       currentActivityId: activity?.id,
       currentActivityTitle: activity?.title,
