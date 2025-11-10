@@ -52,6 +52,7 @@ export default function CourseDetailsClassroom() {
   // Dialog states
   const [createPollOpen, setCreatePollOpen] = useState(false);
   const [createQuizOpen, setCreateQuizOpen] = useState(false);
+  const [createMCQuestionOpen, setCreateMCQuestionOpen] = useState(false);
   const [createDiscussionOpen, setCreateDiscussionOpen] = useState(false);
   const [editPollOpen, setEditPollOpen] = useState(false);
   const [editQuizOpen, setEditQuizOpen] = useState(false);
@@ -781,7 +782,7 @@ export default function CourseDetailsClassroom() {
         {/* Quick Actions */}
         <Grid size={{ xs: 12, md: 6 }}>
           <InteractiveActivitiesCard
-            onCreateMCQuestion={() => setCreateQuizOpen(true)}
+            onCreateMCQuestion={() => setCreateMCQuestionOpen(true)}
             onCreatePoll={() => setCreatePollOpen(true)}
             onCreateQuiz={() => setCreateQuizOpen(true)}
             onCreateDiscussion={() => setCreateDiscussionOpen(true)}
@@ -833,6 +834,14 @@ export default function CourseDetailsClassroom() {
         open={createQuizOpen}
         onClose={() => setCreateQuizOpen(false)}
         onSubmit={handleCreateQuiz}
+      />
+
+      {/* Create MC Question Dialog */}
+      <CreateQuizDialog
+        open={createMCQuestionOpen}
+        onClose={() => setCreateMCQuestionOpen(false)}
+        onSubmit={handleCreateQuiz}
+        singleQuestionMode
       />
 
       {/* Create Discussion Dialog */}

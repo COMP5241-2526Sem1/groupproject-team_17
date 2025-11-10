@@ -211,15 +211,6 @@ export default function CreatePollDialog({ open, onClose, onSubmit }) {
                 }
                 label="Allow Multiple Selections"
               />
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={isAnonymous}
-                    onChange={(e) => setIsAnonymous(e.target.checked)}
-                  />
-                }
-                label="Anonymous Voting"
-              />
             </Stack>
           </Box>
         </Stack>

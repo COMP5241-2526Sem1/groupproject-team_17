@@ -239,15 +239,6 @@ export default function EditPollDialog({ open, onClose, onSubmit, activity }) {
                 }
                 label="Allow Multiple Selections"
               />
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={isAnonymous}
-                    onChange={(e) => setIsAnonymous(e.target.checked)}
-                  />
-                }
-                label="Anonymous Voting"
-              />
             </Stack>
           </Box>
         </Stack>

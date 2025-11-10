@@ -182,6 +182,10 @@ export default function StudentSubmissionDetail({ submission, activity, onBack }
         </Typography>
         <Card>
           <CardContent>
+            <Typography variant="h5" sx={{ mb: 2 }}>
+              {activity.title}
+            </Typography>
+
             <Typography variant="subtitle2" sx={{ mb: 2 }}>
               Selected Options:
             </Typography>
@@ -230,20 +234,15 @@ export default function StudentSubmissionDetail({ submission, activity, onBack }
         </Typography>
         <Card>
           <CardContent>
+            <Typography variant="h6" sx={{ whiteSpace: 'pre-wrap' }}>
+              {activity.title}
+            </Typography>
+            <Divider sx={{ my: 2 }} />
             <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
               {submission.text}
             </Typography>
-            <Divider sx={{ my: 2 }} />
-            <Stack direction="row" spacing={1}>
-              {submission.isAnonymous && (
-                <Chip label="Anonymous" size="small" color="info" />
-              )}
-              {submission.isApproved ? (
-                <Chip label="Approved" size="small" color="success" />
-              ) : (
-                <Chip label="Pending Approval" size="small" color="warning" />
-              )}
-            </Stack>
+
+
           </CardContent>
         </Card>
       </Box>
