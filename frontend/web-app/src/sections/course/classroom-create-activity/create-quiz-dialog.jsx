@@ -20,7 +20,7 @@ import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
-export default function CreateQuizDialog({ open, onClose, onSubmit }) {
+export default function CreateQuizDialog({ open, onClose, onSubmit, singleQuestionMode = false }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [questions, setQuestions] = useState([
@@ -221,7 +221,7 @@ export default function CreateQuizDialog({ open, onClose, onSubmit }) {
       <DialogTitle>
         <Stack direction="row" alignItems="center" spacing={1}>
           <Iconify icon="solar:document-text-bold" width={24} />
-          <Typography variant="h6">Create Quiz</Typography>
+          <Typography variant="h6">{singleQuestionMode ? 'Create MC Question' : 'Create Quiz'}</Typography>
         </Stack>
       </DialogTitle>
 
@@ -253,46 +253,48 @@ export default function CreateQuizDialog({ open, onClose, onSubmit }) {
           {/* Quiz Questions */}
           <Box>
             {/* Navigation Header */}
-            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-              <Typography variant="subtitle2">
-                Question {currentQuestionIndex + 1} of {questions.length}
-              </Typography>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Button
-                  size="small"
-                  startIcon={<Iconify icon="solar:arrow-left-bold" />}
-                  onClick={handlePreviousQuestion}
-                  disabled={currentQuestionIndex === 0}
-                >
-                  Previous
-                </Button>
-                <Button
-                  size="small"
-                  endIcon={<Iconify icon="solar:arrow-right-bold" />}
-                  onClick={handleNextQuestion}
-                  disabled={currentQuestionIndex === questions.length - 1}
-                >
-                  Next
-                </Button>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  startIcon={<Iconify icon="solar:add-circle-bold" />}
-                  onClick={handleAddQuestion}
-                >
-                  Add Question
-                </Button>
-                <IconButton
-                  color="error"
-                  size="small"
-                  onClick={() => handleRemoveQuestion(currentQuestionIndex)}
-                  disabled={questions.length <= 1}
-                  title="Delete this question"
-                >
-                  <Iconify icon="solar:trash-bin-trash-bold" />
-                </IconButton>
+            {!singleQuestionMode && (
+              <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+                <Typography variant="subtitle2">
+                  Question {currentQuestionIndex + 1} of {questions.length}
+                </Typography>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Button
+                    size="small"
+                    startIcon={<Iconify icon="solar:arrow-left-bold" />}
+                    onClick={handlePreviousQuestion}
+                    disabled={currentQuestionIndex === 0}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    size="small"
+                    endIcon={<Iconify icon="solar:arrow-right-bold" />}
+                    onClick={handleNextQuestion}
+                    disabled={currentQuestionIndex === questions.length - 1}
+                  >
+                    Next
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={<Iconify icon="solar:add-circle-bold" />}
+                    onClick={handleAddQuestion}
+                  >
+                    Add Question
+                  </Button>
+                  <IconButton
+                    color="error"
+                    size="small"
+                    onClick={() => handleRemoveQuestion(currentQuestionIndex)}
+                    disabled={questions.length <= 1}
+                    title="Delete this question"
+                  >
+                    <Iconify icon="solar:trash-bin-trash-bold" />
+                  </IconButton>
+                </Stack>
               </Stack>
-            </Stack>
+            )}
 
             {/* Current Question */}
             {questions.length > 0 && currentQuestionIndex < questions.length && (
@@ -401,7 +403,7 @@ export default function CreateQuizDialog({ open, onClose, onSubmit }) {
             )}
 
             {/* Question Dots Indicator */}
-            {questions.length > 1 && (
+            {!singleQuestionMode && questions.length > 1 && (
               <Stack direction="row" justifyContent="center" spacing={0.5} sx={{ mt: 2 }}>
                 {questions.map((_, index) => (
                   <Box
@@ -467,7 +469,7 @@ export default function CreateQuizDialog({ open, onClose, onSubmit }) {
             )
           }
         >
-          {submitting ? 'Creating...' : 'Create Quiz'}
+          {submitting ? 'Creating...' : singleQuestionMode ? 'Create MC Question' : 'Create Quiz'}
         </Button>
       </DialogActions>
     </Dialog>
