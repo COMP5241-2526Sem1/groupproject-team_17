@@ -681,8 +681,7 @@ export default function AIAssistantDialog({ open, onClose, courseId, activityTyp
                 {conversationId && !showHistory && (
                   <Tooltip title="Back to History">
                     <IconButton onClick={handleBackToHistory} sx={{ color: 'white' }}>
-                      <Iconify icon="solar:arrow-left-bold" width={24} />
-                    </IconButton>
+                      <Iconify icon="solar:history-bold" />               </IconButton>
                   </Tooltip>
                 )}
                 <Box>
@@ -1251,7 +1250,7 @@ export default function AIAssistantDialog({ open, onClose, courseId, activityTyp
                                 sx={{
                                   width: 36,
                                   height: 36,
-                                  bgcolor: 'primary.main',
+                                  bgcolor: 'primary.secondary',
                                   boxShadow: (theme) => `0 4px 12px ${alpha(theme.palette.primary.main, 0.24)}`,
                                 }}
                               >
@@ -1708,7 +1707,9 @@ export default function AIAssistantDialog({ open, onClose, courseId, activityTyp
                                   boxShadow: (theme) => `0 4px 12px ${alpha(theme.palette.info.main, 0.24)}`,
                                 }}
                               >
-                                <Iconify icon="solar:user-bold-duotone" width={20} />
+                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                  You
+                                </Typography>
                               </Avatar>
                             )}
                           </Stack>
@@ -1780,7 +1781,7 @@ export default function AIAssistantDialog({ open, onClose, courseId, activityTyp
                                     {isStreaming ? (
                                       <CircularProgress size={20} sx={{ color: 'white' }} />
                                     ) : (
-                                      <Iconify icon="solar:send-bold-duotone" width={20} />
+                                      <Iconify icon="solar:send-square-line-duotone" width={20} />
                                     )}
                                   </IconButton>
                                 </span>
