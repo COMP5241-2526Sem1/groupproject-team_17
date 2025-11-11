@@ -93,7 +93,10 @@ public partial class ClassManager
     {
       return (ResCode.CourseNotFound, null);
     }
-
+    if (course?.IsArchived == true)
+    {
+      return (ResCode.ClassRoomIsClosed, null);
+    }
     return (ResCode.OK, joinClassDto);
   }
   public async Task<(ResCode, JoinedStudent?)> StudentJoinCourse(string courseId, string studentId, string? studentName, string? email, string? pin)
@@ -123,7 +126,10 @@ public partial class ClassManager
     {
       return (ResCode.CourseNotFound, null);
     }
-
+    if (courseFromDb.IsArchived == true)
+    {
+      return (ResCode.ClassRoomIsClosed, null);
+    }
     // Create RealtimeClass and add to ActiveClasses
     EnsureRealtimeClassExists(courseId, courseFromDb);
 

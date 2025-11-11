@@ -82,6 +82,8 @@ public enum ResCode
     CourseAlreadyExists,
     [Description("The course was not found.")]
     CourseNotFound,
+    [Description("The classroom is closed.")]
+    ClassRoomIsClosed,
     [Description("Invalid course data.")]
     InvalidCourseData,
     [Description("The required field is missing.")]
