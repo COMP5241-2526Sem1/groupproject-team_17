@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
-import { Stack } from '@mui/material';
+import { Stack, Typography } from '@mui/material';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -111,8 +111,11 @@ export function JwtSignInView() {
 
   return (
     <>
+      <Typography variant="h2" sx={{ mb: 3, mt: 1, color: 'text.secondary', textAlign: 'center' }}>
+        {'Interactive Hub'}
+      </Typography>
       <FormHead
-        title="Sign in to your account"
+
         description={
           <>
 
@@ -126,8 +129,9 @@ export function JwtSignInView() {
           {errorMessage}
         </Alert>
       )}
-
-
+      <Typography variant='body' sx={{ mb: 3, mt: 1, color: 'text.secondary', textAlign: 'center' }}>
+        Sign in with your social account
+      </Typography>
       <Stack gap={2} direction="column" alignItems="center" justifyContent="center">
         <Button
           fullWidth
