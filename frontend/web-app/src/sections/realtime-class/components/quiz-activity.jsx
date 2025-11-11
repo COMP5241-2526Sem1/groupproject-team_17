@@ -77,7 +77,7 @@ const QuizQuestion = memo(({ question, questionIndex, selectedAnswer, onAnswerSe
             >
               <FormControlLabel
                 value={optionIndex}
-                control={<Radio disabled={isSubmitted} onClick={() => !isSubmitted && onAnswerSelect(questionIndex, optionIndex)} />}
+                control={<Radio disabled={isSubmitted} />}
                 label={option}
                 sx={{ width: '100%', m: 0 }}
               />
@@ -102,6 +102,7 @@ function QuizActivityComponent({ activity, onSubmitSuccess, isHistoryView = fals
   const [timeRemaining, setTimeRemaining] = useState(null);
   const [isTimeUp, setIsTimeUp] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [virtualDisabled, setVirtualDisabled] = useState(false);
 
   const timerRef = useRef(null);
   const startTimeRef = useRef(null); // Track when student started the quiz
@@ -112,23 +113,10 @@ function QuizActivityComponent({ activity, onSubmitSuccess, isHistoryView = fals
   const timeLimit = activity.timeLimit || 0;
   const totalQuestions = activity.questions?.length || 0;
 
-  // Debug: Log activity data when it changes
-  console.log('[QuizActivity] Activity data:', {
-    id: activity.id,
-    title: activity.title,
-    isActive: activity.isActive,
-    isHistoryView,
-    startedAt: activity.startedAt,
-    timeLimit,
-    hasStartedAt: !!activity.startedAt,
-    startedAtType: typeof activity.startedAt,
-    timeLimitType: typeof timeLimit,
-  });
 
   // CRITICAL: Reset ALL state when activity changes (switching between activities)
   // This must run BEFORE checkExistingSubmission to prevent old answers from showing
   useEffect(() => {
-    console.log('[QuizActivity] 🔄 Activity changed - resetting state for activity:', activity.id);
     setAnswers({});
     setSubmissionResult(null);
     setHasSubmitted(false);
@@ -151,26 +139,15 @@ function QuizActivityComponent({ activity, onSubmitSuccess, isHistoryView = fals
   // Note: We ONLY use startedAt + timeLimit, ignoring expiresAt field
   // If timeLimit is 0 or quiz not started yet, return null (unlimited time or not started)
   const expirationTime = useMemo(() => {
-    console.log('[QuizActivity] Calculating expiration time...', {
-      hasStartedAt: !!activity?.startedAt,
-      startedAt: activity?.startedAt,
-      hasTimeLimit: !!timeLimit,
-      timeLimit,
-      timeLimitPositive: timeLimit > 0,
-    });
+
 
     // If quiz hasn't been started by instructor yet, no timer
     if (!activity?.startedAt) {
-      console.log('[QuizActivity] ⏰ Quiz not started yet - waiting for instructor to activate');
       return null;
     }
 
     if (timeLimit <= 0) {
-      console.log('[QuizActivity] ❌ Missing required data for timer:', {
-        hasStartedAt: !!activity?.startedAt,
-        startedAt: activity?.startedAt,
-        timeLimit,
-      });
+
       return null;
     }
 
@@ -450,12 +427,7 @@ function QuizActivityComponent({ activity, onSubmitSuccess, isHistoryView = fals
       return;
     }
 
-    console.log('[QuizActivity] 💾 Auto-saving answers:', {
-      activityId: activity.id,
-      activityTitle: activity.title,
-      studentId: studentState.studentId,
-      currentAnswers,
-    });
+
 
     try {
       const totalQuestions = activity.questions?.length || 0;
@@ -474,12 +446,6 @@ function QuizActivityComponent({ activity, onSubmitSuccess, isHistoryView = fals
         }
       }
 
-      console.log('[QuizActivity] 📤 Submitting to API:', {
-        activityId: activity.id,
-        studentId: studentState.studentId,
-        answersArray,
-        timeSpent,
-      });
 
       await activityAPI.submitQuiz(activity.id, {
         studentId: studentState.studentId,
@@ -487,22 +453,15 @@ function QuizActivityComponent({ activity, onSubmitSuccess, isHistoryView = fals
         timeSpent,
       });
 
-      console.log('[QuizActivity] ✅ Auto-save successful for activity:', activity.id);
     } catch (err) {
-      console.log('[QuizActivity] ⚠️ Auto-save failed (this is OK):', err.message);
       // Don't show error to user for auto-save failures
     }
   }, [activity, studentState, hasSubmitted, timeLimit]);
 
   // Handle answer selection - auto-save after each answer
   const handleAnswerSelect = useCallback((questionIndex, optionIndex) => {
-    console.log('[QuizActivity] 📝 Answer selected:', {
-      questionIndex,
-      optionIndex,
-      currentActivityId: activity?.id,
-      currentActivityTitle: activity?.title,
-    });
-
+    if (virtualDisabled) return;
+    setVirtualDisabled(true);
     setAnswers((prev) => {
       const newAnswers = {
         ...prev,
@@ -517,14 +476,20 @@ function QuizActivityComponent({ activity, onSubmitSuccess, isHistoryView = fals
       return newAnswers;
     });
     setError(null);
-    
+
     // Auto-navigate to next question after selection
-    setTimeout(() => {
-      if (currentQuestionIndex < totalQuestions) {
-        setCurrentQuestionIndex(prev => prev + 1);
-      }
-    }, 300); // Small delay for better UX
-  }, [activity, autoSaveAnswers, currentQuestionIndex, totalQuestions]);
+    /*     setTimeout(() => {
+          if (currentQuestionIndex < totalQuestions) {
+            setCurrentQuestionIndex(prev => {
+              return prev + 1;
+    
+            });
+    
+          }
+    
+        }, 500); // Small delay for better UX */
+    setVirtualDisabled(false);
+  }, [activity, autoSaveAnswers, currentQuestionIndex, totalQuestions, setVirtualDisabled]);
 
   // Submit quiz
   const handleSubmit = async (autoSubmit = false) => {
@@ -634,7 +599,6 @@ function QuizActivityComponent({ activity, onSubmitSuccess, isHistoryView = fals
       isSubmittingRef.current = false; // Reset ref on error to allow retry
     } finally {
       setIsSubmitting(false);
-      console.log('[QuizActivity] 🏁 Submission process completed');
     }
   };
 
@@ -709,18 +673,7 @@ function QuizActivityComponent({ activity, onSubmitSuccess, isHistoryView = fals
   // NOTE: Must check time FIRST before showing results, even if we have submissionResult from auto-save
   const isQuizCompleted = isTimeUp;
 
-  console.log('[QuizActivity] 📊 Result display check:', {
-    isQuizCompleted,
-    isHistoryView,
-    isActive,
-    isQuizExpired,
-    isTimeUp,
-    hasSubmissionResult: !!submissionResult,
-    submissionResult,
-    expirationTime: expirationTime ? new Date(expirationTime).toISOString() : null,
-    now: new Date().toISOString(),
-    shouldShowResults: isQuizCompleted && !!submissionResult,
-  });
+
 
   // If quiz is completed but no submission exists, show "not submitted" message
   if (isQuizCompleted && !submissionResult) {
@@ -853,20 +806,7 @@ function QuizActivityComponent({ activity, onSubmitSuccess, isHistoryView = fals
   const isQuizDisabled = isTimeUp || isQuizExpired;
 
   // Debug timer display
-  console.log('[QuizActivity] 🖥️ UI Render - Timer display check:', {
-    timeLimit,
-    timeRemaining,
-    timeRemainingType: typeof timeRemaining,
-    timeRemainingIsNull: timeRemaining === null,
-    expirationTime,
-    hasSubmitted,
-    isActive,
-    isTimeUp,
-    isQuizExpired,
-    isQuizDisabled,
-    showTimer: timeRemaining !== null,
-    timerValue: timeRemaining !== null ? formatTime(timeRemaining) : 'N/A',
-  });
+
 
   return (
     <Card>
