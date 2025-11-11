@@ -18,6 +18,7 @@ import { useRouter } from 'src/routes/hooks';
 import { Field, schemaUtils } from 'src/components/hook-form';
 import { Iconify } from 'src/components/iconify';
 
+import { CONFIG } from 'src/global-config';
 import { FormHead } from '../../components/form-head';
 import { signInWithPassword } from '../../context/jwt';
 import { getErrorMessage } from '../../utils';
@@ -111,8 +112,8 @@ export function JwtSignInView() {
 
   return (
     <>
-      <Typography variant="h2" sx={{ mb: 3, mt: 1, color: 'text.secondary', textAlign: 'center' }}>
-        {'Interactive Hub'}
+      <Typography variant="h2" sx={{ mb: 0, mt: 1, color: 'text.secondary', textAlign: 'center' }}>
+        {CONFIG.appName}
       </Typography>
       <FormHead
 

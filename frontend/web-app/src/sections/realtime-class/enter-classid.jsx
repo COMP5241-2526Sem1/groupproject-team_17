@@ -307,11 +307,12 @@ export function EnterClassCodeView() {
             </Typography>
             {classInfo ? (
               <Box>
+
+                <Typography variant="h4" color="text.secondary">
+                  {classInfo.courseCode}
+                </Typography>
                 <Typography variant="h6" color="primary" sx={{ mb: 0.5 }}>
                   {classInfo.courseName}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {classInfo.courseCode}
                 </Typography>
               </Box>
             ) : (
