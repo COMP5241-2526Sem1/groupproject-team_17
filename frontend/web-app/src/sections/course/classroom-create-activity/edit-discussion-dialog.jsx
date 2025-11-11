@@ -4,17 +4,13 @@ import { useEffect, useState } from 'react';
 
 import {
   Alert,
-  Box,
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControlLabel,
   Stack,
-  Switch,
-  TextField,
-  Typography,
+  TextField
 } from '@mui/material';
 
 // ----------------------------------------------------------------------
@@ -27,15 +23,30 @@ export default function EditDiscussionDialog({ open, onClose, onSubmit, activity
   const [requireApproval, setRequireApproval] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Load activity data when dialog opens
   useEffect(() => {
+    setIsInitialized(false); // Mark as not initialized when dialog state changes
+
     if (open && activity) {
+      console.log('[EditDiscussionDialog] Loading activity:', activity, 'isActive:', activity.isActive);
       setTitle(activity.title || '');
       setDescription(activity.description || '');
       setMaxLength(activity.maxLength || 500);
       setAllowAnonymous(activity.allowAnonymous || false);
       setRequireApproval(activity.requireApproval || false);
+      setError('');
+      setIsInitialized(true); // Mark as initialized
+    } else if (!open) {
+      // Reset form when dialog closes
+      setTitle('');
+      setDescription('');
+      setMaxLength(500);
+      setAllowAnonymous(false);
+      setRequireApproval(false);
+      setError('');
+      setIsInitialized(false);
     }
   }, [open, activity]);
 
@@ -128,40 +139,6 @@ export default function EditDiscussionDialog({ open, onClose, onSubmit, activity
             disabled={submitting}
             inputProps={{ min: 1, max: 5000 }}
           />
-
-          {/* Allow Anonymous */}
-          <Box>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={allowAnonymous}
-                  onChange={(e) => setAllowAnonymous(e.target.checked)}
-                  disabled={submitting}
-                />
-              }
-              label="Allow Anonymous Responses"
-            />
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', ml: 4 }}>
-              Students can submit responses without revealing their identity
-            </Typography>
-          </Box>
-
-          {/* Require Approval */}
-          <Box>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={requireApproval}
-                  onChange={(e) => setRequireApproval(e.target.checked)}
-                  disabled={submitting}
-                />
-              }
-              label="Require Approval Before Display"
-            />
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', ml: 4 }}>
-              Responses must be approved by instructor before being visible to others
-            </Typography>
-          </Box>
         </Stack>
       </DialogContent>
       <DialogActions>

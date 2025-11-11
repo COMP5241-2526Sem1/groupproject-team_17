@@ -144,7 +144,8 @@ public class RealtimeClass : IHObject
                 createdAt = activity.CreatedAt,
                 timeLimit = quiz.Quiz_TimeLimit,
                 questions = quiz.Questions,
-                quiz_ShowCorrectAnswers = quiz.Quiz_ShowCorrectAnswers
+                quiz_ShowCorrectAnswers = quiz.Quiz_ShowCorrectAnswers,
+                quiz_StartedAt = quiz.Quiz_StartedAt // UTC timestamp when quiz was first activated
             },
             Discussion discussion => new
             {

@@ -3,6 +3,7 @@ using System;
 using InteractiveHub.Service.ClassManagement.Repository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace InteractiveHub.Service.ClassRelated.Migrations
 {
     [DbContext(typeof(ClassDbContext))]
-    partial class ClassDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251107040115_RevertJoinCheckingModesChanges")]
+    partial class RevertJoinCheckingModesChanges
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -478,9 +481,6 @@ namespace InteractiveHub.Service.ClassRelated.Migrations
 
                     b.Property<bool>("Quiz_ShuffleQuestions")
                         .HasColumnType("tinyint(1)");
-
-                    b.Property<DateTime?>("Quiz_StartedAt")
-                        .HasColumnType("datetime(6)");
 
                     b.Property<int>("Quiz_TimeLimit")
                         .HasColumnType("int");

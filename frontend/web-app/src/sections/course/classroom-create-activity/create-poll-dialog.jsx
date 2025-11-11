@@ -2,23 +2,20 @@
 
 import { useState } from 'react';
 
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import {
-  Box,
   Alert,
-  Stack,
+  Box,
   Button,
   Dialog,
-  Switch,
-  TextField,
-  IconButton,
-  Typography,
-  DialogTitle,
   DialogActions,
   DialogContent,
+  DialogTitle,
   FormControlLabel,
+  IconButton,
+  Stack,
+  Switch,
+  TextField,
+  Typography,
 } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
@@ -34,7 +31,6 @@ export default function CreatePollDialog({ open, onClose, onSubmit }) {
   ]);
   const [allowMultipleSelections, setAllowMultipleSelections] = useState(false);
   const [isAnonymous, setIsAnonymous] = useState(true);
-  const [expiresAt, setExpiresAt] = useState(null);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -102,7 +98,6 @@ export default function CreatePollDialog({ open, onClose, onSubmit }) {
         options: validOptions,
         allowMultipleSelections,
         isAnonymous,
-        expiresAt: expiresAt?.toISOString() || null,
       };
 
       await onSubmit(pollData);
@@ -124,7 +119,6 @@ export default function CreatePollDialog({ open, onClose, onSubmit }) {
     ]);
     setAllowMultipleSelections(false);
     setIsAnonymous(true);
-    setExpiresAt(null);
     setError('');
     setSubmitting(false);
     onClose();
@@ -217,33 +211,8 @@ export default function CreatePollDialog({ open, onClose, onSubmit }) {
                 }
                 label="Allow Multiple Selections"
               />
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={isAnonymous}
-                    onChange={(e) => setIsAnonymous(e.target.checked)}
-                  />
-                }
-                label="Anonymous Voting"
-              />
             </Stack>
           </Box>
-
-          {/* Expiration Time */}
-          <LocalizationProvider dateAdapter={AdapterDateFns}>
-            <DateTimePicker
-              label="Expiration Time (Optional)"
-              value={expiresAt}
-              onChange={setExpiresAt}
-              slotProps={{
-                textField: {
-                  fullWidth: true,
-                  helperText: 'Leave empty for no expiration',
-                },
-              }}
-              minDateTime={new Date()}
-            />
-          </LocalizationProvider>
         </Stack>
       </DialogContent>
 

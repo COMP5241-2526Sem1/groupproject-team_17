@@ -16,15 +16,11 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
-export default function CreateQuizDialog({ open, onClose, onSubmit }) {
+export default function CreateQuizDialog({ open, onClose, onSubmit, singleQuestionMode = false }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [questions, setQuestions] = useState([
@@ -37,13 +33,26 @@ export default function CreateQuizDialog({ open, onClose, onSubmit }) {
     },
   ]);
   const [timeLimit, setTimeLimit] = useState(300); // 5 minutes default
-  const [expiresAt, setExpiresAt] = useState(null);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+
+  // Navigation handlers
+  const handleNextQuestion = () => {
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+    }
+  };
+
+  const handlePreviousQuestion = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(currentQuestionIndex - 1);
+    }
+  };
 
   // Add a new question
   const handleAddQuestion = () => {
-    setQuestions([
+    const newQuestions = [
       ...questions,
       {
         text: '',
@@ -52,7 +61,9 @@ export default function CreateQuizDialog({ open, onClose, onSubmit }) {
         points: 1,
         explanation: '',
       },
-    ]);
+    ];
+    setQuestions(newQuestions);
+    setCurrentQuestionIndex(newQuestions.length - 1); // Navigate to new question
   };
 
   // Remove a question
@@ -60,6 +71,10 @@ export default function CreateQuizDialog({ open, onClose, onSubmit }) {
     if (questions.length > 1) {
       const newQuestions = questions.filter((_, i) => i !== index);
       setQuestions(newQuestions);
+      // Adjust current index if needed
+      if (currentQuestionIndex >= newQuestions.length) {
+        setCurrentQuestionIndex(newQuestions.length - 1);
+      }
     }
   };
 
@@ -170,7 +185,6 @@ export default function CreateQuizDialog({ open, onClose, onSubmit }) {
         description: description.trim(),
         questions: validQuestions,
         timeLimit,
-        expiresAt: expiresAt?.toISOString() || null,
       };
 
       await onSubmit(quizData);
@@ -196,7 +210,7 @@ export default function CreateQuizDialog({ open, onClose, onSubmit }) {
       },
     ]);
     setTimeLimit(300);
-    setExpiresAt(null);
+    setCurrentQuestionIndex(0);
     setError('');
     setSubmitting(false);
     onClose();
@@ -207,7 +221,7 @@ export default function CreateQuizDialog({ open, onClose, onSubmit }) {
       <DialogTitle>
         <Stack direction="row" alignItems="center" spacing={1}>
           <Iconify icon="solar:document-text-bold" width={24} />
-          <Typography variant="h6">Create Quiz</Typography>
+          <Typography variant="h6">{singleQuestionMode ? 'Create MC Question' : 'Create Quiz'}</Typography>
         </Stack>
       </DialogTitle>
 
@@ -238,137 +252,178 @@ export default function CreateQuizDialog({ open, onClose, onSubmit }) {
 
           {/* Quiz Questions */}
           <Box>
-            <Typography variant="subtitle2" sx={{ mb: 2 }}>
-              Questions
-            </Typography>
-            <Stack spacing={3}>
-              {questions.map((question, qIndex) => (
-                <Box
-                  key={qIndex}
-                  sx={{
-                    p: 2,
-                    border: 1,
-                    borderColor: 'divider',
-                    borderRadius: 1,
-                    bgcolor: 'background.neutral',
-                  }}
-                >
-                  <Stack spacing={2}>
-                    {/* Question Header */}
-                    <Stack direction="row" alignItems="center" justifyContent="space-between">
-                      <Typography variant="subtitle2">Question {qIndex + 1}</Typography>
-                      <IconButton
-                        color="error"
-                        size="small"
-                        onClick={() => handleRemoveQuestion(qIndex)}
-                        disabled={questions.length <= 1}
-                      >
-                        <Iconify icon="solar:trash-bin-trash-bold" />
-                      </IconButton>
+            {/* Navigation Header */}
+            {!singleQuestionMode && (
+              <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+                <Typography variant="subtitle2">
+                  Question {currentQuestionIndex + 1} of {questions.length}
+                </Typography>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Button
+                    size="small"
+                    startIcon={<Iconify icon="solar:arrow-left-bold" />}
+                    onClick={handlePreviousQuestion}
+                    disabled={currentQuestionIndex === 0}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    size="small"
+                    endIcon={<Iconify icon="solar:arrow-right-bold" />}
+                    onClick={handleNextQuestion}
+                    disabled={currentQuestionIndex === questions.length - 1}
+                  >
+                    Next
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={<Iconify icon="solar:add-circle-bold" />}
+                    onClick={handleAddQuestion}
+                  >
+                    Add Question
+                  </Button>
+                  <IconButton
+                    color="error"
+                    size="small"
+                    onClick={() => handleRemoveQuestion(currentQuestionIndex)}
+                    disabled={questions.length <= 1}
+                    title="Delete this question"
+                  >
+                    <Iconify icon="solar:trash-bin-trash-bold" />
+                  </IconButton>
+                </Stack>
+              </Stack>
+            )}
+
+            {/* Current Question */}
+            {questions.length > 0 && currentQuestionIndex < questions.length && (
+              <Box
+                sx={{
+                  p: 2,
+                  border: 1,
+                  borderColor: 'divider',
+                  borderRadius: 1,
+                  bgcolor: 'background.neutral',
+                }}
+              >
+                <Stack spacing={2}>
+                  {/* Question Text */}
+                  <TextField
+                    label="Question Text"
+                    fullWidth
+                    required
+                    multiline
+                    rows={2}
+                    value={questions[currentQuestionIndex].text}
+                    onChange={(e) => handleQuestionTextChange(currentQuestionIndex, e.target.value)}
+                    placeholder="Enter your question here..."
+                  />
+
+                  {/* Question Options */}
+                  <Box>
+                    <Typography variant="caption" color="text.secondary" sx={{ mb: 1 }}>
+                      Answer Options (minimum 2 required)
+                    </Typography>
+                    <Stack spacing={1} sx={{ mt: 1 }}>
+                      {questions[currentQuestionIndex].options.map((option, oIndex) => (
+                        <Stack key={oIndex} direction="row" spacing={1} alignItems="center">
+                          <TextField
+                            label={`Option ${oIndex + 1}`}
+                            fullWidth
+                            required
+                            size="small"
+                            value={option}
+                            onChange={(e) =>
+                              handleOptionChange(currentQuestionIndex, oIndex, e.target.value)
+                            }
+                            placeholder={`Enter option ${oIndex + 1}`}
+                          />
+                          <IconButton
+                            color="error"
+                            size="small"
+                            onClick={() => handleRemoveOption(currentQuestionIndex, oIndex)}
+                            disabled={questions[currentQuestionIndex].options.length <= 2}
+                          >
+                            <Iconify icon="solar:trash-bin-trash-bold" width={20} />
+                          </IconButton>
+                        </Stack>
+                      ))}
                     </Stack>
-
-                    {/* Question Text */}
-                    <TextField
-                      label="Question Text"
-                      fullWidth
-                      required
-                      multiline
-                      rows={2}
-                      value={question.text}
-                      onChange={(e) => handleQuestionTextChange(qIndex, e.target.value)}
-                      placeholder="Enter your question here..."
-                    />
-
-                    {/* Question Options */}
-                    <Box>
-                      <Typography variant="caption" color="text.secondary" sx={{ mb: 1 }}>
-                        Answer Options (minimum 2 required)
-                      </Typography>
-                      <Stack spacing={1} sx={{ mt: 1 }}>
-                        {question.options.map((option, oIndex) => (
-                          <Stack key={oIndex} direction="row" spacing={1} alignItems="center">
-                            <TextField
-                              label={`Option ${oIndex + 1}`}
-                              fullWidth
-                              required
-                              size="small"
-                              value={option}
-                              onChange={(e) =>
-                                handleOptionChange(qIndex, oIndex, e.target.value)
-                              }
-                              placeholder={`Enter option ${oIndex + 1}`}
-                            />
-                            <IconButton
-                              color="error"
-                              size="small"
-                              onClick={() => handleRemoveOption(qIndex, oIndex)}
-                              disabled={question.options.length <= 2}
-                            >
-                              <Iconify icon="solar:trash-bin-trash-bold" width={20} />
-                            </IconButton>
-                          </Stack>
-                        ))}
-                      </Stack>
-                      <Button
-                        size="small"
-                        startIcon={<Iconify icon="solar:add-circle-bold" />}
-                        onClick={() => handleAddOption(qIndex)}
-                        sx={{ mt: 1 }}
-                      >
-                        Add Option
-                      </Button>
-                    </Box>
-
-                    {/* Correct Answer & Points */}
-                    <Stack direction="row" spacing={2}>
-                      <TextField
-                        label="Correct Answer"
-                        select
-                        fullWidth
-                        size="small"
-                        value={question.correctAnswer}
-                        onChange={(e) => handleCorrectAnswerChange(qIndex, e.target.value)}
-                      >
-                        {question.options.map((_, index) => (
-                          <MenuItem key={index} value={index}>
-                            Option {index + 1}
-                          </MenuItem>
-                        ))}
-                      </TextField>
-                      <TextField
-                        label="Points"
-                        type="number"
-                        size="small"
-                        sx={{ width: 120 }}
-                        value={question.points}
-                        onChange={(e) => handlePointsChange(qIndex, e.target.value)}
-                        inputProps={{ min: 1 }}
-                      />
-                    </Stack>
-
-                    {/* Explanation */}
-                    <TextField
-                      label="Explanation (Optional)"
-                      fullWidth
-                      multiline
-                      rows={2}
+                    <Button
                       size="small"
-                      value={question.explanation}
-                      onChange={(e) => handleExplanationChange(qIndex, e.target.value)}
-                      placeholder="Explain the correct answer..."
+                      startIcon={<Iconify icon="solar:add-circle-bold" />}
+                      onClick={() => handleAddOption(currentQuestionIndex)}
+                      sx={{ mt: 1 }}
+                    >
+                      Add Option
+                    </Button>
+                  </Box>
+
+                  {/* Correct Answer & Points */}
+                  <Stack direction="row" spacing={2}>
+                    <TextField
+                      label="Correct Answer"
+                      select
+                      fullWidth
+                      size="small"
+                      value={questions[currentQuestionIndex].correctAnswer}
+                      onChange={(e) => handleCorrectAnswerChange(currentQuestionIndex, e.target.value)}
+                    >
+                      {questions[currentQuestionIndex].options.map((_, index) => (
+                        <MenuItem key={index} value={index}>
+                          Option {index + 1}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                    <TextField
+                      label="Points"
+                      type="number"
+                      size="small"
+                      sx={{ width: 120 }}
+                      value={questions[currentQuestionIndex].points}
+                      onChange={(e) => handlePointsChange(currentQuestionIndex, e.target.value)}
+                      inputProps={{ min: 1 }}
                     />
                   </Stack>
-                </Box>
-              ))}
-            </Stack>
-            <Button
-              size="small"
-              startIcon={<Iconify icon="solar:add-circle-bold" />}
-              onClick={handleAddQuestion}
-              sx={{ mt: 2 }}
-            >
-              Add Question
-            </Button>
+
+                  {/* Explanation */}
+                  <TextField
+                    label="Explanation (Optional)"
+                    fullWidth
+                    multiline
+                    rows={2}
+                    size="small"
+                    value={questions[currentQuestionIndex].explanation}
+                    onChange={(e) => handleExplanationChange(currentQuestionIndex, e.target.value)}
+                    placeholder="Explain the correct answer..."
+                  />
+                </Stack>
+              </Box>
+            )}
+
+            {/* Question Dots Indicator */}
+            {!singleQuestionMode && questions.length > 1 && (
+              <Stack direction="row" justifyContent="center" spacing={0.5} sx={{ mt: 2 }}>
+                {questions.map((_, index) => (
+                  <Box
+                    key={index}
+                    onClick={() => setCurrentQuestionIndex(index)}
+                    sx={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      bgcolor: index === currentQuestionIndex ? 'primary.main' : 'grey.300',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        transform: 'scale(1.2)',
+                      },
+                    }}
+                  />
+                ))}
+              </Stack>
+            )}
           </Box>
 
           {/* Quiz Settings */}
@@ -378,39 +433,23 @@ export default function CreateQuizDialog({ open, onClose, onSubmit }) {
             </Typography>
             <Stack spacing={2}>
               <TextField
-                label="Time Limit (seconds)"
+                label="Time Limit (minutes)"
                 type="number"
                 fullWidth
-                value={timeLimit}
+                value={Math.round(timeLimit / 60)}
                 onChange={(e) => {
-                  const value = parseInt(e.target.value, 10);
-                  if (value === 0) {
-                    setTimeLimit(0); // 0 = unlimited time
+                  const minutes = parseInt(e.target.value, 10);
+                  if (isNaN(minutes) || minutes < 1) {
+                    setTimeLimit(60); // Minimum 1 minute
                   } else {
-                    setTimeLimit(Math.max(60, value || 300));
+                    setTimeLimit(minutes * 60); // Convert minutes to seconds
                   }
                 }}
-                inputProps={{ min: 0 }}
-                helperText="Set to 0 for unlimited time, or minimum 60 seconds (1 minute)"
+                inputProps={{ min: 1 }}
+                helperText="Minimum 1 minute required"
               />
             </Stack>
           </Box>
-
-          {/* Expiration Time */}
-          <LocalizationProvider dateAdapter={AdapterDateFns}>
-            <DateTimePicker
-              label="Expiration Time (Optional)"
-              value={expiresAt}
-              onChange={setExpiresAt}
-              slotProps={{
-                textField: {
-                  fullWidth: true,
-                  helperText: 'Leave empty for no expiration',
-                },
-              }}
-              minDateTime={new Date()}
-            />
-          </LocalizationProvider>
         </Stack>
       </DialogContent>
 
@@ -430,7 +469,7 @@ export default function CreateQuizDialog({ open, onClose, onSubmit }) {
             )
           }
         >
-          {submitting ? 'Creating...' : 'Create Quiz'}
+          {submitting ? 'Creating...' : singleQuestionMode ? 'Create MC Question' : 'Create Quiz'}
         </Button>
       </DialogActions>
     </Dialog>

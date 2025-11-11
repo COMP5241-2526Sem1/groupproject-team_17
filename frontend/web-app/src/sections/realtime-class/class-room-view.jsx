@@ -94,7 +94,8 @@ export default function ClassRoomView() {
             isActive: fullActivity.isActive,
             hasBeenActivated: fullActivity.hasBeenActivated,
             expiresAt: fullActivity.expiresAt,
-            createdAt: fullActivity.createdAt, // Add createdAt for timer calculation
+            createdAt: fullActivity.createdAt,
+            startedAt: fullActivity.quiz_StartedAt || fullActivity.startedAt, // Add startedAt for quiz timer
             // Type-specific data
             ...(normalizedType === 'quiz' && {
               // Quiz

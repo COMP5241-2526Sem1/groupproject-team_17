@@ -1,5 +1,5 @@
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import {
   Alert,
@@ -22,6 +22,7 @@ import {
 
 import { paths } from 'src/routes/paths';
 
+import { activityAPI } from 'src/api/api-function-call';
 import { ClassManagementActions } from 'src/redux/actions/reducerActions';
 import { useSelector } from 'src/redux/hooks';
 
@@ -87,11 +88,32 @@ export default function CourseDetailsSettings() {
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Activities count state
+  const [activityCount, setActivityCount] = useState(0);
+
   // Join mode states (moved from renderCourseJoinInfo)
   const [editingJoinMode, setEditingJoinMode] = useState(false);
   const [currentCombination, setCurrentCombination] = useState(1);
   const [savedCombinations, setSavedCombinations] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Fetch activities count
+  useEffect(() => {
+    const fetchActivitiesCount = async () => {
+      if (!selectedCourse?.id) return;
+
+      try {
+        const res = await activityAPI.getCourseActivities(selectedCourse.id);
+        if (res?.code === 0 && res.data) {
+          setActivityCount(res.data.length);
+        }
+      } catch (error) {
+        console.error('Failed to fetch activities count:', error);
+      }
+    };
+
+    fetchActivitiesCount();
+  }, [selectedCourse?.id]);
 
   // Edit dialog handlers
   const handleOpenEditDialog = () => {
@@ -721,10 +743,10 @@ export default function CourseDetailsSettings() {
           <Grid size={{ xs: 12, md: 4 }}>
             <Box sx={{ textAlign: 'center' }}>
               <Typography variant="h3" color="primary">
-                {selectedCourse.classCount || 0}
+                {activityCount}
               </Typography>
               <Typography variant="subtitle2" color="text.secondary">
-                Classes
+                Activities
               </Typography>
             </Box>
           </Grid>
@@ -755,7 +777,7 @@ export default function CourseDetailsSettings() {
       <CardContent>
         <Stack spacing={3}>
           {/* Disable Course */}
-          <Box>
+          {/*           <Box>
             <Typography variant="subtitle2" gutterBottom>
               Disable Course
             </Typography>
@@ -771,7 +793,7 @@ export default function CourseDetailsSettings() {
             >
               {selectedCourse?.isEnabled ? 'Disable Course' : 'Enabled Course'}
             </Button>
-          </Box>
+          </Box> */}
 
           {/* Archive Course */}
           <Box>
@@ -779,8 +801,8 @@ export default function CourseDetailsSettings() {
               Archive Course
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Archiving a course will move it to the archived section. All data is preserved but the
-              course becomes read-only and is hidden from active views.
+              Archiving a course will move it to the archived section. All data is preserved. This action can let
+              you have clear view of active courses.
             </Typography>
             <Button
               variant="outlined"
@@ -906,7 +928,7 @@ export default function CourseDetailsSettings() {
             <Alert severity="success">Unarchiving course will restore it to active views.</Alert>
           ) : (
             <Alert severity="warning">
-              Archiving course will make it read-only and hidden from active views.
+              Archiving course will make it hidden from active views.
             </Alert>
           )}
         </DialogContent>

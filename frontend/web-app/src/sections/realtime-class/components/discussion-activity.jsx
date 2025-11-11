@@ -252,7 +252,7 @@ const DiscussionActivity = React.memo(
               multiline
               rows={6}
               fullWidth
-              disabled={!isActive || hasSubmitted || isSubmitting}
+              disabled={hasSubmitted || isSubmitting}
               helperText={`${text.length}/${maxLength} characters`}
             />
 
@@ -269,7 +269,7 @@ const DiscussionActivity = React.memo(
               />
             )}
 
-            {isActive && !hasSubmitted && (
+            {!hasSubmitted && (
               <Button
                 variant="contained"
                 size="large"
@@ -311,29 +311,38 @@ const DiscussionActivity = React.memo(
               <Alert severity="info">No responses yet</Alert>
             ) : (
               <Stack spacing={2}>
-                {submissions.map((submission, index) => (
-                  <Card key={submission.id} variant="outlined">
-                    <CardContent>
-                      <Stack spacing={1}>
-                        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                          <Typography variant="caption" color="text.secondary">
-                            {submission.isAnonymous ? 'Anonymous' : `Student: ${submission.studentId}`}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            •
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {new Date(submission.submittedAt).toLocaleString()}
-                          </Typography>
-                          {submission.id === existingSubmission?.id && (
-                            <Chip label="You" color="primary" size="small" />
-                          )}
+                {submissions.map((submission, index) => {
+                  // Parse UTC timestamp and convert to local timezone
+                  let submittedAtString = submission.submittedAt;
+                  if (submittedAtString && !submittedAtString.endsWith('Z') && !submittedAtString.includes('+')) {
+                    submittedAtString = submittedAtString + 'Z';
+                  }
+                  const submittedDate = new Date(submittedAtString);
+
+                  return (
+                    <Card key={submission.id} variant="outlined">
+                      <CardContent>
+                        <Stack spacing={1}>
+                          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                            <Typography variant="caption" color="text.secondary">
+                              {submission.isAnonymous ? 'Anonymous' : `Student: ${submission.studentId}`}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              •
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {submittedDate.toLocaleString()}
+                            </Typography>
+                            {submission.id === existingSubmission?.id && (
+                              <Chip label="You" color="primary" size="small" />
+                            )}
+                          </Stack>
+                          <Typography variant="body2">{submission.text}</Typography>
                         </Stack>
-                        <Typography variant="body2">{submission.text}</Typography>
-                      </Stack>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </Stack>
             )}
           </CardContent>

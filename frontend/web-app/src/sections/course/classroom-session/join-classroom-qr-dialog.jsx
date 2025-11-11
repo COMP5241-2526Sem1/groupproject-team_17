@@ -17,7 +17,7 @@ import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
-export default function JoinClassroomQRDialog({ open, onClose, courseId, joinCode }) {
+export default function JoinClassroomQRDialog({ open, onClose, courseId, joinCode, courseData }) {
   const [joinUrl, setJoinUrl] = useState('');
   const [copied, setCopied] = useState(false);
 
@@ -89,9 +89,16 @@ export default function JoinClassroomQRDialog({ open, onClose, courseId, joinCod
           pb: 2,
         }}
       >
-        <Typography variant="h5" component="span" sx={{ fontWeight: 600 }}>
-          Join Classroom
-        </Typography>
+        <Box>
+          <Typography variant="h5" component="span" sx={{ fontWeight: 600 }}>
+            Join Classroom
+          </Typography>
+          {courseData && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              {courseData.courseCode} - {courseData.courseName}
+            </Typography>
+          )}
+        </Box>
         <IconButton onClick={onClose} size="small">
           <Iconify icon="solar:close-circle-bold" width={24} />
         </IconButton>
@@ -124,15 +131,10 @@ export default function JoinClassroomQRDialog({ open, onClose, courseId, joinCod
                 value={joinUrl}
                 size={256}
                 level="H"
-                includeMargin
-                imageSettings={{
-                  src: '/logo/logo-single.svg',
-                  height: 40,
-                  width: 40,
-                  excavate: true,
-                }}
+
               />
             ) : (
+
               <Box sx={{ width: 256, height: 256, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Typography color="text.secondary">Loading QR Code...</Typography>
               </Box>

@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { QRCodeSVG } from 'qrcode.react';
 import { Suspense, useEffect, useState } from 'react';
 
+import { realtimeClassAPI } from 'src/api/api-function-call';
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
@@ -14,8 +15,31 @@ function QRCodeContent() {
   const classCode = searchParams.get('class');
   const [joinUrl, setJoinUrl] = useState('');
   const [copied, setCopied] = useState(false);
+  const [courseInfo, setCourseInfo] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchCourseInfo = async () => {
+      if (!classCode) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        // Fetch course information using join code
+        const response = await realtimeClassAPI.getCourseJoinInfo(classCode);
+        if (response.code === 0 && response.data) {
+          setCourseInfo(response.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch course info:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCourseInfo();
+
     if (typeof window !== 'undefined' && classCode) {
       const baseUrl = window.location.origin;
       const url = `${baseUrl}/classroom/?class=${classCode}`;
@@ -81,6 +105,22 @@ function QRCodeContent() {
     );
   }
 
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'grey.100',
+        }}
+      >
+        <Typography>Loading course information...</Typography>
+      </Box>
+    );
+  }
+
   return (
     <Box
       sx={{
@@ -105,13 +145,13 @@ function QRCodeContent() {
             },
           }}
         >
-          {/* Title */}
-          <Typography variant="h3" gutterBottom sx={{ fontWeight: 700, mb: 1 }}>
-            Join Classroom
-          </Typography>
 
-          <Typography variant="h6" color="text.secondary" gutterBottom sx={{ mb: 4 }}>
-            Scan QR Code to Join
+          {/* Title */}
+          <Typography variant="h3" gutterBottom sx={{ mb: 1 }}>
+            {courseInfo.courseCode}
+          </Typography>
+          <Typography variant="h6" color="text.secondary" gutterBottom sx={{ mb: 0 }}>
+            {courseInfo.courseName}
           </Typography>
 
           {/* QR Code - No Logo */}
@@ -147,6 +187,18 @@ function QRCodeContent() {
                 <Typography color="text.secondary">Loading...</Typography>
               </Box>
             )}
+          </Box>
+          <Box
+            sx={{
+              pb: 2,
+              '@media print': {
+                display: 'none',
+              },
+            }}
+          >
+            <Typography variant="caption" color="text.secondary">
+              Students can scan this QR code with their phone camera or enter the class code manually
+            </Typography>
           </Box>
 
           {/* Join Code Display */}
@@ -210,21 +262,7 @@ function QRCodeContent() {
           </Box>
 
           {/* Instructions - Hidden on Print */}
-          <Box
-            sx={{
-              mt: 4,
-              pt: 3,
-              borderTop: '1px solid',
-              borderColor: 'divider',
-              '@media print': {
-                display: 'none',
-              },
-            }}
-          >
-            <Typography variant="caption" color="text.secondary">
-              💡 Students can scan this QR code with their phone camera or enter the class code manually
-            </Typography>
-          </Box>
+
         </Paper>
       </Container>
     </Box>
