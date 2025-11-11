@@ -1,36 +1,35 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
 import { useBoolean, useSetState } from 'minimal-shared/hooks';
+import { useEffect, useMemo, useState } from 'react';
 
 import {
   Box,
-  Tab,
-  Chip,
-  Tabs,
-  Stack,
   Button,
-  TextField,
+  Chip,
   IconButton,
-  Typography,
   InputAdornment,
+  Stack,
+  Tab,
+  Tabs,
+  TextField,
+  Typography,
 } from '@mui/material';
 
-import { useSelector } from 'src/redux/hooks';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { ClassManagementActions } from 'src/redux/actions/reducerActions';
+import { useSelector } from 'src/redux/hooks';
 
-import { Label } from 'src/components/label';
-import { Iconify } from 'src/components/iconify';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
+import { Iconify } from 'src/components/iconify';
+import { Label } from 'src/components/label';
 
-import CourseSort from '../course-sort';
-import { CourseList } from '../course-list';
 import CourseCreateDialog from '../course-create-course-dialog';
+import { CourseList } from '../course-list';
+import CourseSort from '../course-sort';
 
 const TABS_OPTIONS = [
   { value: 'published', label: 'Published', color: 'info' },
-  { value: 'disabled', label: 'Disabled', color: 'error' },
   { value: 'archived', label: 'Archived', color: 'warning' },
 ];
 
