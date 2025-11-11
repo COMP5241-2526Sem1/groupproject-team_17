@@ -235,7 +235,8 @@ public partial class ClassManager
       // Skip if mode is Disabled
       if (mode == TeachingCourse.JoinCheckingModeEnum.Disabled)
       {
-        continue;
+        isVerified = true;
+        break;
       }
 
       bool combinationMatches = true;
