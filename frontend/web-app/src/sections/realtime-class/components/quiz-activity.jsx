@@ -64,15 +64,20 @@ const QuizQuestion = memo(({ question, questionIndex, selectedAnswer, onAnswerSe
                 cursor: isSubmitted ? 'default' : 'pointer',
                 border: selectedAnswer === optionIndex ? 2 : 1,
                 borderColor: selectedAnswer === optionIndex ? 'primary.main' : 'divider',
+                transition: 'all 0.2s ease-in-out',
                 '&:hover': !isSubmitted && {
                   borderColor: 'primary.main',
                   bgcolor: 'action.hover',
+                  transform: 'scale(1.02)',
+                },
+                '&:active': !isSubmitted && {
+                  transform: 'scale(0.98)',
                 },
               }}
             >
               <FormControlLabel
                 value={optionIndex}
-                control={<Radio disabled={isSubmitted} />}
+                control={<Radio disabled={isSubmitted} onClick={() => !isSubmitted && onAnswerSelect(questionIndex, optionIndex)} />}
                 label={option}
                 sx={{ width: '100%', m: 0 }}
               />
@@ -243,24 +248,42 @@ function QuizActivityComponent({ activity, onSubmitSuccess, isHistoryView = fals
           console.log('[QuizActivity] 📥 Loading saved answers:', loadedAnswers);
           setAnswers(loadedAnswers);
 
-          // Check if time has expired
-          const isTimeExpired = expirationTime && Date.now() >= expirationTime;
+          // Check if this is a real submission (has submittedAt timestamp)
+          // vs just an auto-save (no submittedAt or submittedAt is null)
+          const hasSubmittedAt = response.data.submittedAt || response.data.quiz_SubmittedAt;
+          const isRealSubmission = !!hasSubmittedAt;
 
-          console.log('[QuizActivity] ⏰ Time expiration check:', {
-            expirationTime: expirationTime ? new Date(expirationTime).toISOString() : null,
-            now: new Date().toISOString(),
+          // Manually calculate expiration time to check if time has expired
+          // (expirationTime useMemo might not be ready yet during initial load)
+          let isTimeExpired = false;
+          if (activity?.startedAt && timeLimit > 0) {
+            let startedAtString = activity.startedAt;
+            if (startedAtString && !startedAtString.endsWith('Z') && !startedAtString.includes('+')) {
+              startedAtString = startedAtString + 'Z';
+            }
+            const startedTime = new Date(startedAtString).getTime();
+            if (!isNaN(startedTime)) {
+              const expTime = startedTime + (timeLimit * 1000);
+              isTimeExpired = Date.now() >= expTime;
+            }
+          }
+
+          console.log('[QuizActivity] ⏰ Submission status check:', {
+            hasSubmittedAt,
+            isRealSubmission,
             isTimeExpired,
+            now: new Date().toISOString(),
           });
 
-          if (isTimeExpired) {
-            // Time expired - show results with the submission
-            console.log('[QuizActivity] ⏰ Time expired - showing results');
+          if (isRealSubmission || isTimeExpired) {
+            // Real submission OR time expired - show results
+            console.log('[QuizActivity] ✅ Quiz completed - showing results');
             setSubmissionResult(response.data);
             setHasSubmitted(true);
-            setIsTimeUp(true);
+            setIsTimeUp(isTimeExpired);
           } else {
-            // Time not expired yet - allow continuing
-            console.log('[QuizActivity] ⏱️ Time not expired - allowing edits');
+            // Just auto-saved, not submitted yet - allow continuing
+            console.log('[QuizActivity] ⏱️ Auto-save only - allowing edits');
             setHasSubmitted(false);
             setSubmissionResult(null);
           }
@@ -315,7 +338,8 @@ function QuizActivityComponent({ activity, onSubmitSuccess, isHistoryView = fals
       return undefined;
     }
 
-    if (hasSubmitted || !isActive || !expirationTime) {
+    // Don't start timer if already submitted, not active, or no expiration time
+    if (isTimeUp === true) {
       console.log('[QuizActivity] ❌ Timer not starting:', {
         hasSubmitted,
         isActive,
@@ -411,11 +435,11 @@ function QuizActivityComponent({ activity, onSubmitSuccess, isHistoryView = fals
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasSubmitted, isActive, expirationTime, isCheckingSubmission]);
+  }, [hasSubmitted, isActive, expirationTime, isCheckingSubmission,]);
 
   // Auto-save function - saves answers without marking as "submitted"
   const autoSaveAnswers = useCallback(async (currentAnswers) => {
-    if (!activity?.id || !studentState?.studentId || hasSubmitted) {
+    if (!activity?.id || !studentState?.studentId) {
       console.log('[QuizActivity] ⚠️ Auto-save skipped:', {
         hasActivityId: !!activity?.id,
         activityId: activity?.id,
@@ -493,7 +517,14 @@ function QuizActivityComponent({ activity, onSubmitSuccess, isHistoryView = fals
       return newAnswers;
     });
     setError(null);
-  }, [activity, autoSaveAnswers]);
+    
+    // Auto-navigate to next question after selection
+    setTimeout(() => {
+      if (currentQuestionIndex < totalQuestions) {
+        setCurrentQuestionIndex(prev => prev + 1);
+      }
+    }, 300); // Small delay for better UX
+  }, [activity, autoSaveAnswers, currentQuestionIndex, totalQuestions]);
 
   // Submit quiz
   const handleSubmit = async (autoSubmit = false) => {
@@ -622,7 +653,8 @@ function QuizActivityComponent({ activity, onSubmitSuccess, isHistoryView = fals
 
   // Navigation handlers
   const handleNextQuestion = () => {
-    if (currentQuestionIndex < totalQuestions - 1) {
+    // Allow going to totalQuestions index (summary page)
+    if (currentQuestionIndex < totalQuestions) {
       setCurrentQuestionIndex(prev => prev + 1);
     }
   };
@@ -675,7 +707,7 @@ function QuizActivityComponent({ activity, onSubmitSuccess, isHistoryView = fals
   // 2. Activity is inactive OR
   // 3. Time is up (expired or isTimeUp)
   // NOTE: Must check time FIRST before showing results, even if we have submissionResult from auto-save
-  const isQuizCompleted = isHistoryView || !isActive || isQuizExpired || isTimeUp;
+  const isQuizCompleted = isTimeUp;
 
   console.log('[QuizActivity] 📊 Result display check:', {
     isQuizCompleted,
@@ -816,6 +848,10 @@ function QuizActivityComponent({ activity, onSubmitSuccess, isHistoryView = fals
       ? 'solar:play-circle-bold'
       : 'solar:pause-circle-bold';
 
+  // Determine if quiz should be disabled based on submission status or time expiration
+  // Students can edit if: quiz is active, time not expired, and not formally submitted
+  const isQuizDisabled = isTimeUp || isQuizExpired;
+
   // Debug timer display
   console.log('[QuizActivity] 🖥️ UI Render - Timer display check:', {
     timeLimit,
@@ -825,6 +861,9 @@ function QuizActivityComponent({ activity, onSubmitSuccess, isHistoryView = fals
     expirationTime,
     hasSubmitted,
     isActive,
+    isTimeUp,
+    isQuizExpired,
+    isQuizDisabled,
     showTimer: timeRemaining !== null,
     timerValue: timeRemaining !== null ? formatTime(timeRemaining) : 'N/A',
   });
@@ -891,7 +930,9 @@ function QuizActivityComponent({ activity, onSubmitSuccess, isHistoryView = fals
             {/* Question indicator */}
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Typography variant="subtitle2" color="text.secondary">
-                Question {currentQuestionIndex + 1} of {totalQuestions}
+                {currentQuestionIndex === totalQuestions
+                  ? 'Review & Submit'
+                  : `Question ${currentQuestionIndex + 1} of ${totalQuestions}`}
               </Typography>
               <Stack direction="row" spacing={1}>
                 <Button
@@ -908,21 +949,115 @@ function QuizActivityComponent({ activity, onSubmitSuccess, isHistoryView = fals
                   variant="outlined"
                   endIcon={<Iconify icon="solar:alt-arrow-right-bold" />}
                   onClick={handleNextQuestion}
-                  disabled={currentQuestionIndex === totalQuestions - 1}
+                  disabled={currentQuestionIndex === totalQuestions}
                 >
                   Next
                 </Button>
               </Stack>
             </Stack>
 
-            {/* Current question */}
-            <QuizQuestion
-              question={activity.questions[currentQuestionIndex]}
-              questionIndex={currentQuestionIndex}
-              selectedAnswer={answers[currentQuestionIndex]}
-              onAnswerSelect={handleAnswerSelect}
-              isSubmitted={hasSubmitted}
-            />
+            {/* Current question or summary page */}
+            {currentQuestionIndex < totalQuestions ? (
+              <>
+                {/* Current question */}
+                <QuizQuestion
+                  question={activity.questions[currentQuestionIndex]}
+                  questionIndex={currentQuestionIndex}
+                  selectedAnswer={answers[currentQuestionIndex]}
+                  onAnswerSelect={handleAnswerSelect}
+                  isSubmitted={isQuizDisabled}
+                />
+              </>
+            ) : (
+              <>
+                {/* Summary page - show unanswered questions or completion message */}
+                <Card variant="outlined" sx={{ p: 3, bgcolor: 'background.neutral' }}>
+                  <Stack spacing={3}>
+                    {answeredCount === totalQuestions ? (
+                      <>
+                        {/* All questions completed */}
+                        <Stack spacing={2} alignItems="center">
+                          <Iconify icon="solar:check-circle-bold" width={64} color="success.main" />
+                          <Typography variant="h5" color="success.main" textAlign="center">
+                            You have completed all questions!
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" textAlign="center">
+                            Your anwser already saved.
+                          </Typography>
+                          <Button
+                            variant="outlined"
+                            startIcon={<Iconify icon="solar:restart-bold" />}
+                            onClick={() => setCurrentQuestionIndex(0)}
+                            sx={{ mt: 1 }}
+                          >
+                            Start Over to Review
+                          </Button>
+                        </Stack>
+                      </>
+                    ) : (
+                      <>
+                        {/* Some questions unanswered */}
+                        <Stack spacing={2} alignItems="center">
+                          <Iconify icon="solar:danger-circle-bold" width={64} color="warning.main" />
+                          <Typography variant="h5" color="warning.main" textAlign="center">
+                            Incomplete Questions
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" textAlign="center">
+                            You have not answered all questions yet. Please review the following:
+                          </Typography>
+                        </Stack>
+
+                        {/* List of unanswered questions */}
+                        <Box>
+                          <Typography variant="subtitle2" gutterBottom>
+                            Unanswered Questions:
+                          </Typography>
+                          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                            {activity.questions.map((_, index) => {
+                              if (answers[index] === undefined) {
+                                return (
+                                  <Chip
+                                    key={index}
+                                    label={`Q${index + 1}`}
+                                    color="warning"
+                                    size="small"
+                                    onClick={() => setCurrentQuestionIndex(index)}
+                                    sx={{ cursor: 'pointer' }}
+                                  />
+                                );
+                              }
+                              return null;
+                            })}
+                          </Stack>
+                        </Box>
+
+                        {/* Summary stats */}
+                        <Card variant="outlined" sx={{ p: 2 }}>
+                          <Stack direction="row" spacing={3} justifyContent="center">
+                            <Box sx={{ textAlign: 'center' }}>
+                              <Typography variant="h4" color="success.main">
+                                {answeredCount}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                Answered
+                              </Typography>
+                            </Box>
+                            <Box sx={{ textAlign: 'center' }}>
+                              <Typography variant="h4" color="warning.main">
+                                {totalQuestions - answeredCount}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                Remaining
+                              </Typography>
+                            </Box>
+                          </Stack>
+                        </Card>
+                      </>
+                    )}
+                  </Stack>
+                </Card>
+              </>
+            )}
 
             {/* Question navigation dots */}
             <Stack direction="row" spacing={0.5} justifyContent="center" flexWrap="wrap">
@@ -945,6 +1080,23 @@ function QuizActivityComponent({ activity, onSubmitSuccess, isHistoryView = fals
                   onClick={() => setCurrentQuestionIndex(index)}
                 />
               ))}
+              {/* Summary page indicator */}
+              <Box
+                sx={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: '50%',
+                  bgcolor: answeredCount === totalQuestions ? 'success.main' : 'warning.main',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  border: currentQuestionIndex === totalQuestions ? 2 : 0,
+                  borderColor: currentQuestionIndex === totalQuestions ? 'primary.dark' : 'transparent',
+                  '&:hover': {
+                    transform: 'scale(1.3)',
+                  },
+                }}
+                onClick={() => setCurrentQuestionIndex(totalQuestions)}
+              />
             </Stack>
           </Stack>
 
