@@ -205,12 +205,11 @@ export default function CourseDetailsSettings() {
 
   const formatSemester = (semester) => {
     const semesterMap = {
-      0: 'None',
-      1: 'Semester 1',
-      2: 'Semester 2',
-      3: 'Summer',
+      'one': 'Semester 1',
+      'two': 'Semester 2',
+      'summer': 'Semester 3',
     };
-    return semesterMap[semester] || 'Unknown';
+    return semesterMap[semester] || '';
   };
 
   const status = selectedCourse.isArchived
