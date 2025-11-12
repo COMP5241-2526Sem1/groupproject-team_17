@@ -35,15 +35,15 @@ const editCourseSchema = z.object({
     .min(1, { message: 'Course name is required' })
     .max(100, { message: 'Course name is too long' }),
   academicYear: z.number().min(1970).max(2100),
-  semester: z.number().min(0).max(3), // 0=None, 1=Spring, 2=Winter, 3=Summer
+  semester: z.string(), // 0=None, 1=Spring, 2=Winter, 3=Summer
   description: z.string().max(500).optional().or(z.literal('')),
 });
 
 const SEMESTER_OPTIONS = [
-  { value: 0, label: 'All' },
-  { value: 1, label: '1' },
-  { value: 2, label: '2' },
-  { value: 3, label: '3' },
+  { value: 'none', label: 'All' },
+  { value: 'one', label: '1' },
+  { value: 'two', label: '2' },
+  { value: 'summer', label: '3' },
 ];
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -62,7 +62,7 @@ export default function CourseDetailsSettingsEditDialog({
     courseCode: '',
     courseName: '',
     academicYear: CURRENT_YEAR,
-    semester: 1,
+    semester: '',
     description: '',
   };
 
@@ -85,7 +85,7 @@ export default function CourseDetailsSettingsEditDialog({
         courseCode: course.courseCode || '',
         courseName: course.courseName || '',
         academicYear: course.academicYear || CURRENT_YEAR,
-        semester: course.semester ?? 1,
+        semester: semesterConvert(course.semester) ?? 1,
         description: course.description || '',
       });
       setSubmitError('');
@@ -111,6 +111,13 @@ export default function CourseDetailsSettingsEditDialog({
     }
   }, [open, isSubmitting, isLoading]);
 
+
+  const semesterConvert = (sem) => {
+    if (sem === 'one') return 'one';
+    if (sem === 'two') return 'two';
+    if (sem === 'summer') return 'summer';
+    return 'none';
+  }
   const onSubmitForm = handleSubmit(async (data) => {
     const res = await ClassManagementActions.updateCourse(course.id, data);
 
