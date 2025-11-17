@@ -78,9 +78,12 @@ npm-debug.log*
 next-env.d.ts
 coverage/
 
-# C# Web-api
+# C# Web-api - Configuration files with sensitive data
 backend/InteractiveHub.WebAPI/appsettings.Development.json
+backend/InteractiveHub.WebAPI/appsettings.Production.json
+backend/InteractiveHub.WebAPI/appsettings.json
 
-
-# Docker
+# Docker - Ignore actual config, keep example files
 docker-compose.yml
+!docker-compose.example.yml
+!backend/InteractiveHub.WebAPI/appsettings.example.json
