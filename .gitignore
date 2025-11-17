@@ -80,3 +80,7 @@ coverage/
 
 # C# Web-api
 backend/InteractiveHub.WebAPI/appsettings.Development.json
+
+
+# Docker
+docker-compose.yml
