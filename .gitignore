@@ -83,6 +83,7 @@ backend/InteractiveHub.WebAPI/appsettings.Development.json
 backend/InteractiveHub.WebAPI/appsettings.Production.json
 backend/InteractiveHub.WebAPI/appsettings.json
 
+
 # Docker - Ignore actual config, keep example files
 docker-compose.yml
 !docker-compose.example.yml
